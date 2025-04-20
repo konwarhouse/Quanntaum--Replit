@@ -580,7 +580,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post("/api/failure-history", async (req, res) => {
     try {
-      const failureHistoryData = insertFailureHistorySchema.parse(req.body);
+      // Modify the request data to handle date strings properly
+      const requestData = {
+        ...req.body,
+        // Parse date strings into actual Date objects if they're strings
+        failureDate: typeof req.body.failureDate === 'string' 
+          ? new Date(req.body.failureDate) 
+          : req.body.failureDate,
+        repairCompleteDate: typeof req.body.repairCompleteDate === 'string'
+          ? new Date(req.body.repairCompleteDate) 
+          : req.body.repairCompleteDate
+      };
+      
+      // Now parse with the schema
+      const failureHistoryData = insertFailureHistorySchema.parse(requestData);
+      
+      // Create the record in the database
       const failureRecord = await storage.createFailureHistory(failureHistoryData);
       res.status(201).json(failureRecord);
     } catch (error) {
@@ -608,8 +623,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/failure-history/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const failureHistoryData = req.body;
-      const failureRecord = await storage.updateFailureHistory(id, failureHistoryData);
+      
+      // Modify the request data to handle date strings properly
+      const requestData = {
+        ...req.body,
+        // Parse date strings into actual Date objects if they're strings
+        failureDate: typeof req.body.failureDate === 'string' 
+          ? new Date(req.body.failureDate) 
+          : req.body.failureDate,
+        repairCompleteDate: typeof req.body.repairCompleteDate === 'string'
+          ? new Date(req.body.repairCompleteDate) 
+          : req.body.repairCompleteDate
+      };
+      
+      const failureRecord = await storage.updateFailureHistory(id, requestData);
       
       if (!failureRecord) {
         return res.status(404).json({ message: "Failure history record not found" });
