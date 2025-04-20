@@ -888,14 +888,14 @@ const FailureHistory = () => {
             <div>
               <Label htmlFor="assetFilter">Asset</Label>
               <Select
-                value={selectedAssetId || ""}
-                onValueChange={(value) => setSelectedAssetId(value === "" ? null : value)}
+                value={selectedAssetId || "all"}
+                onValueChange={(value) => setSelectedAssetId(value === "all" ? null : value)}
               >
                 <SelectTrigger id="assetFilter">
                   <SelectValue placeholder="All assets" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All assets</SelectItem>
+                  <SelectItem value="all">All assets</SelectItem>
                   {assets.map((asset) => (
                     <SelectItem key={asset.id} value={asset.id.toString()}>
                       {asset.assetNumber} - {asset.name}
@@ -926,7 +926,7 @@ const FailureHistory = () => {
                       mode="single"
                       selected={dateRange.start || undefined}
                       onSelect={(date) =>
-                        setDateRange({ ...dateRange, start: date })
+                        setDateRange({ ...dateRange, start: date ? date : null })
                       }
                       disabled={(date) =>
                         date > new Date() || (dateRange.end ? date > dateRange.end : false)
@@ -955,7 +955,7 @@ const FailureHistory = () => {
                       mode="single"
                       selected={dateRange.end || undefined}
                       onSelect={(date) =>
-                        setDateRange({ ...dateRange, end: date })
+                        setDateRange({ ...dateRange, end: date ? date : null })
                       }
                       disabled={(date) =>
                         date > new Date() || (dateRange.start ? date < dateRange.start : false)
