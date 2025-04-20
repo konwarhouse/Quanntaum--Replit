@@ -500,6 +500,7 @@ const FailureHistory = () => {
         repairCompleteDate: formattedRepairDate,
         downtimeHours: parseFloat(formValues.downtimeHours as string) || 0,
         repairTimeHours: parseFloat(formValues.repairTimeHours as string) || 0,
+        needsRCA: formValues.needsRCA,
         operatingHoursAtFailure: formValues.operatingHoursAtFailure ? parseFloat(formValues.operatingHoursAtFailure as string) : null,
         failureDescription: formValues.failureDescription,
         failureMechanism: formValues.failureMechanism,
@@ -762,6 +763,17 @@ const FailureHistory = () => {
                           { value: "external", label: "External Influence" },
                           { value: "material", label: "Material/Corrosion" },
                           { value: "misoperation", label: "Misoperation" },
+                        ]
+                      )}
+                      {renderFormField(
+                        addForm,
+                        "needsRCA",
+                        "Requires RCA Investigation",
+                        "Does this failure need a Root Cause Analysis investigation?",
+                        "select",
+                        [
+                          { value: "yes", label: "Yes" },
+                          { value: "no", label: "No" },
                         ]
                       )}
                       {renderFormField(
@@ -1310,6 +1322,17 @@ const FailureHistory = () => {
                       { value: "external", label: "External Influence" },
                       { value: "material", label: "Material/Corrosion" },
                       { value: "misoperation", label: "Misoperation" },
+                    ]
+                  )}
+                  {renderFormField(
+                    editForm,
+                    "needsRCA",
+                    "Requires RCA Investigation",
+                    "Does this failure need a Root Cause Analysis investigation?",
+                    "select",
+                    [
+                      { value: "yes", label: "Yes" },
+                      { value: "no", label: "No" },
                     ]
                   )}
                   {renderFormField(
