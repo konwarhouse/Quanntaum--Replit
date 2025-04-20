@@ -1,8 +1,9 @@
-import type { Express } from "express";
+import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { OpenAI } from "openai";
 import * as XLSX from 'xlsx';
+import { UserRole } from "@shared/auth";
 import { 
   insertMessageSchema, 
   ChatCompletionRequest, 
@@ -475,6 +476,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/failure-modes", async (req, res) => {
     try {
+      // Check if user has admin role via header
+      const userRole = req.headers['x-user-role'] as string;
+      // For development/demo purposes, allow access if no role header is present
+      // In production, this should be properly secured with authentication
+      if (userRole && userRole !== 'admin') {
+        return res.status(403).json({ 
+          message: "Only administrators can create failure modes" 
+        });
+      }
+      
       const failureModeData = insertFailureModeSchema.parse(req.body);
       const failureMode = await storage.createFailureMode(failureModeData);
       res.status(201).json(failureMode);
@@ -486,6 +497,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/failure-modes/:id", async (req, res) => {
     try {
+      // Check if user has admin role via header
+      const userRole = req.headers['x-user-role'] as string;
+      // For development/demo purposes, allow access if no role header is present
+      // In production, this should be properly secured with authentication
+      if (userRole && userRole !== 'admin') {
+        return res.status(403).json({ 
+          message: "Only administrators can update failure modes" 
+        });
+      }
+      
       const id = parseInt(req.params.id);
       const failureModeData = req.body;
       const failureMode = await storage.updateFailureMode(id, failureModeData);
@@ -503,6 +524,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/failure-modes/:id", async (req, res) => {
     try {
+      // Check if user has admin role
+      const userRole = req.session?.userRole;
+      if (userRole !== 'admin') {
+        return res.status(403).json({ 
+          message: "Only administrators can delete failure modes" 
+        });
+      }
+      
       const id = parseInt(req.params.id);
       const success = await storage.deleteFailureMode(id);
       
