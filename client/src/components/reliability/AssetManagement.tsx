@@ -5,78 +5,74 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Asset } from "@/lib/types";
-import { Edit, PlusCircle, Trash2 } from "lucide-react";
-import { format, parseISO } from "date-fns";
-
-interface AssetFormData {
-  name: string;
-  description: string;
-  criticality: string;
-  installationDate?: string;
-  weibullBeta: number;
-  weibullEta: number;
-  timeUnit: string;
-}
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const AssetManagement = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
-  const [formData, setFormData] = useState<AssetFormData>({
-    name: "",
-    description: "",
-    criticality: "Medium",
-    weibullBeta: 2,
-    weibullEta: 1000,
-    timeUnit: "hours"
+  const [isAddAssetOpen, setIsAddAssetOpen] = useState(false);
+  const [isEditAssetOpen, setIsEditAssetOpen] = useState(false);
+  const [newAsset, setNewAsset] = useState({
+    name: '',
+    description: '',
+    criticality: 'Medium',
+    installationDate: '',
+    weibullBeta: 2.0,
+    weibullEta: 1000.0,
+    timeUnit: 'hours'
   });
-  
+  const [date, setDate] = useState<Date | undefined>(undefined);
+
   // Fetch assets
   const { data: assets = [], isLoading } = useQuery<Asset[]>({
     queryKey: ['/api/assets'],
     staleTime: 5000,
   });
-  
-  // Create asset mutation
-  const createAssetMutation = useMutation({
-    mutationFn: (asset: Omit<Asset, 'id'>) => 
-      apiRequest("POST", "/api/assets", asset),
+
+  // Add asset mutation
+  const addAssetMutation = useMutation({
+    mutationFn: (assetData: any) => apiRequest("POST", "/api/assets", assetData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/assets'] });
+      setIsAddAssetOpen(false);
+      resetForm();
       toast({ 
         title: "Success", 
-        description: "Asset created successfully" 
+        description: "Asset added successfully" 
       });
-      setIsAddDialogOpen(false);
-      resetForm();
     },
     onError: (error) => {
       toast({ 
         title: "Error", 
-        description: error instanceof Error ? error.message : "Failed to create asset",
+        description: error instanceof Error ? error.message : "Failed to add asset",
         variant: "destructive"
       });
     }
   });
-  
+
   // Update asset mutation
   const updateAssetMutation = useMutation({
-    mutationFn: (asset: Asset) => 
-      apiRequest("PUT", `/api/assets/${asset.id}`, asset),
+    mutationFn: ({ id, data }: { id: number; data: any }) => 
+      apiRequest("PUT", `/api/assets/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/assets'] });
+      setIsEditAssetOpen(false);
+      setSelectedAsset(null);
       toast({ 
         title: "Success", 
         description: "Asset updated successfully" 
       });
-      setIsEditDialogOpen(false);
-      setSelectedAsset(null);
     },
     onError: (error) => {
       toast({ 
@@ -86,13 +82,13 @@ const AssetManagement = () => {
       });
     }
   });
-  
+
   // Delete asset mutation
   const deleteAssetMutation = useMutation({
-    mutationFn: (id: number) => 
-      apiRequest("DELETE", `/api/assets/${id}`),
+    mutationFn: (id: number) => apiRequest("DELETE", `/api/assets/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/assets'] });
+      setSelectedAsset(null);
       toast({ 
         title: "Success", 
         description: "Asset deleted successfully" 
@@ -106,367 +102,364 @@ const AssetManagement = () => {
       });
     }
   });
-  
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setNewAsset(prev => ({
       ...prev,
       [name]: name === 'weibullBeta' || name === 'weibullEta' ? parseFloat(value) : value
     }));
   };
-  
+
   const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({
+    setNewAsset(prev => ({
       ...prev,
       [name]: value
     }));
   };
-  
-  const resetForm = () => {
-    setFormData({
-      name: "",
-      description: "",
-      criticality: "Medium",
-      weibullBeta: 2,
-      weibullEta: 1000,
-      timeUnit: "hours"
-    });
+
+  const handleDateSelect = (selectedDate: Date | undefined) => {
+    setDate(selectedDate);
+    if (selectedDate) {
+      setNewAsset(prev => ({
+        ...prev,
+        installationDate: format(selectedDate, 'yyyy-MM-dd')
+      }));
+    } else {
+      setNewAsset(prev => ({
+        ...prev,
+        installationDate: ''
+      }));
+    }
   };
-  
+
+  const resetForm = () => {
+    setNewAsset({
+      name: '',
+      description: '',
+      criticality: 'Medium',
+      installationDate: '',
+      weibullBeta: 2.0,
+      weibullEta: 1000.0,
+      timeUnit: 'hours'
+    });
+    setDate(undefined);
+  };
+
   const handleAddAsset = (e: React.FormEvent) => {
     e.preventDefault();
-    createAssetMutation.mutate(formData);
+    addAssetMutation.mutate(newAsset);
   };
-  
+
   const handleEditAsset = (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedAsset) {
-      updateAssetMutation.mutate({
-        ...formData,
-        id: selectedAsset.id
+      updateAssetMutation.mutate({ 
+        id: selectedAsset.id, 
+        data: newAsset 
       });
     }
   };
-  
-  const handleDeleteAsset = (id: number) => {
-    if (confirm("Are you sure you want to delete this asset?")) {
-      deleteAssetMutation.mutate(id);
+
+  const handleDeleteAsset = () => {
+    if (selectedAsset) {
+      deleteAssetMutation.mutate(selectedAsset.id);
     }
   };
-  
-  const openEditDialog = (asset: Asset) => {
+
+  const handleEditClick = (asset: Asset) => {
     setSelectedAsset(asset);
-    setFormData({
+    setNewAsset({
       name: asset.name,
-      description: asset.description || "",
+      description: asset.description || '',
       criticality: asset.criticality,
-      installationDate: asset.installationDate || undefined,
+      installationDate: asset.installationDate || '',
       weibullBeta: asset.weibullBeta,
       weibullEta: asset.weibullEta,
       timeUnit: asset.timeUnit
     });
-    setIsEditDialogOpen(true);
+    if (asset.installationDate) {
+      setDate(new Date(asset.installationDate));
+    } else {
+      setDate(undefined);
+    }
+    setIsEditAssetOpen(true);
   };
-  
-  return (
-    <div>
-      <div className="flex justify-between mb-4">
-        <h3 className="text-lg font-medium">Asset List</h3>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => resetForm()}>
-              <PlusCircle className="mr-2 h-4 w-4" /> Add Asset
+
+  // Asset card
+  const AssetCard = ({ asset }: { asset: Asset }) => (
+    <Card className="overflow-hidden">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-xl">{asset.name}</CardTitle>
+        <CardDescription>
+          Installed: {asset.installationDate ? format(new Date(asset.installationDate), 'MMM d, yyyy') : 'Unknown'}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="grid gap-4">
+        <div className="grid grid-cols-2 gap-2 text-sm">
+          <div>
+            <div className="font-medium">Criticality</div>
+            <div className={cn(
+              "mt-1 py-1 px-2 rounded-md text-xs w-fit",
+              asset.criticality === 'High' 
+                ? "bg-red-100 text-red-800" 
+                : asset.criticality === 'Medium' 
+                  ? "bg-amber-100 text-amber-800" 
+                  : "bg-green-100 text-green-800"
+            )}>
+              {asset.criticality}
+            </div>
+          </div>
+          <div>
+            <div className="font-medium">Weibull Parameters</div>
+            <div className="text-xs text-muted-foreground mt-1">
+              β = {asset.weibullBeta.toFixed(2)}, η = {asset.weibullEta.toFixed(2)} {asset.timeUnit}
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="font-medium">Description</div>
+          <div className="text-sm text-muted-foreground mt-1">
+            {asset.description || "No description available"}
+          </div>
+        </div>
+      </CardContent>
+      <CardFooter className="flex justify-between border-t pt-4">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handleEditClick(asset)}
+        >
+          Edit
+        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="destructive"
+              size="sm"
+            >
+              Delete
             </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the asset and all associated data.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => {
+                setSelectedAsset(asset);
+                handleDeleteAsset();
+              }}>
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </CardFooter>
+    </Card>
+  );
+
+  // Asset form
+  const AssetForm = ({ 
+    onSubmit, 
+    title, 
+    submitText,
+    isLoading 
+  }: { 
+    onSubmit: (e: React.FormEvent) => void, 
+    title: string, 
+    submitText: string,
+    isLoading: boolean
+  }) => (
+    <form onSubmit={onSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="name">Asset Name</Label>
+        <Input
+          id="name"
+          name="name"
+          value={newAsset.name}
+          onChange={handleInputChange}
+          required
+        />
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="description">Description</Label>
+        <Textarea
+          id="description"
+          name="description"
+          value={newAsset.description}
+          onChange={handleInputChange}
+          rows={3}
+        />
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="criticality">Criticality</Label>
+        <Select
+          value={newAsset.criticality}
+          onValueChange={(value) => handleSelectChange("criticality", value)}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select criticality" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="High">High</SelectItem>
+            <SelectItem value="Medium">Medium</SelectItem>
+            <SelectItem value="Low">Low</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      
+      <div className="space-y-2">
+        <Label>Installation Date</Label>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant={"outline"}
+              className={cn(
+                "w-full justify-start text-left font-normal",
+                !date && "text-muted-foreground"
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {date ? format(date, "PPP") : <span>Pick a date</span>}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0">
+            <Calendar
+              mode="single"
+              selected={date}
+              onSelect={handleDateSelect}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="weibullBeta">Weibull β (Shape)</Label>
+          <Input
+            id="weibullBeta"
+            name="weibullBeta"
+            type="number"
+            step="0.1"
+            min="0.1"
+            value={newAsset.weibullBeta}
+            onChange={handleInputChange}
+            required
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="weibullEta">Weibull η (Scale)</Label>
+          <Input
+            id="weibullEta"
+            name="weibullEta"
+            type="number"
+            step="1"
+            min="1"
+            value={newAsset.weibullEta}
+            onChange={handleInputChange}
+            required
+          />
+        </div>
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="timeUnit">Time Unit</Label>
+        <Select
+          value={newAsset.timeUnit}
+          onValueChange={(value) => handleSelectChange("timeUnit", value)}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select time unit" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="hours">Hours</SelectItem>
+            <SelectItem value="days">Days</SelectItem>
+            <SelectItem value="months">Months</SelectItem>
+            <SelectItem value="years">Years</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      
+      <Button 
+        type="submit" 
+        className="w-full"
+        disabled={isLoading}
+      >
+        {isLoading ? "Processing..." : submitText}
+      </Button>
+    </form>
+  );
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-3xl font-bold tracking-tight">Asset Management</h2>
+        <Dialog open={isAddAssetOpen} onOpenChange={setIsAddAssetOpen}>
+          <DialogTrigger asChild>
+            <Button>Add New Asset</Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>Add New Asset</DialogTitle>
               <DialogDescription>
-                Enter the asset details and Weibull parameters.
+                Enter the details of the asset to add it to your inventory.
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleAddAsset}>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="name" className="text-right">Asset Name</Label>
-                  <Input
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    className="col-span-3"
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="description" className="text-right">Description</Label>
-                  <Input
-                    id="description"
-                    name="description"
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="criticality" className="text-right">Criticality</Label>
-                  <Select
-                    name="criticality"
-                    value={formData.criticality}
-                    onValueChange={(value) => handleSelectChange("criticality", value)}
-                  >
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder="Select criticality" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="High">High</SelectItem>
-                      <SelectItem value="Medium">Medium</SelectItem>
-                      <SelectItem value="Low">Low</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="weibullBeta" className="text-right">Shape (β)</Label>
-                  <Input
-                    id="weibullBeta"
-                    name="weibullBeta"
-                    type="number"
-                    step="0.1"
-                    min="0.1"
-                    value={formData.weibullBeta}
-                    onChange={handleInputChange}
-                    className="col-span-3"
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="weibullEta" className="text-right">Scale (η)</Label>
-                  <Input
-                    id="weibullEta"
-                    name="weibullEta"
-                    type="number"
-                    step="1"
-                    min="1"
-                    value={formData.weibullEta}
-                    onChange={handleInputChange}
-                    className="col-span-3"
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="timeUnit" className="text-right">Time Unit</Label>
-                  <Select
-                    name="timeUnit"
-                    value={formData.timeUnit}
-                    onValueChange={(value) => handleSelectChange("timeUnit", value)}
-                  >
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder="Select time unit" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="hours">Hours</SelectItem>
-                      <SelectItem value="days">Days</SelectItem>
-                      <SelectItem value="months">Months</SelectItem>
-                      <SelectItem value="years">Years</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button 
-                  type="submit" 
-                  disabled={createAssetMutation.isPending}
-                >
-                  {createAssetMutation.isPending ? "Adding..." : "Add Asset"}
-                </Button>
-              </DialogFooter>
-            </form>
+            <AssetForm 
+              onSubmit={handleAddAsset} 
+              title="Add New Asset" 
+              submitText="Add Asset"
+              isLoading={addAssetMutation.isPending}
+            />
           </DialogContent>
         </Dialog>
       </div>
-      
+
+      {isLoading ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      ) : assets.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center h-64">
+            <p className="text-muted-foreground mb-4">No assets found</p>
+            <Button onClick={() => setIsAddAssetOpen(true)}>Add Your First Asset</Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {assets.map((asset) => (
+            <AssetCard key={asset.id} asset={asset} />
+          ))}
+        </div>
+      )}
+
       {/* Edit Asset Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
+      <Dialog open={isEditAssetOpen} onOpenChange={setIsEditAssetOpen}>
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Edit Asset</DialogTitle>
             <DialogDescription>
-              Update the asset details and Weibull parameters.
+              Update the details of your asset.
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleEditAsset}>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-name" className="text-right">Asset Name</Label>
-                <Input
-                  id="edit-name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  className="col-span-3"
-                  required
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-description" className="text-right">Description</Label>
-                <Input
-                  id="edit-description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-criticality" className="text-right">Criticality</Label>
-                <Select
-                  name="criticality"
-                  value={formData.criticality}
-                  onValueChange={(value) => handleSelectChange("criticality", value)}
-                >
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select criticality" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="High">High</SelectItem>
-                    <SelectItem value="Medium">Medium</SelectItem>
-                    <SelectItem value="Low">Low</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-weibullBeta" className="text-right">Shape (β)</Label>
-                <Input
-                  id="edit-weibullBeta"
-                  name="weibullBeta"
-                  type="number"
-                  step="0.1"
-                  min="0.1"
-                  value={formData.weibullBeta}
-                  onChange={handleInputChange}
-                  className="col-span-3"
-                  required
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-weibullEta" className="text-right">Scale (η)</Label>
-                <Input
-                  id="edit-weibullEta"
-                  name="weibullEta"
-                  type="number"
-                  step="1"
-                  min="1"
-                  value={formData.weibullEta}
-                  onChange={handleInputChange}
-                  className="col-span-3"
-                  required
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-timeUnit" className="text-right">Time Unit</Label>
-                <Select
-                  name="timeUnit"
-                  value={formData.timeUnit}
-                  onValueChange={(value) => handleSelectChange("timeUnit", value)}
-                >
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select time unit" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="hours">Hours</SelectItem>
-                    <SelectItem value="days">Days</SelectItem>
-                    <SelectItem value="months">Months</SelectItem>
-                    <SelectItem value="years">Years</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button 
-                type="submit" 
-                disabled={updateAssetMutation.isPending}
-              >
-                {updateAssetMutation.isPending ? "Updating..." : "Update Asset"}
-              </Button>
-            </DialogFooter>
-          </form>
+          <AssetForm 
+            onSubmit={handleEditAsset} 
+            title="Edit Asset" 
+            submitText="Save Changes"
+            isLoading={updateAssetMutation.isPending}
+          />
         </DialogContent>
       </Dialog>
-      
-      {isLoading ? (
-        <div className="flex justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-      ) : assets && assets.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {assets.map((asset: Asset) => (
-            <Card key={asset.id} className="overflow-hidden">
-              <CardHeader className="pb-2">
-                <div className="flex justify-between items-start">
-                  <CardTitle className="text-lg font-semibold">{asset.name}</CardTitle>
-                  <div className="flex space-x-1">
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={() => openEditDialog(asset)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={() => handleDeleteAsset(asset.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-                <div className={`text-xs px-2 py-1 rounded-full inline-block ${
-                  asset.criticality === 'High' 
-                    ? 'bg-red-100 text-red-800' 
-                    : asset.criticality === 'Medium'
-                      ? 'bg-yellow-100 text-yellow-800'
-                      : 'bg-green-100 text-green-800'
-                }`}>
-                  {asset.criticality} Criticality
-                </div>
-              </CardHeader>
-              <CardContent>
-                {asset.description && (
-                  <p className="text-sm text-muted-foreground mb-2">{asset.description}</p>
-                )}
-                <div className="space-y-1 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Weibull β:</span>
-                    <span className="font-medium">{asset.weibullBeta}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Weibull η:</span>
-                    <span className="font-medium">{asset.weibullEta} {asset.timeUnit}</span>
-                  </div>
-                  {asset.installationDate && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Installed:</span>
-                      <span className="font-medium">{format(parseISO(asset.installationDate), 'MMM d, yyyy')}</span>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-10 border rounded-md">
-          <p className="text-muted-foreground">No assets added yet</p>
-          <Button 
-            variant="outline" 
-            className="mt-4"
-            onClick={() => setIsAddDialogOpen(true)}
-          >
-            <PlusCircle className="mr-2 h-4 w-4" /> Add Your First Asset
-          </Button>
-        </div>
-      )}
     </div>
   );
 };
