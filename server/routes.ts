@@ -577,6 +577,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to delete failure history record" });
     }
   });
+  
+  // Export failure history to Excel
+  app.get("/api/failure-history/export/excel", async (req, res) => {
+    try {
+      const assetId = req.query.assetId ? parseInt(req.query.assetId as string) : undefined;
+      const failureModeId = req.query.failureModeId ? parseInt(req.query.failureModeId as string) : undefined;
+      
+      // Fetch failure records using the same logic as the GET endpoint
+      let failureRecords;
+      if (assetId) {
+        failureRecords = await storage.getFailureHistoryByAssetId(assetId);
+      } else if (failureModeId) {
+        failureRecords = await storage.getFailureHistoryByFailureModeId(failureModeId);
+      } else {
+        // Get all failure records when no filter is specified
+        failureRecords = await Promise.all(
+          (await storage.getAssets()).map(async (asset) => {
+            return await storage.getFailureHistoryByAssetId(asset.id);
+          })
+        );
+        // Flatten the array of arrays
+        failureRecords = failureRecords.flat();
+      }
+      
+      // Get assets and failure modes to include their names in the export
+      const assets = await storage.getAssets();
+      const allFailureModes = await Promise.all(
+        assets.map(async (asset) => {
+          return await storage.getFailureModesByAssetId(asset.id);
+        })
+      );
+      const failureModes = allFailureModes.flat();
+      
+      // Create Excel workbook and worksheet
+      const wb = XLSX.utils.book_new();
+      
+      // Convert failure records to worksheet data
+      const exportData = failureRecords.map(record => {
+        const asset = assets.find(a => a.id === record.assetId);
+        const failureMode = failureModes.find(fm => fm.id === record.failureModeId);
+        
+        return {
+          "Asset": asset ? `${asset.assetNumber} - ${asset.name}` : `Asset ID: ${record.assetId}`,
+          "Failure Mode": failureMode ? failureMode.description : `Mode ID: ${record.failureModeId}`,
+          "Failure Date": record.failureDate ? new Date(record.failureDate).toISOString().split('T')[0] : "",
+          "Repair Date": record.repairCompleteDate ? new Date(record.repairCompleteDate).toISOString().split('T')[0] : "",
+          "Description": record.failureDescription || "",
+          "Cause": record.failureCause || "",
+          "Downtime (hrs)": record.downtimeHours,
+          "Repair Time (hrs)": record.repairTimeHours,
+          "RCA Required": record.needsRCA || "no",
+          "Classification": record.failureClassification || "",
+          "Detection Method": record.failureDetectionMethod || "",
+          "Safety Impact": record.safetyImpact || "none",
+          "Production Impact": record.productionImpact || "none",
+          "Environmental Impact": record.environmentalImpact || "none",
+          "Repair Cost": record.repairCost || 0,
+          "Consequential Cost": record.consequentialCost || 0,
+          "Parts Replaced": record.partsReplaced || "",
+          "Repair Actions": record.repairActions || "",
+          "Preventability": record.preventability || "",
+          "Recorded By": record.recordedBy || "",
+          "Record Date": record.recordDate ? new Date(record.recordDate).toISOString().split('T')[0] : ""
+        };
+      });
+      
+      // Create the worksheet
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(wb, ws, "Failure History");
+      
+      // Generate Excel file
+      const excelBuffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+      
+      // Set response headers
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', 'attachment; filename=Failure_History_Export.xlsx');
+      
+      // Send the file
+      res.send(excelBuffer);
+    } catch (error) {
+      console.error("Error exporting failure history to Excel:", error);
+      res.status(500).json({ message: "Failed to export failure history to Excel" });
+    }
+  });
 
   // Weibull Analysis endpoint
   app.post("/api/weibull-analysis", async (req, res) => {
