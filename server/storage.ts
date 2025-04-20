@@ -54,12 +54,14 @@ export class MemStorage implements IStorage {
   private assetsMap: Map<number, Asset>;
   private maintenanceEventsMap: Map<number, MaintenanceEvent>;
   private failureModesMap: Map<number, FailureMode>;
+  private failureHistoryMap: Map<number, FailureHistory>;
   
   private userCurrentId: number;
   private messageCurrentId: number;
   private assetCurrentId: number;
   private maintenanceEventCurrentId: number;
   private failureModeCurrentId: number;
+  private failureHistoryCurrentId: number;
 
   constructor() {
     this.users = new Map();
@@ -67,12 +69,14 @@ export class MemStorage implements IStorage {
     this.assetsMap = new Map();
     this.maintenanceEventsMap = new Map();
     this.failureModesMap = new Map();
+    this.failureHistoryMap = new Map();
     
     this.userCurrentId = 1;
     this.messageCurrentId = 1;
     this.assetCurrentId = 1;
     this.maintenanceEventCurrentId = 1;
     this.failureModeCurrentId = 1;
+    this.failureHistoryCurrentId = 1;
   }
 
   // User operations
@@ -220,6 +224,93 @@ export class MemStorage implements IStorage {
   
   async deleteFailureMode(id: number): Promise<boolean> {
     return this.failureModesMap.delete(id);
+  }
+  
+  // Failure History operations
+  async getFailureHistory(id: number): Promise<FailureHistory | undefined> {
+    return this.failureHistoryMap.get(id);
+  }
+  
+  async getFailureHistoryByAssetId(assetId: number): Promise<FailureHistory[]> {
+    return Array.from(this.failureHistoryMap.values())
+      .filter(record => record.assetId === assetId)
+      .sort((a, b) => new Date(a.failureDate).getTime() - new Date(b.failureDate).getTime());
+  }
+  
+  async getFailureHistoryByFailureModeId(failureModeId: number): Promise<FailureHistory[]> {
+    return Array.from(this.failureHistoryMap.values())
+      .filter(record => record.failureModeId === failureModeId)
+      .sort((a, b) => new Date(a.failureDate).getTime() - new Date(b.failureDate).getTime());
+  }
+  
+  async createFailureHistory(insertFailureHistory: InsertFailureHistory): Promise<FailureHistory> {
+    const id = this.failureHistoryCurrentId++;
+    const recordDate = new Date();
+    
+    // Set default values for optional fields
+    const failureHistory: FailureHistory = {
+      ...insertFailureHistory,
+      id,
+      recordDate,
+      failureModeId: insertFailureHistory.failureModeId || null,
+      operatingHoursAtFailure: insertFailureHistory.operatingHoursAtFailure || null,
+      failureMechanism: insertFailureHistory.failureMechanism || null,
+      failureClassification: insertFailureHistory.failureClassification || null,
+      safetyImpact: insertFailureHistory.safetyImpact || null,
+      environmentalImpact: insertFailureHistory.environmentalImpact || null,
+      productionImpact: insertFailureHistory.productionImpact || null,
+      repairCost: insertFailureHistory.repairCost || null,
+      consequentialCost: insertFailureHistory.consequentialCost || null,
+      partsReplaced: insertFailureHistory.partsReplaced || null,
+      repairTechnician: insertFailureHistory.repairTechnician || null,
+      operatingConditions: insertFailureHistory.operatingConditions || null,
+      preventability: insertFailureHistory.preventability || null,
+      recommendedPreventiveAction: insertFailureHistory.recommendedPreventiveAction || null,
+      weibullBeta: insertFailureHistory.weibullBeta || null,
+      weibullEta: insertFailureHistory.weibullEta || null,
+      recordedBy: insertFailureHistory.recordedBy || null,
+      verifiedBy: insertFailureHistory.verifiedBy || null
+    };
+    
+    this.failureHistoryMap.set(id, failureHistory);
+    return failureHistory;
+  }
+  
+  async updateFailureHistory(id: number, failureHistoryUpdate: Partial<InsertFailureHistory>): Promise<FailureHistory | undefined> {
+    const existingRecord = this.failureHistoryMap.get(id);
+    if (!existingRecord) return undefined;
+    
+    // Preserve existing values for fields not included in the update
+    const updatedRecord: FailureHistory = {
+      ...existingRecord,
+      ...failureHistoryUpdate,
+      // Explicitly handle each optional field
+      failureModeId: failureHistoryUpdate.failureModeId !== undefined ? failureHistoryUpdate.failureModeId : existingRecord.failureModeId,
+      operatingHoursAtFailure: failureHistoryUpdate.operatingHoursAtFailure !== undefined ? failureHistoryUpdate.operatingHoursAtFailure : existingRecord.operatingHoursAtFailure,
+      failureMechanism: failureHistoryUpdate.failureMechanism !== undefined ? failureHistoryUpdate.failureMechanism : existingRecord.failureMechanism,
+      failureClassification: failureHistoryUpdate.failureClassification !== undefined ? failureHistoryUpdate.failureClassification : existingRecord.failureClassification,
+      safetyImpact: failureHistoryUpdate.safetyImpact !== undefined ? failureHistoryUpdate.safetyImpact : existingRecord.safetyImpact,
+      environmentalImpact: failureHistoryUpdate.environmentalImpact !== undefined ? failureHistoryUpdate.environmentalImpact : existingRecord.environmentalImpact,
+      productionImpact: failureHistoryUpdate.productionImpact !== undefined ? failureHistoryUpdate.productionImpact : existingRecord.productionImpact,
+      repairCost: failureHistoryUpdate.repairCost !== undefined ? failureHistoryUpdate.repairCost : existingRecord.repairCost,
+      consequentialCost: failureHistoryUpdate.consequentialCost !== undefined ? failureHistoryUpdate.consequentialCost : existingRecord.consequentialCost,
+      partsReplaced: failureHistoryUpdate.partsReplaced !== undefined ? failureHistoryUpdate.partsReplaced : existingRecord.partsReplaced,
+      repairTechnician: failureHistoryUpdate.repairTechnician !== undefined ? failureHistoryUpdate.repairTechnician : existingRecord.repairTechnician,
+      operatingConditions: failureHistoryUpdate.operatingConditions !== undefined ? failureHistoryUpdate.operatingConditions : existingRecord.operatingConditions,
+      preventability: failureHistoryUpdate.preventability !== undefined ? failureHistoryUpdate.preventability : existingRecord.preventability,
+      recommendedPreventiveAction: failureHistoryUpdate.recommendedPreventiveAction !== undefined ? failureHistoryUpdate.recommendedPreventiveAction : existingRecord.recommendedPreventiveAction,
+      weibullBeta: failureHistoryUpdate.weibullBeta !== undefined ? failureHistoryUpdate.weibullBeta : existingRecord.weibullBeta,
+      weibullEta: failureHistoryUpdate.weibullEta !== undefined ? failureHistoryUpdate.weibullEta : existingRecord.weibullEta,
+      recordedBy: failureHistoryUpdate.recordedBy !== undefined ? failureHistoryUpdate.recordedBy : existingRecord.recordedBy,
+      verifiedBy: failureHistoryUpdate.verifiedBy !== undefined ? failureHistoryUpdate.verifiedBy : existingRecord.verifiedBy
+    };
+    
+    this.failureHistoryMap.set(id, updatedRecord);
+    return updatedRecord;
+  }
+  
+  async deleteFailureHistory(id: number): Promise<boolean> {
+    return this.failureHistoryMap.delete(id);
   }
 }
 

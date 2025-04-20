@@ -8,6 +8,7 @@ import {
   insertAssetSchema, 
   insertMaintenanceEventSchema, 
   insertFailureModeSchema,
+  insertFailureHistorySchema,
   WeibullParameters,
   MaintenanceOptimizationParameters,
   RCMParameters,
@@ -441,6 +442,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting failure mode:", error);
       res.status(500).json({ message: "Failed to delete failure mode" });
+    }
+  });
+  
+  // Failure History endpoints
+  app.get("/api/failure-history", async (req, res) => {
+    try {
+      const assetId = req.query.assetId ? parseInt(req.query.assetId as string) : undefined;
+      const failureModeId = req.query.failureModeId ? parseInt(req.query.failureModeId as string) : undefined;
+      
+      let failureRecords;
+      if (assetId) {
+        failureRecords = await storage.getFailureHistoryByAssetId(assetId);
+      } else if (failureModeId) {
+        failureRecords = await storage.getFailureHistoryByFailureModeId(failureModeId);
+      } else {
+        return res.status(400).json({ message: "Either asset ID or failure mode ID is required" });
+      }
+      
+      res.json(failureRecords);
+    } catch (error) {
+      console.error("Error fetching failure history:", error);
+      res.status(500).json({ message: "Failed to fetch failure history" });
+    }
+  });
+  
+  app.post("/api/failure-history", async (req, res) => {
+    try {
+      const failureHistoryData = insertFailureHistorySchema.parse(req.body);
+      const failureRecord = await storage.createFailureHistory(failureHistoryData);
+      res.status(201).json(failureRecord);
+    } catch (error) {
+      console.error("Error creating failure history record:", error);
+      res.status(500).json({ message: "Failed to create failure history record" });
+    }
+  });
+  
+  app.get("/api/failure-history/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const failureRecord = await storage.getFailureHistory(id);
+      
+      if (!failureRecord) {
+        return res.status(404).json({ message: "Failure history record not found" });
+      }
+      
+      res.json(failureRecord);
+    } catch (error) {
+      console.error("Error fetching failure history record:", error);
+      res.status(500).json({ message: "Failed to fetch failure history record" });
+    }
+  });
+  
+  app.put("/api/failure-history/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const failureHistoryData = req.body;
+      const failureRecord = await storage.updateFailureHistory(id, failureHistoryData);
+      
+      if (!failureRecord) {
+        return res.status(404).json({ message: "Failure history record not found" });
+      }
+      
+      res.json(failureRecord);
+    } catch (error) {
+      console.error("Error updating failure history record:", error);
+      res.status(500).json({ message: "Failed to update failure history record" });
+    }
+  });
+  
+  app.delete("/api/failure-history/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteFailureHistory(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Failure history record not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting failure history record:", error);
+      res.status(500).json({ message: "Failed to delete failure history record" });
     }
   });
 
