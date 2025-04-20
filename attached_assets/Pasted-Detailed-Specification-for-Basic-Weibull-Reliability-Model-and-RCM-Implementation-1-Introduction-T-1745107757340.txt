@@ -1,0 +1,257 @@
+Detailed Specification for Basic Weibull Reliability Model and RCM Implementation
+1. Introduction
+
+This specification outlines requirements for developing a reliability analysis system incorporating Weibull-based reliability modeling and Reliability-Centered Maintenance (RCM) principles. The system will enable asset managers to predict failure probabilities, optimize maintenance schedules, and implement strategic maintenance approaches.
+
+2. System Overview
+
+2.1 Objectives
+
+Implement Weibull reliability calculations for failure prediction
+Provide RCM-based decision support for maintenance strategies
+Generate optimal preventive maintenance schedules
+Visualize reliability decay and cost trade-offs
+2.2 Scope
+
+Weibull reliability function implementation
+RCM analysis framework
+Maintenance interval optimization
+Basic Monte Carlo simulation capability
+Reporting and visualization
+3. Functional Requirements
+
+3.1 Weibull Reliability Module
+
+3.1.1 Input Parameters
+
+Shape parameter (β): Numeric field with validation (β > 0)
+Scale parameter (η): Numeric field with validation (η > 0)
+Time units: Dropdown selection (hours/days/months/years)
+Time horizon: Numeric field for analysis period
+3.1.2 Calculations
+
+Reliability function: R(t) = e^-(t/η)^β
+Failure rate function: h(t) = (β/η)*(t/η)^(β-1)
+Cumulative failure probability: F(t) = 1 - R(t)
+MTBF (Mean Time Between Failures) calculation
+3.1.3 Outputs
+
+Reliability vs. time curve (tabular and graphical)
+Failure rate vs. time curve
+Probability density function visualization
+Exportable results in CSV/Excel format
+3.2 Maintenance Optimization Module
+
+3.2.1 Input Parameters
+
+Preventive maintenance cost (numeric)
+Corrective maintenance cost (numeric)
+Target reliability threshold (percentage 0-100%)
+Maximum acceptable downtime (numeric)
+3.2.2 Calculations
+
+Optimal PM interval calculation: t = η*(1-(1/β)^(1/β))
+Cost optimization model:
+C_total = C_PM * f_PM + C_failure * (1 - R(t_PM))
+Availability calculation: A = uptime / (uptime + downtime)
+3.2.3 Outputs
+
+Recommended maintenance interval
+Cost vs. interval analysis
+Availability projections
+Sensitivity analysis on key parameters
+3.3 RCM Analysis Module
+
+3.3.1 Input Parameters
+
+Asset criticality rating (dropdown: High/Medium/Low)
+Failure mode descriptions (text input)
+Failure consequences (text input)
+Current maintenance practices (text input)
+3.3.2 Analysis Framework
+
+Failure Mode and Effects Analysis (FMEA) template
+Decision logic tree for maintenance strategy selection:
+Preventive maintenance
+Predictive maintenance
+Run-to-failure
+Redesign
+Task prioritization based on criticality and cost
+3.3.3 Outputs
+
+Recommended maintenance strategy for each failure mode
+Actionable maintenance tasks
+Criticality ranking of components
+Exportable RCM report
+3.4 Simulation Module (Basic)
+
+3.4.1 Input Parameters
+
+Number of simulation runs (numeric, default 1000)
+Time horizon for simulation (numeric)
+3.4.2 Simulation Engine
+
+Random failure time generation using Weibull inverse CDF:
+t = η*(-ln(1-U))^(1/β) where U is uniform random [0,1]
+Event tracking (failures, PM activities)
+Cost accumulation
+3.4.3 Outputs
+
+Distribution of total costs
+Failure probability distribution
+Simulation summary statistics
+Graphical comparison of scenarios
+4. Technical Specifications
+
+4.1 Data Model
+
+Asset Table
+
+AssetID (PK)
+Name
+Description
+Criticality
+InstallationDate
+WeibullBeta
+WeibullEta
+Maintenance Events
+
+EventID (PK)
+AssetID (FK)
+EventType (PM/CM)
+EventDate
+Cost
+Downtime
+Description
+Failure Modes
+
+ModeID (PK)
+AssetID (FK)
+Description
+Consequences
+DetectionMethod
+CurrentControl
+4.2 Algorithms
+
+Weibull Calculations
+
+Reliability(t) = exp(-(t/η)^β)
+FailureRate(t) = (β/η)*(t/η)^(β-1)
+InverseCDF(p) = η*(-ln(1-p))^(1/β)
+Maintenance Optimization
+
+PMInterval = η*(1-(1/β)^(1/β))
+TotalCost = (C_PM * T/interval) + (C_CM * (1-R(interval))*T/interval)
+4.3 User Interface Requirements
+
+Dashboard View
+
+Summary reliability metrics
+Upcoming maintenance alerts
+Cost projections
+Analysis Views
+
+Interactive reliability curves
+Maintenance interval sliders
+Cost-benefit comparison charts
+Input Forms
+
+Asset registration
+Failure mode entry
+Cost parameter configuration
+5. Implementation Guidelines
+
+5.1 Development Approach
+
+Modular architecture separating:
+Calculation engine
+Data persistence
+User interface
+API-first design for future integration
+Unit testing for all mathematical functions
+5.2 Technology Stack Recommendations
+
+Backend Options
+
+Python (NumPy, SciPy for calculations)
+R (for statistical functions)
+MATLAB (for advanced simulations)
+Frontend Options
+
+Web: React/Angular with Chart.js/D3.js
+Desktop: Electron or Windows Forms
+Mobile: React Native (for field use)
+Database Options
+
+SQLite (for standalone applications)
+PostgreSQL/MySQL (for enterprise systems)
+MongoDB (for document storage of failure analyses)
+5.3 Validation Requirements
+
+Unit tests for all mathematical functions
+Comparison with known analytical solutions
+Verification against example datasets
+Sensitivity analysis on input parameters
+6. Example Implementation
+
+6.1 Weibull Calculation (Python Pseudocode)
+
+python
+import numpy as np
+
+def weibull_reliability(t, beta, eta):
+    return np.exp(-(t/eta)**beta)
+
+def optimal_pm_interval(beta, eta):
+    return eta * (1 - (1/beta)**(1/beta))
+6.2 RCM Decision Logic (Pseudocode)
+
+FUNCTION determine_maintenance_strategy(failure_mode):
+    IF failure_mode.criticality == 'High':
+        IF failure_mode.is_predictable:
+            RETURN 'Predictive Maintenance'
+        ELSE:
+            RETURN 'Redesign'
+    ELSE IF failure_mode.cost_of_failure > threshold:
+        RETURN 'Preventive Maintenance'
+    ELSE:
+        RETURN 'Run-to-Failure'
+7. Deliverables
+
+Core Calculation Engine
+Weibull reliability functions
+Maintenance optimization algorithms
+Basic simulation capability
+RCM Analysis Framework
+Failure mode classification
+Decision support logic
+Task prioritization
+User Interface
+Data input forms
+Visualization components
+Report generation
+Documentation
+Technical specification
+User manual
+API documentation (if applicable)
+8. Assumptions and Constraints
+
+Initial version assumes single failure modes per component
+Constant maintenance costs (no economies of scale)
+No competing failure modes considered
+Perfect maintenance assumption (good-as-new after PM)
+9. Future Enhancements
+
+Advanced Features
+Competing risks models
+Condition-based maintenance integration
+Spare parts optimization
+Integration Capabilities
+CMMS/EAM system connectivity
+IoT sensor data feeds
+Enterprise ERP integration
+Advanced Analytics
+Machine learning for parameter estimation
+Bayesian updating of reliability estimates
+Survival analysis techniques
+This specification provides a comprehensive foundation for developing a Weibull-based reliability and RCM analysis system. Developers should follow modular design principles to allow for future expansion while ensuring accuracy in the core reliability calculations.
