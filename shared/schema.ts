@@ -77,7 +77,7 @@ export const insertMaintenanceEventSchema = createInsertSchema(maintenanceEvents
 // Failure Modes table
 export const failureModes = pgTable("failure_modes", {
   id: serial("id").primaryKey(),
-  assetId: integer("asset_id").notNull().references(() => assets.id, { onDelete: 'cascade' }),
+  assetId: integer("asset_id").references(() => assets.id, { onDelete: 'cascade' }), // Made optional
   description: text("description").notNull(),
   consequences: text("consequences").notNull(),
   detectionMethod: text("detection_method"),
@@ -87,7 +87,8 @@ export const failureModes = pgTable("failure_modes", {
   equipmentClass: text("equipment_class").notNull(), // ISO 14224 equipment class reference - required
 });
 
-export const insertFailureModeSchema = createInsertSchema(failureModes).pick({
+export const insertFailureModeSchema = createInsertSchema(failureModes)
+.pick({
   assetId: true,
   description: true,
   consequences: true,
@@ -96,7 +97,8 @@ export const insertFailureModeSchema = createInsertSchema(failureModes).pick({
   isPredictable: true,
   costOfFailure: true,
   equipmentClass: true,
-});
+})
+.partial({ assetId: true }); // Make assetId optional in the schema
 
 // Failure History table - Comprehensive version for reliability analysis
 export const failureHistory = pgTable("failure_history", {
