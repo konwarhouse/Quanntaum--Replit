@@ -222,16 +222,74 @@ const AssetImport = () => {
       const jsonData = lines.slice(1).map(line => {
         const values = line.split(delimiter);
         return headers.reduce((obj, header, index) => {
-          // Map header names to our expected format
-          let mappedHeader = header.toLowerCase().replace(/[^a-z0-9]/g, '');
+          // For Excel file directly export from Asset Master, the headers are:
+          // 'Asset ID', 'Name', 'Equipment Class', 'Description', 'Criticality', 'Installation Date', 
+          // 'Beta Value', 'Eta Value', 'Time Unit'
           
-          // Handle common variations
-          if (mappedHeader.includes('asset') && mappedHeader.includes('number')) mappedHeader = 'assetNumber';
-          if (mappedHeader.includes('equipment') && mappedHeader.includes('class')) mappedHeader = 'equipmentClass';
-          if (mappedHeader === 'beta' || mappedHeader.includes('weibull') && mappedHeader.includes('beta')) mappedHeader = 'weibullBeta';
-          if (mappedHeader === 'eta' || mappedHeader.includes('weibull') && mappedHeader.includes('eta')) mappedHeader = 'weibullEta';
-          if (mappedHeader.includes('install') && mappedHeader.includes('date')) mappedHeader = 'installationDate';
-          if (mappedHeader.includes('time') && mappedHeader.includes('unit')) mappedHeader = 'timeUnit';
+          // Normalize header for comparison
+          let mappedHeader = '';
+          
+          // Special mapping for Asset Master export headers
+          if (header === 'Asset ID') {
+            mappedHeader = 'assetNumber';
+          }
+          else if (header === 'Name') {
+            mappedHeader = 'name';
+          }
+          else if (header === 'Equipment Class') {
+            mappedHeader = 'equipmentClass';
+          }
+          else if (header === 'Description') {
+            mappedHeader = 'description';
+          }
+          else if (header === 'Criticality') {
+            mappedHeader = 'criticality';
+          }
+          else if (header === 'Installation Date') {
+            mappedHeader = 'installationDate';
+          }
+          else if (header === 'Beta Value') {
+            mappedHeader = 'weibullBeta';
+          }
+          else if (header === 'Eta Value') {
+            mappedHeader = 'weibullEta';
+          }
+          else if (header === 'Time Unit') {
+            mappedHeader = 'timeUnit';
+          }
+          // Fallback for other header variations
+          else {
+            const normalizedHeader = header.toLowerCase().replace(/[^a-z0-9]/g, '');
+            if (normalizedHeader.includes('asset')) {
+              mappedHeader = 'assetNumber';
+            }
+            else if (normalizedHeader === 'name') {
+              mappedHeader = 'name';
+            }
+            else if (normalizedHeader.includes('equipment')) {
+              mappedHeader = 'equipmentClass';
+            }
+            else if (normalizedHeader === 'description') {
+              mappedHeader = 'description';
+            }
+            else if (normalizedHeader === 'criticality') {
+              mappedHeader = 'criticality';
+            }
+            else if (normalizedHeader.includes('install') || normalizedHeader.includes('date')) {
+              mappedHeader = 'installationDate';
+            }
+            else if (normalizedHeader.includes('beta')) {
+              mappedHeader = 'weibullBeta';
+            }
+            else if (normalizedHeader.includes('eta')) {
+              mappedHeader = 'weibullEta';
+            }
+            else if (normalizedHeader.includes('time')) {
+              mappedHeader = 'timeUnit';
+            }
+          }
+          
+          console.log(`Header mapping: "${header}" -> "${mappedHeader}"`);
           
           obj[mappedHeader] = values[index]?.trim() || '';
           return obj;
@@ -260,6 +318,8 @@ const AssetImport = () => {
       return;
     }
     
+    console.log("Raw imported data:", data);
+    
     // Validation checks
     const errors: Record<string, string[]> = {};
     
@@ -267,21 +327,37 @@ const AssetImport = () => {
     const processedAssets = data.map((item, index) => {
       const rowErrors: string[] = [];
       
+      // Map Excel headers to our schema fields
+      const mappedItem: Record<string, any> = {};
+      
+      // Handle all possible field names from Excel exports
+      mappedItem.assetNumber = item.assetNumber || item["Asset ID"] || item["Asset Number"] || "";
+      mappedItem.name = item.name || item["Name"] || "";
+      mappedItem.equipmentClass = item.equipmentClass || item["Equipment Class"] || "";
+      mappedItem.description = item.description || item["Description"] || "";
+      mappedItem.criticality = item.criticality || item["Criticality"] || "Medium";
+      mappedItem.installationDate = item.installationDate || item["Installation Date"] || null;
+      mappedItem.weibullBeta = item.weibullBeta || item["Beta Value"] || item["Beta"] || "2.0";
+      mappedItem.weibullEta = item.weibullEta || item["Eta Value"] || item["Eta"] || "5000";
+      mappedItem.timeUnit = item.timeUnit || item["Time Unit"] || "hours";
+      
+      console.log("Mapped item:", mappedItem);
+      
       // Check required fields
-      if (!item.assetNumber) rowErrors.push("Asset number is required");
-      if (!item.name) rowErrors.push("Asset name is required");
+      if (!mappedItem.assetNumber) rowErrors.push("Asset number is required");
+      if (!mappedItem.name) rowErrors.push("Asset name is required");
       
       // Set defaults for optional fields if missing
       const asset = {
-        assetNumber: item.assetNumber || "",
-        name: item.name || "",
-        equipmentClass: item.equipmentClass || "",
-        description: item.description || "",
-        criticality: item.criticality || "Medium",
-        installationDate: item.installationDate || null,
-        weibullBeta: parseFloat(item.weibullBeta || "2.0"),
-        weibullEta: parseFloat(item.weibullEta || "5000"),
-        timeUnit: item.timeUnit || "hours",
+        assetNumber: mappedItem.assetNumber || "",
+        name: mappedItem.name || "",
+        equipmentClass: mappedItem.equipmentClass || "",
+        description: mappedItem.description || "",
+        criticality: mappedItem.criticality || "Medium",
+        installationDate: mappedItem.installationDate || null,
+        weibullBeta: parseFloat(mappedItem.weibullBeta || "2.0"),
+        weibullEta: parseFloat(mappedItem.weibullEta || "5000"),
+        timeUnit: mappedItem.timeUnit || "hours",
       };
       
       // Validate numeric fields
