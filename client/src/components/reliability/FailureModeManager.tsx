@@ -494,14 +494,14 @@ const FailureModeManager = ({ currentUserRole }: FailureModeManagerProps) => {
       <div className="flex items-center space-x-2">
         <div className="w-full max-w-sm">
           <Select
-            value={selectedEquipmentClass || ""}
-            onValueChange={(value) => setSelectedEquipmentClass(value || null)}
+            value={selectedEquipmentClass || "_all_"}
+            onValueChange={(value) => setSelectedEquipmentClass(value === "_all_" ? null : value)}
           >
             <SelectTrigger>
               <SelectValue placeholder="Filter by equipment class" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Equipment Classes</SelectItem>
+              <SelectItem value="_all_">All Equipment Classes</SelectItem>
               {equipmentClasses.map((equipClass) => (
                 <SelectItem key={equipClass} value={equipClass}>
                   {equipClass}
