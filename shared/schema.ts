@@ -31,8 +31,9 @@ export const insertMessageSchema = createInsertSchema(messages).pick({
 // Reliability Models - Assets table
 export const assets = pgTable("assets", {
   id: serial("id").primaryKey(),
+  assetNumber: text("asset_number").notNull().unique(), // Alphanumeric asset identifier, up to 20 chars
   name: text("name").notNull(),
-  description: text("description"),
+  description: text("description").notNull(), // Text fields can hold long descriptions by default
   criticality: text("criticality").notNull(), // High, Medium, Low
   installationDate: date("installation_date"),
   weibullBeta: real("weibull_beta").notNull(), // Shape parameter
@@ -41,6 +42,7 @@ export const assets = pgTable("assets", {
 });
 
 export const insertAssetSchema = createInsertSchema(assets).pick({
+  assetNumber: true,
   name: true,
   description: true,
   criticality: true,
