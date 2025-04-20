@@ -386,7 +386,17 @@ const CriticalityAssessment = () => {
               </div>
             </div>
           </CardContent>
-          <CardFooter>
+          <CardFooter className="flex justify-between">
+            <Button 
+              variant="outline"
+              onClick={() => {
+                form.reset();
+                setAssessmentCompleted(false);
+                setAssessmentStep(1);
+              }}
+            >
+              Back to Asset List
+            </Button>
             <Button 
               onClick={() => {
                 form.reset();
