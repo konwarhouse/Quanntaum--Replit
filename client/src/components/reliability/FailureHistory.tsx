@@ -610,17 +610,21 @@ const FailureHistory = () => {
             {type === "select" ? (
               <Select
                 onValueChange={field.onChange}
-                value={field.value}
+                value={field.value || ""}
               >
                 <SelectTrigger>
                   <SelectValue placeholder={`Select ${label.toLowerCase()}`} />
                 </SelectTrigger>
                 <SelectContent>
-                  {options.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
+                  {options.length > 0 ? (
+                    options.map((option) => (
+                      <SelectItem key={option.value} value={option.value || "_empty_"}>
+                        {option.label}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="_empty_">No options available</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             ) : type === "textarea" ? (
