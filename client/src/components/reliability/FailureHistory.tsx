@@ -151,12 +151,39 @@ const FailureHistory = () => {
   
   // State to track the currently selected asset in the add form
   const [currentAssetId, setCurrentAssetId] = useState<number | null>(null);
+  const [currentEquipmentClass, setCurrentEquipmentClass] = useState<string | null>(null);
   
-  // Filter failure modes for the currently selected asset
+  // When asset changes, update the equipment class
+  useEffect(() => {
+    if (currentAssetId) {
+      const selectedAsset = assets.find(asset => asset.id === currentAssetId);
+      if (selectedAsset) {
+        setCurrentEquipmentClass(selectedAsset.equipmentClass || null);
+      }
+    } else {
+      setCurrentEquipmentClass(null);
+    }
+  }, [currentAssetId, assets]);
+  
+  // Filter failure modes for the currently selected asset AND matching equipment class
   const assetFailureModes = useMemo(() => {
     if (!currentAssetId) return [];
-    return allFailureModes.filter(mode => mode.assetId === currentAssetId);
-  }, [currentAssetId, allFailureModes]);
+    
+    // First try to find modes specifically for this asset
+    const exactAssetModes = allFailureModes.filter(mode => mode.assetId === currentAssetId);
+    if (exactAssetModes.length > 0) return exactAssetModes;
+    
+    // If no specific failure modes for this asset, try to find modes matching the equipment class
+    if (currentEquipmentClass) {
+      return allFailureModes.filter(mode => 
+        mode.equipmentClass === currentEquipmentClass || 
+        // Also include general failure modes with no equipment class specified
+        !mode.equipmentClass
+      );
+    }
+    
+    return [];
+  }, [currentAssetId, currentEquipmentClass, allFailureModes]);
 
   // Fetch failure history records
   const { 
