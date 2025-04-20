@@ -365,12 +365,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validAssetIds = new Set<number>();
       
       // Verify all asset IDs exist
-      for (const assetId of uniqueAssetIds) {
+      await Promise.all(uniqueAssetIds.map(async (assetId) => {
         const asset = await storage.getAsset(assetId);
         if (asset) {
           validAssetIds.add(assetId);
         }
-      }
+      }));
       
       const results = [];
       const errors = [];

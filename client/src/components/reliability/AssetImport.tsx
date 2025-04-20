@@ -501,9 +501,17 @@ const AssetImport = () => {
                       <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 mr-2" />
                       <div>
                         <h3 className="font-medium text-amber-800">Validation Warnings</h3>
-                        <p className="text-sm text-amber-700">
-                          Some records have validation issues. Defaults will be applied where possible.
+                        <p className="text-sm text-amber-700 mb-2">
+                          {Object.keys(validationErrors).length} records have validation issues. Defaults will be applied where possible.
                         </p>
+                        <div className="text-sm text-amber-900 bg-amber-100 p-2 rounded">
+                          <strong>Common issues:</strong>
+                          <ul className="list-disc ml-5 mt-1">
+                            <li>Missing <span className="font-semibold">Asset Number</span> (required field, shown in red)</li>
+                            <li>Missing <span className="font-semibold">Name</span> (required field, shown in red)</li>
+                            <li>Invalid numeric values for Weibull parameters (should be positive numbers)</li>
+                          </ul>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -529,8 +537,12 @@ const AssetImport = () => {
                       {parsedAssets.map((asset, index) => (
                         <TableRow key={index}>
                           <TableCell>{index + 1}</TableCell>
-                          <TableCell>{asset.assetNumber}</TableCell>
-                          <TableCell>{asset.name}</TableCell>
+                          <TableCell className={!asset.assetNumber ? "text-red-500 font-semibold" : ""}>
+                            {asset.assetNumber || "Missing (Required)"}
+                          </TableCell>
+                          <TableCell className={!asset.name ? "text-red-500 font-semibold" : ""}>
+                            {asset.name || "Missing (Required)"}
+                          </TableCell>
                           <TableCell>{asset.equipmentClass || "-"}</TableCell>
                           <TableCell>
                             <Badge
@@ -547,8 +559,12 @@ const AssetImport = () => {
                             </Badge>
                           </TableCell>
                           <TableCell>{asset.installationDate || "-"}</TableCell>
-                          <TableCell>{asset.weibullBeta}</TableCell>
-                          <TableCell>{asset.weibullEta}</TableCell>
+                          <TableCell className={isNaN(asset.weibullBeta) || asset.weibullBeta <= 0 ? "text-red-500 font-semibold" : ""}>
+                            {asset.weibullBeta}
+                          </TableCell>
+                          <TableCell className={isNaN(asset.weibullEta) || asset.weibullEta <= 0 ? "text-red-500 font-semibold" : ""}>
+                            {asset.weibullEta}
+                          </TableCell>
                           <TableCell>{asset.timeUnit}</TableCell>
                           <TableCell>
                             {validationErrors[index] ? (
