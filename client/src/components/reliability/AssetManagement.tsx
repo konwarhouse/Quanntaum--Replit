@@ -25,6 +25,7 @@ const AssetManagement = () => {
   const [isEditAssetOpen, setIsEditAssetOpen] = useState(false);
   const [newAsset, setNewAsset] = useState({
     name: '',
+    assetNumber: '',
     description: '',
     criticality: 'Medium',
     installationDate: '',
@@ -136,6 +137,7 @@ const AssetManagement = () => {
   const resetForm = () => {
     setNewAsset({
       name: '',
+      assetNumber: '',
       description: '',
       criticality: 'Medium',
       installationDate: '',
@@ -171,6 +173,7 @@ const AssetManagement = () => {
     setSelectedAsset(asset);
     setNewAsset({
       name: asset.name,
+      assetNumber: asset.assetNumber || '',
       description: asset.description || '',
       criticality: asset.criticality,
       installationDate: asset.installationDate || '',
@@ -283,6 +286,18 @@ const AssetManagement = () => {
           name="name"
           value={newAsset.name}
           onChange={handleInputChange}
+          required
+        />
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="assetNumber">Asset Number</Label>
+        <Input
+          id="assetNumber"
+          name="assetNumber"
+          value={newAsset.assetNumber}
+          onChange={handleInputChange}
+          placeholder="e.g., ABC-2024-001"
           required
         />
       </div>
