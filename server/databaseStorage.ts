@@ -39,6 +39,26 @@ export class DatabaseStorage implements IStorage {
     return message;
   }
 
+  // Equipment Class operations
+  async getEquipmentClass(id: number): Promise<EquipmentClass | undefined> {
+    const [equipmentClass] = await db.select().from(equipmentClasses).where(eq(equipmentClasses.id, id));
+    return equipmentClass;
+  }
+
+  async getEquipmentClasses(): Promise<EquipmentClass[]> {
+    return db.select().from(equipmentClasses);
+  }
+
+  async createEquipmentClass(insertEquipmentClass: InsertEquipmentClass): Promise<EquipmentClass> {
+    const [equipmentClass] = await db.insert(equipmentClasses).values(insertEquipmentClass).returning();
+    return equipmentClass;
+  }
+
+  async deleteEquipmentClass(id: number): Promise<boolean> {
+    const result = await db.delete(equipmentClasses).where(eq(equipmentClasses.id, id));
+    return true; // Assume success if no error is thrown
+  }
+
   // Asset operations
   async getAsset(id: number): Promise<Asset | undefined> {
     const [asset] = await db.select().from(assets).where(eq(assets.id, id));

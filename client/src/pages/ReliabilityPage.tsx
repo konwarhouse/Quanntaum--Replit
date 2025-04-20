@@ -8,6 +8,7 @@ import AssetMaster from "@/components/reliability/AssetMaster";
 import CriticalityAssessment from "@/components/reliability/CriticalityAssessment";
 import FailureHistory from "@/components/reliability/FailureHistory";
 import FailureModeManager from "@/components/reliability/FailureModeManager";
+import EquipmentClassManager from "@/components/reliability/EquipmentClassManager";
 import { useQuery } from "@tanstack/react-query";
 import { Asset } from "@shared/schema";
 import { UserRole } from "@shared/auth";
@@ -40,11 +41,12 @@ const ReliabilityPage = () => {
         onValueChange={setActiveTab}
         className="w-full"
       >
-        <TabsList className="grid grid-cols-2 md:grid-cols-8 w-full">
+        <TabsList className="grid grid-cols-2 md:grid-cols-9 w-full">
           <TabsTrigger value="assets">Asset Master</TabsTrigger>
           <TabsTrigger value="criticality">Criticality</TabsTrigger>
           <TabsTrigger value="failures">Failure History</TabsTrigger>
           <TabsTrigger value="failureModes">Failure Modes</TabsTrigger>
+          <TabsTrigger value="equipmentClasses">Equipment Classes</TabsTrigger>
           <TabsTrigger value="weibull">Weibull Analysis</TabsTrigger>
           <TabsTrigger value="maintenance">Maintenance Optimization</TabsTrigger>
           <TabsTrigger value="rcm">RCM Analysis</TabsTrigger>
@@ -66,6 +68,10 @@ const ReliabilityPage = () => {
           
           <TabsContent value="failureModes" className="focus-visible:outline-none focus-visible:ring-0">
             <FailureModeManager currentUserRole={currentUserRole} />
+          </TabsContent>
+          
+          <TabsContent value="equipmentClasses" className="focus-visible:outline-none focus-visible:ring-0">
+            <EquipmentClassManager currentUserRole={currentUserRole} />
           </TabsContent>
 
           <TabsContent value="weibull" className="focus-visible:outline-none focus-visible:ring-0">
