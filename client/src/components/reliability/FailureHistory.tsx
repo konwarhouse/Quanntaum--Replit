@@ -695,9 +695,18 @@ const FailureHistory = () => {
                             <FormControl>
                               <Select
                                 onValueChange={(value) => {
+                                  console.log("Asset selected:", value);
                                   field.onChange(value);
+                                  
                                   // Update the current asset ID to filter failure modes
-                                  setCurrentAssetId(parseInt(value));
+                                  const assetId = parseInt(value);
+                                  setCurrentAssetId(assetId);
+                                  console.log("Set current asset ID to:", assetId);
+                                  
+                                  // Find selected asset to get its equipment class
+                                  const selectedAsset = assets.find(a => a.id === assetId);
+                                  console.log("Selected asset:", selectedAsset);
+                                  
                                   // Reset failure mode when asset changes
                                   addForm.setValue("failureModeId", "");
                                 }}
