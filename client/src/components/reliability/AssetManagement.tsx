@@ -151,6 +151,13 @@ const AssetManagement = () => {
   };
 
   const resetForm = () => {
+    // Reset individual fields' state
+    setName('');
+    setAssetNumber('');
+    setDescription('');
+    setDate(undefined);
+    
+    // Reset the main form state object
     setNewAsset({
       name: '',
       assetNumber: '',
@@ -161,7 +168,6 @@ const AssetManagement = () => {
       weibullEta: 1000.0,
       timeUnit: 'hours'
     });
-    setDate(undefined);
   };
 
   const handleAddAsset = (e: React.FormEvent) => {
@@ -199,6 +205,13 @@ const AssetManagement = () => {
 
   const handleEditClick = (asset: Asset) => {
     setSelectedAsset(asset);
+    
+    // Update individual state variables
+    setName(asset.name);
+    setAssetNumber(asset.assetNumber || '');
+    setDescription(asset.description || '');
+    
+    // Update main form state object
     setNewAsset({
       name: asset.name,
       assetNumber: asset.assetNumber || '',
@@ -209,11 +222,14 @@ const AssetManagement = () => {
       weibullEta: asset.weibullEta,
       timeUnit: asset.timeUnit
     });
+    
+    // Update date state
     if (asset.installationDate) {
       setDate(new Date(asset.installationDate));
     } else {
       setDate(undefined);
     }
+    
     setIsEditAssetOpen(true);
   };
 

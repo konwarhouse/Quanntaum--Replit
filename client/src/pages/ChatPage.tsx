@@ -46,12 +46,14 @@ const ChatPage = () => {
   const handleSendMessage = async (message: string) => {
     if (!message.trim()) return;
 
+    let userMessageId = messages.length + 1;
+    
     try {
       setIsLoading(true);
       
       // Optimistically add user message to UI
       const userMessage: ChatMessage = {
-        id: messages.length + 1,
+        id: userMessageId,
         content: message,
         role: "user",
         username,
@@ -61,15 +63,33 @@ const ChatPage = () => {
       setMessages((prev) => [...prev, userMessage]);
       
       // Send message to API
+      console.log("Sending message to API:", { username, message });
       const response = await sendChatMessage(username, message);
+      console.log("Received response:", response);
       
       // Add AI response to UI
       setMessages((prev) => [...prev, response]);
     } catch (error) {
       console.error("Error sending message:", error);
+      
+      // Show detailed error message based on the type of error
+      let errorMessage = "Failed to send message";
+      
+      if (error instanceof Error) {
+        console.error("Error details:", error.message);
+        // Provide more specific error message if possible
+        if (error.message.includes("401")) {
+          errorMessage = "Authentication error. Please try again.";
+        } else if (error.message.includes("429")) {
+          errorMessage = "Too many requests. Please wait and try again.";
+        } else if (error.message.includes("500")) {
+          errorMessage = "Server error. Please try again later.";
+        }
+      }
+      
       toast({
         title: "Error",
-        description: "Failed to send message",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {

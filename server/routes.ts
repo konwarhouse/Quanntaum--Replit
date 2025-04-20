@@ -74,23 +74,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         "Would you like to know more about asset management or reliability engineering?";
       
       try {
-        // Try to call OpenAI API
-        // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-        const response = await openai.chat.completions.create({
-          model: "gpt-4o",
-          messages: [
-            { role: "system", content: "You are a helpful, friendly AI assistant. You can also provide information about reliability engineering, Weibull analysis, and Reliability-Centered Maintenance (RCM)." },
-            ...chatHistory.slice(-10), // limit context to last 10 messages
-            { role: "user", content: message }
-          ],
-        });
-        
-        // Only update responseContent if we got a valid response
-        if (response.choices && response.choices.length > 0 && response.choices[0].message) {
-          responseContent = response.choices[0].message.content || responseContent;
+        // Check if OpenAI API key is available
+        if (!process.env.OPENAI_API_KEY) {
+          console.warn("OPENAI_API_KEY is not set. Using fallback response.");
+          // We'll use the fallback response defined above
+        } else {
+          // Try to call OpenAI API
+          // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+          const response = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: [
+              { role: "system", content: "You are a helpful, friendly AI assistant. You can also provide information about reliability engineering, Weibull analysis, and Reliability-Centered Maintenance (RCM)." },
+              ...chatHistory.slice(-10), // limit context to last 10 messages
+              { role: "user", content: message }
+            ],
+            temperature: 0.7,
+            max_tokens: 800,
+          });
+          
+          // Only update responseContent if we got a valid response
+          if (response.choices && response.choices.length > 0 && response.choices[0].message) {
+            responseContent = response.choices[0].message.content || responseContent;
+          }
         }
       } catch (error) {
         console.error("Error in chat completion:", error);
+        if (error instanceof Error) {
+          console.error("Error details:", error.message);
+        }
         // We'll use the fallback response defined above
       }
       

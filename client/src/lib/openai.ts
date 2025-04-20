@@ -29,24 +29,25 @@ export async function fetchChatHistory(username: string): Promise<ChatMessage[]>
 }
 
 export async function sendChatMessage(username: string, message: string): Promise<ChatMessage> {
-  const response = await apiRequest("POST", "/api/chat", {
-    username,
-    message,
-  });
-  
-  if (!response.ok) {
-    throw new Error(`Failed to send message: ${response.status}`);
+  try {
+    // Use apiRequest function - this will throw if the response is not OK
+    const data = await apiRequest<{success: boolean, message: any}>("POST", "/api/chat", {
+      username,
+      message,
+    });
+    
+    if (!data.success || !data.message) {
+      console.error("Invalid server response:", data);
+      throw new Error("Invalid response from server");
+    }
+    
+    // Convert timestamp string to Date object
+    return {
+      ...data.message,
+      timestamp: new Date(data.message.timestamp),
+    };
+  } catch (error) {
+    console.error("Error in sendChatMessage:", error);
+    throw error; // Re-throw to allow caller to handle
   }
-  
-  const data = await response.json();
-  
-  if (!data.success || !data.message) {
-    throw new Error("Invalid response from server");
-  }
-  
-  // Convert timestamp string to Date object
-  return {
-    ...data.message,
-    timestamp: new Date(data.message.timestamp),
-  };
 }
