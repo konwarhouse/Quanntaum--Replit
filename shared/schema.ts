@@ -151,7 +151,8 @@ export const failureHistory = pgTable("failure_history", {
   recordDate: timestamp("record_date").defaultNow().notNull(), // When this record was created
 });
 
-export const insertFailureHistorySchema = createInsertSchema(failureHistory).pick({
+export const insertFailureHistorySchema = createInsertSchema(failureHistory)
+.pick({
   assetId: true,
   failureModeId: true,
   failureDate: true,
@@ -179,6 +180,16 @@ export const insertFailureHistorySchema = createInsertSchema(failureHistory).pic
   weibullEta: true,
   recordedBy: true,
   verifiedBy: true,
+})
+.transform((data) => {
+  // Convert string dates to Date objects if they're provided as strings
+  return {
+    ...data,
+    failureDate: typeof data.failureDate === 'string' ? new Date(data.failureDate) : data.failureDate,
+    repairCompleteDate: data.repairCompleteDate && typeof data.repairCompleteDate === 'string' 
+      ? new Date(data.repairCompleteDate) 
+      : data.repairCompleteDate,
+  };
 });
 
 // Types

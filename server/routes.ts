@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { OpenAI } from "openai";
+import * as XLSX from 'xlsx';
 import { 
   insertMessageSchema, 
   ChatCompletionRequest, 
@@ -254,6 +255,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting asset:", error);
       res.status(500).json({ message: "Failed to delete asset" });
+    }
+  });
+  
+  // Export assets to Excel
+  app.get("/api/assets/export/excel", async (req, res) => {
+    try {
+      const assets = await storage.getAssets();
+      
+      // Create Excel workbook and worksheet
+      const wb = XLSX.utils.book_new();
+      
+      // Convert assets to worksheet data
+      const assetData = assets.map(asset => ({
+        "Asset Number": asset.assetNumber,
+        "Name": asset.name,
+        "Description": asset.description || "",
+        "Installation Date": asset.installationDate ? new Date(asset.installationDate).toISOString().split('T')[0] : "",
+        "Location": asset.location || "",
+        "Manufacturer": asset.manufacturer || "",
+        "Model": asset.model || "",
+        "Serial Number": asset.serialNumber || "",
+        "Equipment Class": asset.equipmentClass || "",
+        "Criticality": asset.criticality || "",
+        "Residual Criticality": asset.residualCriticality || "",
+        "Status": asset.status || "",
+        "Comments": asset.comments || ""
+      }));
+      
+      // Create the worksheet
+      const ws = XLSX.utils.json_to_sheet(assetData);
+      
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(wb, ws, "Assets");
+      
+      // Generate Excel file
+      const excelBuffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+      
+      // Set response headers
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', 'attachment; filename=Asset_Master_Export.xlsx');
+      
+      // Send the file
+      res.send(excelBuffer);
+    } catch (error) {
+      console.error("Error exporting assets to Excel:", error);
+      res.status(500).json({ message: "Failed to export assets to Excel" });
     }
   });
 
