@@ -1096,6 +1096,7 @@ const FailureHistory = () => {
                   <TableHead>Failure Date</TableHead>
                   <TableHead>Description</TableHead>
                   <TableHead>Downtime (hrs)</TableHead>
+                  <TableHead>RCA</TableHead>
                   <TableHead>Impact</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -1128,6 +1129,23 @@ const FailureHistory = () => {
                         </div>
                       </TableCell>
                       <TableCell>{record.downtimeHours.toFixed(1)}</TableCell>
+                      <TableCell>
+                        {record.needsRCA === "yes" ? (
+                          <Badge 
+                            className="bg-red-100 text-red-800"
+                            variant="outline"
+                          >
+                            Required
+                          </Badge>
+                        ) : (
+                          <Badge 
+                            className="bg-green-100 text-green-800"
+                            variant="outline"
+                          >
+                            Not Required
+                          </Badge>
+                        )}
+                      </TableCell>
                       <TableCell>
                         {record.safetyImpact && record.safetyImpact !== "none" && (
                           <Badge 
