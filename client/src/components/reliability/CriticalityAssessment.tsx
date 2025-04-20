@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -30,12 +30,14 @@ import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 import { Asset } from "@shared/schema";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Info, ArrowRight, AlertTriangle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Info, ArrowRight, AlertTriangle, Check, RefreshCw } from "lucide-react";
 
 // Define form schema for criticality assessment
 const criticalityAssessmentSchema = z.object({
@@ -131,18 +133,105 @@ const CriticalityAssessment = () => {
     setResidualCriticalityLevel(determineCriticalityLevel(residualRisk));
   });
 
+  // Add state for selected asset and whether assessments have been completed
+  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
+  const [assessmentCompleted, setAssessmentCompleted] = useState(false);
+  
+  // Update asset mutation
+  const updateAssetMutation = useMutation({
+    mutationFn: async (updateData: { 
+      assetId: number, 
+      criticality: string,
+      inherentCriticality?: string, 
+      residualRiskLevel?: number,
+      inherentRiskLevel?: number
+    }) => {
+      const response = await fetch(`/api/assets/${updateData.assetId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          criticality: updateData.criticality,
+          // Store additional assessment data as part of the asset
+          criticalityAssessment: {
+            inherentCriticality: updateData.inherentCriticality,
+            residualRiskLevel: updateData.residualRiskLevel,
+            inherentRiskLevel: updateData.inherentRiskLevel,
+            assessmentDate: new Date().toISOString()
+          }
+        })
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to update asset');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/assets'] });
+      setAssessmentCompleted(true);
+      
+      toast({
+        title: "Criticality Assessment Applied",
+        description: `The asset has been updated with the new criticality level.`,
+      });
+    },
+    onError: (error) => {
+      console.error('Error updating asset:', error);
+      toast({
+        title: 'Failed to update asset',
+        description: error instanceof Error ? error.message : 'An unknown error occurred',
+        variant: 'destructive'
+      });
+    }
+  });
+  
+  // Update selected asset when asset ID changes
+  useEffect(() => {
+    const assetId = form.getValues('assetId');
+    if (assetId) {
+      const asset = assets.find(a => a.id.toString() === assetId);
+      setSelectedAsset(asset || null);
+    } else {
+      setSelectedAsset(null);
+    }
+  }, [form.watch('assetId'), assets]);
+  
   // Handle form submission
   const onSubmit = (data: z.infer<typeof criticalityAssessmentSchema>) => {
-    // In a real application, this would submit the assessment to the server
-    console.log("Assessment data:", data);
-    console.log("Inherent Risk Level:", riskLevel);
-    console.log("Inherent Criticality Level:", criticalityLevel);
-    console.log("Residual Risk Level:", residualRiskLevel);
-    console.log("Residual Criticality Level:", residualCriticalityLevel);
+    // Convert asset ID to number
+    const assetId = parseInt(data.assetId);
     
-    toast({
-      title: "Criticality Assessment Completed",
-      description: `Asset criticality assessment has been saved. Inherent Criticality: ${criticalityLevel}, Residual Criticality: ${residualCriticalityLevel}`,
+    // Map criticality levels to strings
+    let criticalityString = "Medium"; // Default
+    
+    if (residualCriticalityLevel === 1) {
+      criticalityString = "High";
+    } else if (residualCriticalityLevel === 2) {
+      criticalityString = "Medium";
+    } else if (residualCriticalityLevel === 3 || residualCriticalityLevel === 4) {
+      criticalityString = "Low";
+    }
+    
+    // Map inherent criticality level to string
+    let inherentCriticalityString = "Medium"; // Default
+    
+    if (criticalityLevel === 1) {
+      inherentCriticalityString = "High";
+    } else if (criticalityLevel === 2) {
+      inherentCriticalityString = "Medium";
+    } else if (criticalityLevel === 3 || criticalityLevel === 4) {
+      inherentCriticalityString = "Low";
+    }
+    
+    // Update the asset with the new criticality level
+    updateAssetMutation.mutate({
+      assetId,
+      criticality: criticalityString,
+      inherentCriticality: inherentCriticalityString,
+      residualRiskLevel: residualRiskLevel || 0,
+      inherentRiskLevel: riskLevel || 0
     });
   };
 
