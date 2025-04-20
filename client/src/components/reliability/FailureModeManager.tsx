@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -7,6 +7,7 @@ import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { Asset, FailureMode } from "@shared/schema";
 import { UserRole } from "@shared/auth";
+import { Switch } from "@/components/ui/switch";
 
 import {
   Card,
@@ -54,17 +55,17 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { AlertTriangle, Plus, RefreshCw, FileEdit, Trash2 } from "lucide-react";
+import { AlertTriangle, Plus, RefreshCw, FileEdit, Trash2, Filter } from "lucide-react";
 
 // Define the form schema for creating/editing failure modes
 const failureModeFormSchema = z.object({
-  assetId: z.coerce.number().min(1, "Please select an asset"),
+  equipmentClass: z.string().min(1, "Please select an equipment class"),
   description: z.string().min(3, "Description must be at least 3 characters"),
-  category: z.string().min(1, "Please select a category"),
-  failureEffect: z.string().min(3, "Failure effect must be at least 3 characters"),
+  consequences: z.string().min(3, "Consequences must be at least 3 characters"),
   detectionMethod: z.string().optional(),
-  mttr: z.coerce.number().min(0, "MTTR must be a positive number").optional(),
-  notes: z.string().optional(),
+  currentControl: z.string().optional(),
+  isPredictable: z.boolean().default(false),
+  costOfFailure: z.coerce.number().min(0, "Cost must be a positive number").optional(),
 });
 
 type FailureModeFormValues = z.infer<typeof failureModeFormSchema>;
@@ -75,7 +76,7 @@ interface FailureModeManagerProps {
 
 const FailureModeManager = ({ currentUserRole }: FailureModeManagerProps) => {
   const { toast } = useToast();
-  const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
+  const [selectedEquipmentClass, setSelectedEquipmentClass] = useState<string | null>(null);
   const [selectedFailureModeId, setSelectedFailureModeId] = useState<number | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -90,18 +91,29 @@ const FailureModeManager = ({ currentUserRole }: FailureModeManagerProps) => {
     staleTime: 60000,
   });
 
+  // Extract unique equipment classes from assets
+  const equipmentClasses = useMemo(() => {
+    const classes = new Set<string>();
+    assets.forEach(asset => {
+      if (asset.equipmentClass) {
+        classes.add(asset.equipmentClass);
+      }
+    });
+    return Array.from(classes).sort();
+  }, [assets]);
+
   // Fetch failure modes
   const { 
     data: failureModes = [], 
     isLoading,
     refetch: refetchFailureModes 
   } = useQuery<FailureMode[]>({
-    queryKey: ['/api/failure-modes', selectedAssetId],
+    queryKey: ['/api/failure-modes', selectedEquipmentClass],
     enabled: true,
     queryFn: async () => {
       let url = `/api/failure-modes`;
-      if (selectedAssetId) {
-        url = `/api/failure-modes/${selectedAssetId}`;
+      if (selectedEquipmentClass) {
+        url = `/api/failure-modes/class/${encodeURIComponent(selectedEquipmentClass)}`;
       }
       const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to fetch failure modes');
@@ -109,9 +121,15 @@ const FailureModeManager = ({ currentUserRole }: FailureModeManagerProps) => {
     },
   });
 
+  // Filter failure modes by equipment class if one is selected
+  const filteredFailureModes = useMemo(() => {
+    if (!selectedEquipmentClass) return failureModes;
+    return failureModes.filter(mode => mode.equipmentClass === selectedEquipmentClass);
+  }, [failureModes, selectedEquipmentClass]);
+
   // Mutations for CRUD operations
   const createFailureModeMutation = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: FailureModeFormValues) => {
       const response = await fetch('/api/failure-modes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -143,7 +161,7 @@ const FailureModeManager = ({ currentUserRole }: FailureModeManagerProps) => {
   });
 
   const updateFailureModeMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+    mutationFn: async ({ id, data }: { id: number; data: FailureModeFormValues }) => {
       const response = await fetch(`/api/failure-modes/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -209,13 +227,13 @@ const FailureModeManager = ({ currentUserRole }: FailureModeManagerProps) => {
   const addForm = useForm<FailureModeFormValues>({
     resolver: zodResolver(failureModeFormSchema),
     defaultValues: {
-      assetId: selectedAssetId ? parseInt(selectedAssetId) : undefined,
+      equipmentClass: selectedEquipmentClass || "",
       description: "",
-      category: "",
-      failureEffect: "",
+      consequences: "",
       detectionMethod: "",
-      mttr: undefined,
-      notes: "",
+      currentControl: "",
+      isPredictable: false,
+      costOfFailure: undefined,
     },
   });
 
@@ -223,26 +241,26 @@ const FailureModeManager = ({ currentUserRole }: FailureModeManagerProps) => {
   const editForm = useForm<FailureModeFormValues>({
     resolver: zodResolver(failureModeFormSchema),
     defaultValues: {
-      assetId: "",
+      equipmentClass: "",
       description: "",
-      category: "",
-      failureEffect: "",
+      consequences: "",
       detectionMethod: "",
-      mttr: undefined,
-      notes: "",
+      currentControl: "",
+      isPredictable: false,
+      costOfFailure: undefined,
     },
   });
 
   // Reset the add form when the dialog opens
   const handleAddDialogOpen = () => {
     addForm.reset({
-      assetId: selectedAssetId ? parseInt(selectedAssetId) : undefined,
+      equipmentClass: selectedEquipmentClass || "",
       description: "",
-      category: "",
-      failureEffect: "",
+      consequences: "",
       detectionMethod: "",
-      mttr: undefined,
-      notes: "",
+      currentControl: "",
+      isPredictable: false,
+      costOfFailure: undefined,
     });
     setIsAddDialogOpen(true);
   };
@@ -251,13 +269,13 @@ const FailureModeManager = ({ currentUserRole }: FailureModeManagerProps) => {
   const handleEditDialogOpen = (failureMode: FailureMode) => {
     setSelectedFailureModeId(failureMode.id);
     editForm.reset({
-      assetId: failureMode.assetId,
+      equipmentClass: failureMode.equipmentClass || "",
       description: failureMode.description,
-      category: failureMode.category || "",
-      failureEffect: failureMode.failureEffect || "",
+      consequences: failureMode.consequences,
       detectionMethod: failureMode.detectionMethod || "",
-      mttr: failureMode.mttr,
-      notes: failureMode.notes || "",
+      currentControl: failureMode.currentControl || "",
+      isPredictable: failureMode.isPredictable || false,
+      costOfFailure: failureMode.costOfFailure || undefined,
     });
     setIsEditDialogOpen(true);
   };
@@ -289,35 +307,13 @@ const FailureModeManager = ({ currentUserRole }: FailureModeManagerProps) => {
     });
   };
 
-  // Failure mode categories for dropdowns
-  const failureCategories = [
-    { value: "mechanical", label: "Mechanical" },
-    { value: "electrical", label: "Electrical" },
-    { value: "instrumentation", label: "Instrumentation" },
-    { value: "material", label: "Material/Corrosion" },
-    { value: "external", label: "External Factor" },
-    { value: "operational", label: "Operational" },
-  ];
-
-  // Detection methods for dropdowns
-  const detectionMethods = [
-    { value: "visual", label: "Visual Inspection" },
-    { value: "vibration", label: "Vibration Analysis" },
-    { value: "temperature", label: "Temperature Monitoring" },
-    { value: "pressure", label: "Pressure Monitoring" },
-    { value: "electrical", label: "Electrical Testing" },
-    { value: "oil", label: "Oil Analysis" },
-    { value: "noise", label: "Noise/Sound Detection" },
-    { value: "other", label: "Other" },
-  ];
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-start">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Failure Mode Manager</h2>
           <p className="text-muted-foreground">
-            Manage failure modes for assets and equipment
+            Manage failure modes by equipment class
           </p>
         </div>
         <div className="flex gap-2">
@@ -337,34 +333,35 @@ const FailureModeManager = ({ currentUserRole }: FailureModeManagerProps) => {
                 <DialogHeader>
                   <DialogTitle>Add New Failure Mode</DialogTitle>
                   <DialogDescription>
-                    Define a potential failure mode for an asset. These will be available for selection when recording failures.
+                    Define a potential failure mode for an equipment class. These will be available 
+                    for selection when recording failures for any asset in this class.
                   </DialogDescription>
                 </DialogHeader>
                 <Form {...addForm}>
                   <form onSubmit={addForm.handleSubmit(onAddSubmit)} className="space-y-6">
                     <FormField
                       control={addForm.control}
-                      name="assetId"
+                      name="equipmentClass"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Asset</FormLabel>
+                          <FormLabel>Equipment Class</FormLabel>
                           <Select 
-                            onValueChange={(value) => field.onChange(parseInt(value))}
-                            value={field.value?.toString()}
+                            onValueChange={field.onChange}
+                            value={field.value}
                           >
                             <SelectTrigger>
-                              <SelectValue placeholder="Select asset" />
+                              <SelectValue placeholder="Select equipment class" />
                             </SelectTrigger>
                             <SelectContent>
-                              {assets.map((asset) => (
-                                <SelectItem key={asset.id} value={asset.id.toString()}>
-                                  {asset.assetNumber} - {asset.name}
+                              {equipmentClasses.map((equipClass) => (
+                                <SelectItem key={equipClass} value={equipClass}>
+                                  {equipClass}
                                 </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
                           <FormDescription>
-                            Select the asset this failure mode applies to
+                            This failure mode will apply to all assets in this equipment class
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -388,43 +385,19 @@ const FailureModeManager = ({ currentUserRole }: FailureModeManagerProps) => {
                     />
                     <FormField
                       control={addForm.control}
-                      name="category"
+                      name="consequences"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Category</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select category" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {failureCategories.map((category) => (
-                                <SelectItem key={category.value} value={category.value}>
-                                  {category.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormDescription>
-                            Category or type of failure
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={addForm.control}
-                      name="failureEffect"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Failure Effect</FormLabel>
+                          <FormLabel>Consequences</FormLabel>
                           <FormControl>
                             <Textarea 
-                              placeholder="Describe what happens when this failure occurs" 
+                              placeholder="Describe the impact of this failure..." 
+                              className="min-h-[80px]"
                               {...field} 
                             />
                           </FormControl>
                           <FormDescription>
-                            Outcome or consequence of the failure
+                            What happens when this failure occurs
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -436,18 +409,9 @@ const FailureModeManager = ({ currentUserRole }: FailureModeManagerProps) => {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Detection Method</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value || ""}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select detection method" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {detectionMethods.map((method) => (
-                                <SelectItem key={method.value} value={method.value}>
-                                  {method.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <FormControl>
+                            <Input placeholder="e.g., Visual inspection, Vibration analysis" {...field} />
+                          </FormControl>
                           <FormDescription>
                             How this failure can be detected
                           </FormDescription>
@@ -457,24 +421,15 @@ const FailureModeManager = ({ currentUserRole }: FailureModeManagerProps) => {
                     />
                     <FormField
                       control={addForm.control}
-                      name="mttr"
+                      name="currentControl"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Mean Time To Repair (hours)</FormLabel>
+                          <FormLabel>Current Control</FormLabel>
                           <FormControl>
-                            <Input 
-                              type="number" 
-                              placeholder="Average repair time in hours" 
-                              {...field}
-                              value={field.value || ""}
-                              onChange={(e) => {
-                                const value = e.target.value === "" ? undefined : parseFloat(e.target.value);
-                                field.onChange(value);
-                              }}
-                            />
+                            <Input placeholder="e.g., Preventive maintenance, Inspections" {...field} />
                           </FormControl>
                           <FormDescription>
-                            Typical time needed to fix this failure
+                            Existing controls to prevent or mitigate this failure
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -482,45 +437,50 @@ const FailureModeManager = ({ currentUserRole }: FailureModeManagerProps) => {
                     />
                     <FormField
                       control={addForm.control}
-                      name="notes"
+                      name="isPredictable"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base">
+                              Failure is Predictable
+                            </FormLabel>
+                            <FormDescription>
+                              Can this failure be predicted based on condition monitoring?
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={addForm.control}
+                      name="costOfFailure"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Notes</FormLabel>
+                          <FormLabel>Cost of Failure</FormLabel>
                           <FormControl>
-                            <Textarea 
-                              placeholder="Additional information about this failure mode" 
-                              {...field} 
-                              value={field.value || ""}
+                            <Input 
+                              type="number" 
+                              placeholder="Average cost when this failure occurs" 
+                              {...field}
+                              value={field.value === undefined ? '' : field.value} 
+                              onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
                             />
                           </FormControl>
                           <FormDescription>
-                            Any other relevant details
+                            Average cost impact when this failure occurs
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                     <DialogFooter>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setIsAddDialogOpen(false)}
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        type="submit"
-                        disabled={createFailureModeMutation.isPending}
-                      >
-                        {createFailureModeMutation.isPending ? (
-                          <>
-                            <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                            Saving...
-                          </>
-                        ) : (
-                          "Save"
-                        )}
-                      </Button>
+                      <Button type="submit">Add Failure Mode</Button>
                     </DialogFooter>
                   </form>
                 </Form>
@@ -530,121 +490,121 @@ const FailureModeManager = ({ currentUserRole }: FailureModeManagerProps) => {
         </div>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg font-medium">Filter</CardTitle>
-          <CardDescription>Filter failure modes by asset</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Select
-                value={selectedAssetId || "all"}
-                onValueChange={(value) => setSelectedAssetId(value === "all" ? null : value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="All assets" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All assets</SelectItem>
-                  {assets.map((asset) => (
-                    <SelectItem key={asset.id} value={asset.id.toString()}>
-                      {asset.assetNumber} - {asset.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Equipment Class Filter */}
+      <div className="flex items-center space-x-2">
+        <div className="w-full max-w-sm">
+          <Select
+            value={selectedEquipmentClass || ""}
+            onValueChange={(value) => setSelectedEquipmentClass(value || null)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by equipment class" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All Equipment Classes</SelectItem>
+              {equipmentClasses.map((equipClass) => (
+                <SelectItem key={equipClass} value={equipClass}>
+                  {equipClass}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <Button 
+          variant="outline" 
+          onClick={() => setSelectedEquipmentClass(null)}
+          disabled={!selectedEquipmentClass}
+        >
+          Clear Filter
+        </Button>
+      </div>
 
-      {/* Failure Modes List */}
+      {/* Failure Modes Table */}
       <Card>
         <CardHeader>
           <CardTitle>Failure Modes</CardTitle>
           <CardDescription>
-            All defined failure modes for assets
+            {selectedEquipmentClass 
+              ? `Failure modes for ${selectedEquipmentClass} equipment`
+              : "All equipment failure modes"}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="flex justify-center items-center h-40">
-              <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+            <div className="flex items-center justify-center p-8">
+              <p>Loading failure modes...</p>
             </div>
-          ) : failureModes.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <p className="mb-2">No failure modes found</p>
-              {selectedAssetId && (
-                <p>Try selecting a different asset or create new failure modes for this asset</p>
-              )}
-              {!selectedAssetId && hasAdminAccess && (
-                <Button 
-                  variant="outline" 
-                  className="mt-4"
-                  onClick={handleAddDialogOpen}
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Your First Failure Mode
-                </Button>
-              )}
+          ) : filteredFailureModes.length === 0 ? (
+            <div className="flex flex-col items-center justify-center p-8 text-center">
+              <AlertTriangle className="h-12 w-12 text-amber-500 mb-4" />
+              <h3 className="text-lg font-semibold">No Failure Modes Found</h3>
+              <p className="text-muted-foreground">
+                {selectedEquipmentClass 
+                  ? `No failure modes have been defined for ${selectedEquipmentClass} equipment.`
+                  : "No failure modes have been defined yet. Add your first one!"}
+              </p>
             </div>
           ) : (
-            <div className="relative overflow-x-auto">
+            <div className="rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Asset</TableHead>
+                    <TableHead>Equipment Class</TableHead>
                     <TableHead>Description</TableHead>
-                    <TableHead>Category</TableHead>
+                    <TableHead>Consequences</TableHead>
                     <TableHead>Detection Method</TableHead>
-                    <TableHead>MTTR (hrs)</TableHead>
-                    {hasAdminAccess && <TableHead>Actions</TableHead>}
+                    <TableHead className="text-center">Is Predictable</TableHead>
+                    <TableHead className="text-right">Cost of Failure</TableHead>
+                    {hasAdminAccess && <TableHead className="text-right">Actions</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {failureModes.map((failureMode) => {
-                    const asset = assets.find((a) => a.id === failureMode.assetId);
-                    return (
-                      <TableRow key={failureMode.id}>
-                        <TableCell>
-                          {asset ? `${asset.assetNumber} - ${asset.name}` : `Asset ID: ${failureMode.assetId}`}
+                  {filteredFailureModes.map((failureMode) => (
+                    <TableRow key={failureMode.id}>
+                      <TableCell className="font-medium">{failureMode.equipmentClass}</TableCell>
+                      <TableCell>{failureMode.description}</TableCell>
+                      <TableCell>{failureMode.consequences}</TableCell>
+                      <TableCell>{failureMode.detectionMethod}</TableCell>
+                      <TableCell className="text-center">
+                        {failureMode.isPredictable ? "Yes" : "No"}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {failureMode.costOfFailure 
+                          ? `$${failureMode.costOfFailure.toFixed(2)}` 
+                          : "-"}
+                      </TableCell>
+                      {hasAdminAccess && (
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleEditDialogOpen(failureMode)}
+                            >
+                              <FileEdit className="h-4 w-4" />
+                              <span className="sr-only">Edit</span>
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-destructive"
+                              onClick={() => handleDeleteDialogOpen(failureMode.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              <span className="sr-only">Delete</span>
+                            </Button>
+                          </div>
                         </TableCell>
-                        <TableCell>{failureMode.description}</TableCell>
-                        <TableCell>{failureMode.category}</TableCell>
-                        <TableCell>{failureMode.detectionMethod}</TableCell>
-                        <TableCell>{failureMode.mttr}</TableCell>
-                        {hasAdminAccess && (
-                          <TableCell>
-                            <div className="flex space-x-2">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleEditDialogOpen(failureMode)}
-                              >
-                                <FileEdit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleDeleteDialogOpen(failureMode.id)}
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        )}
-                      </TableRow>
-                    );
-                  })}
+                      )}
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
             </div>
           )}
         </CardContent>
       </Card>
-
+      
       {/* Edit Dialog */}
       {hasAdminAccess && (
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
@@ -652,35 +612,32 @@ const FailureModeManager = ({ currentUserRole }: FailureModeManagerProps) => {
             <DialogHeader>
               <DialogTitle>Edit Failure Mode</DialogTitle>
               <DialogDescription>
-                Update the details of this failure mode
+                Update the details for this failure mode.
               </DialogDescription>
             </DialogHeader>
             <Form {...editForm}>
               <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-6">
                 <FormField
                   control={editForm.control}
-                  name="assetId"
+                  name="equipmentClass"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Asset</FormLabel>
+                      <FormLabel>Equipment Class</FormLabel>
                       <Select 
-                        onValueChange={(value) => field.onChange(parseInt(value))}
-                        value={field.value?.toString()}
+                        onValueChange={field.onChange}
+                        value={field.value}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select asset" />
+                          <SelectValue placeholder="Select equipment class" />
                         </SelectTrigger>
                         <SelectContent>
-                          {assets.map((asset) => (
-                            <SelectItem key={asset.id} value={asset.id.toString()}>
-                              {asset.assetNumber} - {asset.name}
+                          {equipmentClasses.map((equipClass) => (
+                            <SelectItem key={equipClass} value={equipClass}>
+                              {equipClass}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
-                      <FormDescription>
-                        Select the asset this failure mode applies to
-                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -692,55 +649,21 @@ const FailureModeManager = ({ currentUserRole }: FailureModeManagerProps) => {
                     <FormItem>
                       <FormLabel>Description</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., Bearing Failure, Motor Overheating" {...field} />
+                        <Input {...field} />
                       </FormControl>
-                      <FormDescription>
-                        Clear, concise description of the failure mode
-                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
                 <FormField
                   control={editForm.control}
-                  name="category"
+                  name="consequences"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Category</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select category" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {failureCategories.map((category) => (
-                            <SelectItem key={category.value} value={category.value}>
-                              {category.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        Category or type of failure
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={editForm.control}
-                  name="failureEffect"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Failure Effect</FormLabel>
+                      <FormLabel>Consequences</FormLabel>
                       <FormControl>
-                        <Textarea 
-                          placeholder="Describe what happens when this failure occurs" 
-                          {...field} 
-                        />
+                        <Textarea className="min-h-[80px]" {...field} />
                       </FormControl>
-                      <FormDescription>
-                        Outcome or consequence of the failure
-                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -751,91 +674,68 @@ const FailureModeManager = ({ currentUserRole }: FailureModeManagerProps) => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Detection Method</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || ""}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select detection method" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {detectionMethods.map((method) => (
-                            <SelectItem key={method.value} value={method.value}>
-                              {method.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        How this failure can be detected
-                      </FormDescription>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
                 <FormField
                   control={editForm.control}
-                  name="mttr"
+                  name="currentControl"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Mean Time To Repair (hours)</FormLabel>
+                      <FormLabel>Current Control</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="isPredictable"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base">
+                          Failure is Predictable
+                        </FormLabel>
+                        <FormDescription>
+                          Can this failure be predicted based on condition monitoring?
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="costOfFailure"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Cost of Failure</FormLabel>
                       <FormControl>
                         <Input 
                           type="number" 
-                          placeholder="Average repair time in hours" 
                           {...field}
-                          value={field.value || ""}
-                          onChange={(e) => {
-                            const value = e.target.value === "" ? undefined : parseFloat(e.target.value);
-                            field.onChange(value);
-                          }}
+                          value={field.value === undefined ? '' : field.value} 
+                          onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
                         />
                       </FormControl>
-                      <FormDescription>
-                        Typical time needed to fix this failure
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={editForm.control}
-                  name="notes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Notes</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Additional information about this failure mode" 
-                          {...field} 
-                          value={field.value || ""}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Any other relevant details
-                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
                 <DialogFooter>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setIsEditDialogOpen(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={updateFailureModeMutation.isPending}
-                  >
-                    {updateFailureModeMutation.isPending ? (
-                      <>
-                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                        Updating...
-                      </>
-                    ) : (
-                      "Update"
-                    )}
-                  </Button>
+                  <Button type="submit">Update Failure Mode</Button>
                 </DialogFooter>
               </form>
             </Form>
@@ -848,37 +748,17 @@ const FailureModeManager = ({ currentUserRole }: FailureModeManagerProps) => {
         <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Delete Failure Mode</DialogTitle>
+              <DialogTitle>Confirm Deletion</DialogTitle>
               <DialogDescription>
                 Are you sure you want to delete this failure mode? This action cannot be undone.
               </DialogDescription>
             </DialogHeader>
-            <div className="flex items-center space-x-2 py-4">
-              <AlertTriangle className="h-6 w-6 text-yellow-500" />
-              <p>This will permanently remove this failure mode from the database.</p>
-            </div>
             <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsDeleteDialogOpen(false)}
-              >
+              <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button
-                type="button"
-                variant="destructive"
-                onClick={handleDeleteConfirm}
-                disabled={deleteFailureModeMutation.isPending}
-              >
-                {deleteFailureModeMutation.isPending ? (
-                  <>
-                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                    Deleting...
-                  </>
-                ) : (
-                  "Delete"
-                )}
+              <Button variant="destructive" onClick={handleDeleteConfirm}>
+                Delete
               </Button>
             </DialogFooter>
           </DialogContent>
