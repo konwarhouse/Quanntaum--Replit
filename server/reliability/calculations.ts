@@ -1,10 +1,9 @@
 import {
   WeibullParameters,
-  WeibullAnalysisResponse,
   MaintenanceOptimizationParameters,
   RCMParameters,
-  SimulationParameters,
-} from "@shared/schema";
+  SimulationParameters
+} from "../types";
 
 /**
  * Calculate reliability function R(t) = e^-(t/η)^β
@@ -14,10 +13,6 @@ import {
  * @returns Reliability value (between 0 and 1)
  */
 export function calculateReliability(t: number, beta: number, eta: number): number {
-  if (t < 0 || beta <= 0 || eta <= 0) {
-    throw new Error("Invalid parameters: t must be non-negative, beta and eta must be positive");
-  }
-  
   return Math.exp(-Math.pow(t / eta, beta));
 }
 
@@ -29,10 +24,6 @@ export function calculateReliability(t: number, beta: number, eta: number): numb
  * @returns Failure rate
  */
 export function calculateFailureRate(t: number, beta: number, eta: number): number {
-  if (t < 0 || beta <= 0 || eta <= 0) {
-    throw new Error("Invalid parameters: t must be non-negative, beta and eta must be positive");
-  }
-  
   return (beta / eta) * Math.pow(t / eta, beta - 1);
 }
 
@@ -56,30 +47,7 @@ export function calculateFailureProbability(t: number, beta: number, eta: number
  * @returns MTBF value
  */
 export function calculateMTBF(beta: number, eta: number): number {
-  if (beta <= 0 || eta <= 0) {
-    throw new Error("Invalid parameters: beta and eta must be positive");
-  }
-  
-  // Approximate gamma function for (1 + 1/beta)
-  // For simple cases, we'll use the fact that:
-  // If beta = 1, MTBF = eta (exponential distribution)
-  // If beta = 2, MTBF = eta * sqrt(PI)/2
-  // If beta = 3, MTBF = eta * Γ(4/3)
-  // For other values, we'll use a simple approximation
-  
-  if (beta === 1) {
-    return eta;
-  } else if (beta === 2) {
-    return eta * Math.sqrt(Math.PI) / 2;
-  } else if (beta === 3) {
-    // Gamma(4/3) ≈ 0.8930
-    return eta * 0.8930;
-  } else {
-    // Simple approximation of gamma function
-    // This is valid for common beta values in reliability (0.5 to 5)
-    const x = 1 + 1 / beta;
-    return eta * Math.exp(approximateLogGamma(x));
-  }
+  return eta * Math.exp(approximateLogGamma(1 + 1 / beta));
 }
 
 /**
@@ -88,12 +56,31 @@ export function calculateMTBF(beta: number, eta: number): number {
  * @returns Approximate value of log(Γ(x))
  */
 function approximateLogGamma(x: number): number {
-  if (x <= 0) {
-    throw new Error("Input must be positive");
+  // Lanczos approximation
+  if (x < 0.5) {
+    return Math.log(Math.PI / Math.sin(Math.PI * x)) - approximateLogGamma(1 - x);
+  }
+
+  // Coefficients for the Lanczos approximation
+  const c = [
+    76.18009172947146,
+    -86.50532032941677,
+    24.01409824083091,
+    -1.231739572450155,
+    0.1208650973866179e-2,
+    -0.5395239384953e-5
+  ];
+
+  let y = x;
+  let tmp = x + 5.5;
+  tmp -= (x + 0.5) * Math.log(tmp);
+  
+  let sum = 1.000000000190015;
+  for (let j = 0; j < 6; j++) {
+    sum += c[j] / ++y;
   }
   
-  // Stirling's approximation: log(Γ(x)) ≈ (x - 0.5) * log(x) - x + 0.5 * log(2π)
-  return (x - 0.5) * Math.log(x) - x + 0.5 * Math.log(2 * Math.PI);
+  return -tmp + Math.log(2.5066282746310005 * sum / x);
 }
 
 /**
@@ -104,12 +91,12 @@ function approximateLogGamma(x: number): number {
  * @returns Optimal PM interval
  */
 export function calculateOptimalPMInterval(beta: number, eta: number): number {
-  if (beta <= 1 || eta <= 0) {
-    // For beta <= 1, failure rate is decreasing, so run-to-failure is optimal
+  if (beta <= 1) {
+    // For β ≤ 1, run-to-failure is optimal
     return Infinity;
   }
-  
-  return eta * (1 - Math.pow(1 / beta, 1 / beta));
+
+  return eta * Math.pow(1 - Math.pow(1 / beta, 1 / beta), 1 / beta);
 }
 
 /**
@@ -132,20 +119,29 @@ export function calculateTotalCost(
   timeHorizon: number
 ): number {
   if (interval <= 0) {
-    throw new Error("Interval must be positive");
+    return Infinity;
   }
+
+  if (interval === Infinity) {
+    // Run-to-failure cost calculation
+    const expectedFailures = timeHorizon / calculateMTBF(beta, eta);
+    return failureCost * expectedFailures;
+  }
+
+  // Number of preventive maintenance actions within time horizon
+  const numPM = Math.floor(timeHorizon / interval);
   
-  // Number of PM activities in the time horizon
-  const pmCount = timeHorizon / interval;
-  
-  // Probability of failure between PM intervals
+  // For each PM interval, calculate the probability of failure
   const failureProbability = calculateFailureProbability(interval, beta, eta);
   
-  // Expected number of failures in the time horizon
-  const expectedFailures = pmCount * failureProbability;
+  // Estimate the number of failures
+  const expectedFailures = numPM * failureProbability;
   
-  // Total cost = PM cost + Failure cost
-  return pmCost * pmCount + failureCost * expectedFailures;
+  // Calculate total cost
+  const totalPMCost = numPM * pmCost;
+  const totalFailureCost = expectedFailures * failureCost;
+  
+  return totalPMCost + totalFailureCost;
 }
 
 /**
@@ -153,10 +149,8 @@ export function calculateTotalCost(
  * @param params - Weibull parameters
  * @returns Analysis results
  */
-export function generateWeibullAnalysis(params: WeibullParameters): WeibullAnalysisResponse {
+export function generateWeibullAnalysis(params: WeibullParameters) {
   const { beta, eta, timeHorizon } = params;
-  
-  // Generate points for plotting curves
   const numPoints = 100;
   const timeStep = timeHorizon / numPoints;
   
@@ -181,7 +175,90 @@ export function generateWeibullAnalysis(params: WeibullParameters): WeibullAnaly
     reliabilityCurve,
     failureRateCurve,
     mtbf,
-    cumulativeFailureProbability,
+    cumulativeFailureProbability
+  };
+}
+
+/**
+ * Find optimal maintenance interval by evaluating a range of intervals
+ * @param params - Maintenance optimization parameters
+ * @returns Optimization results
+ */
+export function optimizeMaintenanceInterval(params: MaintenanceOptimizationParameters) {
+  const {
+    beta,
+    eta,
+    preventiveMaintenanceCost,
+    correctiveMaintenanceCost,
+    timeHorizon
+  } = params;
+  
+  // If beta <= 1, run-to-failure is optimal
+  if (beta <= 1) {
+    const runToFailureCost = calculateTotalCost(
+      Infinity,
+      beta,
+      eta,
+      preventiveMaintenanceCost,
+      correctiveMaintenanceCost,
+      timeHorizon
+    );
+    
+    return {
+      optimalInterval: Infinity,
+      optimalCost: runToFailureCost,
+      costCurve: [{ interval: eta, cost: runToFailureCost }]
+    };
+  }
+  
+  // Generate range of intervals to evaluate
+  const numPoints = 50;
+  const maxInterval = eta * 2; // Evaluate up to 2x the characteristic life
+  const intervalStep = maxInterval / numPoints;
+  
+  const costCurve = [];
+  let minCost = Infinity;
+  let optimalInterval = 0;
+  
+  for (let i = 1; i <= numPoints; i++) {
+    const interval = i * intervalStep;
+    const cost = calculateTotalCost(
+      interval,
+      beta,
+      eta,
+      preventiveMaintenanceCost,
+      correctiveMaintenanceCost,
+      timeHorizon
+    );
+    
+    costCurve.push({ interval, cost });
+    
+    if (cost < minCost) {
+      minCost = cost;
+      optimalInterval = interval;
+    }
+  }
+  
+  // Also check analytical solution
+  const analyticalOptimal = calculateOptimalPMInterval(beta, eta);
+  const analyticalCost = calculateTotalCost(
+    analyticalOptimal,
+    beta,
+    eta,
+    preventiveMaintenanceCost,
+    correctiveMaintenanceCost,
+    timeHorizon
+  );
+  
+  if (analyticalCost < minCost) {
+    minCost = analyticalCost;
+    optimalInterval = analyticalOptimal;
+  }
+  
+  return {
+    optimalInterval,
+    optimalCost: minCost,
+    costCurve
   };
 }
 
@@ -190,23 +267,104 @@ export function generateWeibullAnalysis(params: WeibullParameters): WeibullAnaly
  * @param params - RCM parameters
  * @returns Recommended maintenance strategy
  */
-export function determineMaintenanceStrategy(
-  assetCriticality: string,
-  isPredictable: boolean,
-  costOfFailure: number,
-  threshold: number = 1000
-): string {
-  if (assetCriticality === 'High') {
-    if (isPredictable) {
-      return 'Predictive Maintenance';
+export function determineMaintenanceStrategy(params: RCMParameters) {
+  const {
+    assetCriticality,
+    isPredictable,
+    costOfFailure,
+    failureModeDescriptions,
+    failureConsequences,
+    currentMaintenancePractices
+  } = params;
+  
+  // Decision logic based on criticality and failure predictability
+  let maintenanceStrategy = "";
+  const taskRecommendations = [];
+  
+  // Main strategy selection logic
+  if (isPredictable) {
+    if (assetCriticality === "High") {
+      maintenanceStrategy = "Predictive Maintenance";
+      taskRecommendations.push(
+        "Implement condition monitoring to detect early signs of failure",
+        "Develop threshold limits for key parameters indicating degradation",
+        "Create response procedures for different severity levels of degradation",
+        "Train staff on proper use of predictive technologies"
+      );
+    } else if (costOfFailure > 5000) {
+      maintenanceStrategy = "Preventive Maintenance";
+      taskRecommendations.push(
+        "Establish time-based maintenance intervals",
+        "Develop detailed maintenance procedures for each task",
+        "Create checklist for preventive maintenance activities"
+      );
     } else {
-      return 'Redesign';
+      maintenanceStrategy = "Condition-Based Maintenance";
+      taskRecommendations.push(
+        "Implement basic condition monitoring",
+        "Establish threshold alerts for maintenance actions",
+        "Develop response procedures for alerts"
+      );
     }
-  } else if (costOfFailure > threshold) {
-    return 'Preventive Maintenance';
   } else {
-    return 'Run-to-Failure';
+    if (assetCriticality === "High") {
+      maintenanceStrategy = "Redesign";
+      taskRecommendations.push(
+        "Analyze failure modes to identify opportunities for design improvements",
+        "Consider redundant systems to improve reliability",
+        "Evaluate alternative technologies or materials",
+        "Conduct engineering analysis to address root causes of failures"
+      );
+    } else if (costOfFailure > 3000) {
+      maintenanceStrategy = "Preventive Maintenance";
+      taskRecommendations.push(
+        "Establish conservative time-based maintenance intervals",
+        "Document detailed maintenance procedures",
+        "Track effectiveness and adjust intervals based on results"
+      );
+    } else {
+      maintenanceStrategy = "Run-to-Failure";
+      taskRecommendations.push(
+        "Ensure spare parts are available for quick replacement",
+        "Document repair procedures to minimize downtime",
+        "Train staff on quick response and repair techniques"
+      );
+    }
   }
+  
+  // Additional recommendations based on current practices
+  if (currentMaintenancePractices.toLowerCase().includes("reactive") || 
+      currentMaintenancePractices.toLowerCase().includes("run to fail")) {
+    taskRecommendations.push(
+      "Transition from reactive to planned maintenance approach",
+      "Document all failures to build historical data for analysis"
+    );
+  }
+  
+  // Recommendations based on failure modes
+  if (failureModeDescriptions.some(fm => fm.toLowerCase().includes("wear"))) {
+    taskRecommendations.push(
+      "Implement lubrication program to reduce wear-related failures",
+      "Consider surface treatments or hardening to improve wear resistance"
+    );
+  }
+  
+  if (failureConsequences.some(fc => fc.toLowerCase().includes("safety"))) {
+    taskRecommendations.push(
+      "Develop emergency response procedures for safety-critical failures",
+      "Implement additional safety controls and monitoring"
+    );
+  }
+  
+  return {
+    maintenanceStrategy,
+    taskRecommendations,
+    analysisInputs: {
+      assetCriticality,
+      isPredictable,
+      costOfFailure
+    }
+  };
 }
 
 /**
@@ -218,104 +376,109 @@ export function determineMaintenanceStrategy(
  * @returns Time to failure
  */
 export function weibullInverseCDF(p: number, beta: number, eta: number): number {
-  if (p < 0 || p > 1) {
-    throw new Error("Probability must be between 0 and 1");
-  }
-  
   return eta * Math.pow(-Math.log(1 - p), 1 / beta);
 }
 
 /**
  * Run a Monte Carlo simulation to estimate failure statistics
  * @param params - Simulation parameters
- * @param beta - Shape parameter
- * @param eta - Scale parameter
- * @param pmInterval - Preventive maintenance interval (if any)
- * @param pmCost - Preventive maintenance cost
- * @param failureCost - Corrective maintenance (failure) cost
  * @returns Simulation results
  */
-export function runSimulation(
-  params: SimulationParameters,
-  beta: number,
-  eta: number,
-  pmInterval: number | null = null,
-  pmCost: number = 0,
-  failureCost: number = 0
-): {
-  totalCost: number;
-  averageFailures: number;
-  failureTimes: number[];
-} {
-  const { numberOfRuns, timeHorizon } = params;
+export function runSimulation(params: SimulationParameters) {
+  const {
+    beta,
+    eta,
+    numberOfRuns,
+    timeHorizon,
+    pmInterval,
+    pmCost,
+    failureCost
+  } = params;
   
-  let totalFailures = 0;
-  let totalCost = 0;
   const allFailureTimes: number[] = [];
+  let totalCost = 0;
+  let totalFailures = 0;
   
+  // Run the simulation multiple times
   for (let run = 0; run < numberOfRuns; run++) {
     let time = 0;
-    let runFailures = 0;
     let runCost = 0;
+    let runFailures = 0;
+    const runFailureTimes: number[] = [];
     
-    // If using PM, calculate scheduled PM events
-    if (pmInterval && pmInterval > 0 && pmInterval < Infinity) {
-      const numPMs = Math.floor(timeHorizon / pmInterval);
-      runCost += numPMs * pmCost;
-      
-      // For each PM interval, check if failure occurs before PM
-      for (let i = 0; i < numPMs; i++) {
-        const intervalStart = i * pmInterval;
-        const intervalEnd = (i + 1) * pmInterval;
+    // If using preventive maintenance
+    if (pmInterval !== undefined) {
+      // Simulate until reaching the time horizon
+      while (time < timeHorizon) {
+        // Generate random failure time
+        const u = Math.random();
+        const ttf = weibullInverseCDF(u, beta, eta);
         
-        // Generate a random failure time within this interval
-        const p = Math.random();
-        const failureTime = intervalStart + weibullInverseCDF(p, beta, eta);
-        
-        if (failureTime < intervalEnd) {
-          // Failure occurs before the next PM
-          runFailures++;
+        if (time + ttf < time + pmInterval && time + ttf < timeHorizon) {
+          // Failure occurs before next PM and before time horizon
+          time += ttf;
           runCost += failureCost;
-          allFailureTimes.push(failureTime);
-        }
-      }
-      
-      // Check for failures in remaining time
-      const remainingTime = timeHorizon - (numPMs * pmInterval);
-      if (remainingTime > 0) {
-        const p = Math.random();
-        const failureTime = numPMs * pmInterval + weibullInverseCDF(p, beta, eta);
-        
-        if (failureTime < timeHorizon) {
           runFailures++;
-          runCost += failureCost;
-          allFailureTimes.push(failureTime);
+          runFailureTimes.push(time);
+          
+          // Reset component age (as good as new)
+          time = Math.floor(time / pmInterval) * pmInterval + pmInterval;
+          runCost += pmCost;
+        } else if (time + pmInterval < timeHorizon) {
+          // PM occurs before failure and before time horizon
+          time += pmInterval;
+          runCost += pmCost;
+        } else {
+          // Reached time horizon
+          break;
         }
       }
     } else {
-      // No PM, just simulate failures until timeHorizon
-      let currentTime = 0;
-      
-      while (currentTime < timeHorizon) {
-        const p = Math.random();
-        const timeToFailure = weibullInverseCDF(p, beta, eta);
-        currentTime += timeToFailure;
+      // Run-to-failure strategy
+      while (time < timeHorizon) {
+        // Generate random failure time
+        const u = Math.random();
+        const ttf = weibullInverseCDF(u, beta, eta);
         
-        if (currentTime < timeHorizon) {
-          runFailures++;
+        if (time + ttf < timeHorizon) {
+          // Failure occurs before time horizon
+          time += ttf;
           runCost += failureCost;
-          allFailureTimes.push(currentTime);
+          runFailures++;
+          runFailureTimes.push(time);
+        } else {
+          // Reached time horizon
+          break;
         }
       }
     }
     
-    totalFailures += runFailures;
     totalCost += runCost;
+    totalFailures += runFailures;
+    allFailureTimes.push(...runFailureTimes);
   }
   
+  // Calculate average cost and failures
+  const avgCost = totalCost / numberOfRuns;
+  const avgFailures = totalFailures / numberOfRuns;
+  
+  // Create histogram of failure times
+  const numBins = 20;
+  const binWidth = timeHorizon / numBins;
+  const histogram = Array(numBins).fill(0).map((_, i) => ({
+    binStart: i * binWidth,
+    binEnd: (i + 1) * binWidth,
+    count: 0
+  }));
+  
+  allFailureTimes.forEach(time => {
+    const binIndex = Math.min(Math.floor(time / binWidth), numBins - 1);
+    histogram[binIndex].count++;
+  });
+  
   return {
-    totalCost: totalCost / numberOfRuns,
-    averageFailures: totalFailures / numberOfRuns,
-    failureTimes: allFailureTimes,
+    totalCost: avgCost,
+    averageFailures: avgFailures,
+    histogram
   };
 }

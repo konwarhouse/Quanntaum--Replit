@@ -36,7 +36,7 @@ const RCMAnalysisForm = () => {
   // RCM analysis mutation
   const rcmMutation = useMutation<RCMAnalysisResponse, Error, RCMParameters>({
     mutationFn: (params: RCMParameters) => 
-      apiRequest("POST", "/api/rcm-analysis", params),
+      apiRequest<RCMAnalysisResponse>("POST", "/api/rcm-analysis", params),
     onSuccess: (data) => {
       setResults(data);
       toast({ 

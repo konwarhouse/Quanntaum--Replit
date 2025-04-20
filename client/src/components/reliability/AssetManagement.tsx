@@ -1,25 +1,34 @@
 import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Asset } from "@/lib/types";
-import { Pencil, Trash2, PlusCircle } from "lucide-react";
+import { Edit, PlusCircle, Trash2 } from "lucide-react";
+import { format, parseISO } from "date-fns";
+
+interface AssetFormData {
+  name: string;
+  description: string;
+  criticality: string;
+  installationDate?: string;
+  weibullBeta: number;
+  weibullEta: number;
+  timeUnit: string;
+}
 
 const AssetManagement = () => {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
-  
-  // Form state
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<AssetFormData>({
     name: "",
     description: "",
     criticality: "Medium",
@@ -151,6 +160,7 @@ const AssetManagement = () => {
       name: asset.name,
       description: asset.description || "",
       criticality: asset.criticality,
+      installationDate: asset.installationDate || undefined,
       weibullBeta: asset.weibullBeta,
       weibullEta: asset.weibullEta,
       timeUnit: asset.timeUnit
@@ -383,72 +393,79 @@ const AssetManagement = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Asset List */}
       {isLoading ? (
-        <div className="flex justify-center items-center p-8">
+        <div className="flex justify-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
       ) : assets && assets.length > 0 ? (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Criticality</TableHead>
-              <TableHead>Shape (β)</TableHead>
-              <TableHead>Scale (η)</TableHead>
-              <TableHead>Time Unit</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {assets.map((asset: Asset) => (
-              <TableRow key={asset.id}>
-                <TableCell className="font-medium">{asset.name}</TableCell>
-                <TableCell>
-                  <span className={`
-                    px-2 py-1 rounded-full text-xs
-                    ${asset.criticality === 'High' ? 'bg-red-100 text-red-800' : 
-                      asset.criticality === 'Medium' ? 'bg-yellow-100 text-yellow-800' : 
-                      'bg-green-100 text-green-800'}
-                  `}>
-                    {asset.criticality}
-                  </span>
-                </TableCell>
-                <TableCell>{asset.weibullBeta}</TableCell>
-                <TableCell>{asset.weibullEta}</TableCell>
-                <TableCell>{asset.timeUnit}</TableCell>
-                <TableCell className="text-right">
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={() => openEditDialog(asset)}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={() => handleDeleteAsset(asset.id)}
-                  >
-                    <Trash2 className="h-4 w-4 text-red-500" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {assets.map((asset: Asset) => (
+            <Card key={asset.id} className="overflow-hidden">
+              <CardHeader className="pb-2">
+                <div className="flex justify-between items-start">
+                  <CardTitle className="text-lg font-semibold">{asset.name}</CardTitle>
+                  <div className="flex space-x-1">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => openEditDialog(asset)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => handleDeleteAsset(asset.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div className={`text-xs px-2 py-1 rounded-full inline-block ${
+                  asset.criticality === 'High' 
+                    ? 'bg-red-100 text-red-800' 
+                    : asset.criticality === 'Medium'
+                      ? 'bg-yellow-100 text-yellow-800'
+                      : 'bg-green-100 text-green-800'
+                }`}>
+                  {asset.criticality} Criticality
+                </div>
+              </CardHeader>
+              <CardContent>
+                {asset.description && (
+                  <p className="text-sm text-muted-foreground mb-2">{asset.description}</p>
+                )}
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Weibull β:</span>
+                    <span className="font-medium">{asset.weibullBeta}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Weibull η:</span>
+                    <span className="font-medium">{asset.weibullEta} {asset.timeUnit}</span>
+                  </div>
+                  {asset.installationDate && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Installed:</span>
+                      <span className="font-medium">{format(parseISO(asset.installationDate), 'MMM d, yyyy')}</span>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       ) : (
-        <Card className="w-full">
-          <CardContent className="flex flex-col items-center justify-center p-6">
-            <p className="text-muted-foreground mb-4">No assets found.</p>
-            <Button 
-              variant="outline" 
-              onClick={() => setIsAddDialogOpen(true)}
-            >
-              <PlusCircle className="mr-2 h-4 w-4" /> Add your first asset
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="text-center py-10 border rounded-md">
+          <p className="text-muted-foreground">No assets added yet</p>
+          <Button 
+            variant="outline" 
+            className="mt-4"
+            onClick={() => setIsAddDialogOpen(true)}
+          >
+            <PlusCircle className="mr-2 h-4 w-4" /> Add Your First Asset
+          </Button>
+        </div>
       )}
     </div>
   );

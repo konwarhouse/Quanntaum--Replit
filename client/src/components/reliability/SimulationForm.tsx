@@ -46,7 +46,7 @@ const SimulationForm = () => {
   // Simulation mutation
   const simulationMutation = useMutation<SimulationResponse, Error, SimulationParameters>({
     mutationFn: (params: SimulationParameters) => 
-      apiRequest("POST", "/api/simulation", params),
+      apiRequest<SimulationResponse>("POST", "/api/simulation", params),
     onSuccess: (data) => {
       setResults(data);
       toast({ 

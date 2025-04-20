@@ -461,17 +461,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { beta, eta, numberOfRuns, timeHorizon, pmInterval, pmCost, failureCost } = data;
       
       // Run simulation
-      const simulationResults = runSimulation(
-        { numberOfRuns, timeHorizon },
+      const simulationParams: SimulationParameters = {
         beta,
         eta,
+        numberOfRuns,
+        timeHorizon,
         pmInterval,
         pmCost,
         failureCost
-      );
+      };
       
-      // Process failure times for histogram
-      const histogramData = processFailureTimesForHistogram(simulationResults.failureTimes, timeHorizon);
+      // Run simulation
+      const simulationResults = runSimulation(simulationParams);
       
       res.json({
         totalCost: simulationResults.totalCost,
