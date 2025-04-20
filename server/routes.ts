@@ -67,22 +67,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         content: msg.content,
       }));
       
-      // Call OpenAI API
-      // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          { role: "system", content: "You are a helpful, friendly AI assistant. You can also provide information about reliability engineering, Weibull analysis, and Reliability-Centered Maintenance (RCM)." },
-          ...chatHistory.slice(-10), // limit context to last 10 messages
-          { role: "user", content: message }
-        ],
-      });
+      // Default fallback response if OpenAI API fails
+      let responseContent = "I'm currently experiencing connectivity issues with my knowledge base. " +
+        "In the meantime, I can tell you that Reliability Centered Maintenance (RCM) is a process to ensure that assets continue to do what their users require in their present operating context. " +
+        "Weibull analysis is a method for modeling and analyzing failure data, where the Weibull distribution is characterized by shape parameter (β) and scale parameter (η). " +
+        "Would you like to know more about asset management or reliability engineering?";
       
-      const aiResponse = response.choices[0]?.message?.content || "Sorry, I couldn't generate a response.";
+      try {
+        // Try to call OpenAI API
+        // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        const response = await openai.chat.completions.create({
+          model: "gpt-4o",
+          messages: [
+            { role: "system", content: "You are a helpful, friendly AI assistant. You can also provide information about reliability engineering, Weibull analysis, and Reliability-Centered Maintenance (RCM)." },
+            ...chatHistory.slice(-10), // limit context to last 10 messages
+            { role: "user", content: message }
+          ],
+        });
+        
+        // Only update responseContent if we got a valid response
+        if (response.choices && response.choices.length > 0 && response.choices[0].message) {
+          responseContent = response.choices[0].message.content || responseContent;
+        }
+      } catch (error) {
+        console.error("Error in chat completion:", error);
+        // We'll use the fallback response defined above
+      }
       
       // Save AI response
       const aiMessageData = insertMessageSchema.parse({
-        content: aiResponse,
+        content: responseContent,
         role: "assistant",
         username,
       });
