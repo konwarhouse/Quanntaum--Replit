@@ -7,11 +7,17 @@ import SimulationForm from "@/components/reliability/SimulationForm";
 import AssetMaster from "@/components/reliability/AssetMaster";
 import CriticalityAssessment from "@/components/reliability/CriticalityAssessment";
 import FailureHistory from "@/components/reliability/FailureHistory";
+import FailureModeManager from "@/components/reliability/FailureModeManager";
 import { useQuery } from "@tanstack/react-query";
 import { Asset } from "@shared/schema";
+import { UserRole } from "@shared/auth";
 
 const ReliabilityPage = () => {
   const [activeTab, setActiveTab] = useState("assets");
+  
+  // Set default user role to Admin for development purposes
+  // In a production app, this would come from an auth context
+  const currentUserRole = UserRole.ADMIN;
   
   // Fetch assets for maintenance import
   const { data: assets = [] } = useQuery<Asset[]>({
@@ -34,10 +40,11 @@ const ReliabilityPage = () => {
         onValueChange={setActiveTab}
         className="w-full"
       >
-        <TabsList className="grid grid-cols-2 md:grid-cols-7 w-full">
+        <TabsList className="grid grid-cols-2 md:grid-cols-8 w-full">
           <TabsTrigger value="assets">Asset Master</TabsTrigger>
           <TabsTrigger value="criticality">Criticality</TabsTrigger>
           <TabsTrigger value="failures">Failure History</TabsTrigger>
+          <TabsTrigger value="failureModes">Failure Modes</TabsTrigger>
           <TabsTrigger value="weibull">Weibull Analysis</TabsTrigger>
           <TabsTrigger value="maintenance">Maintenance Optimization</TabsTrigger>
           <TabsTrigger value="rcm">RCM Analysis</TabsTrigger>
@@ -55,6 +62,10 @@ const ReliabilityPage = () => {
 
           <TabsContent value="criticality" className="focus-visible:outline-none focus-visible:ring-0">
             <CriticalityAssessment />
+          </TabsContent>
+          
+          <TabsContent value="failureModes" className="focus-visible:outline-none focus-visible:ring-0">
+            <FailureModeManager currentUserRole={currentUserRole} />
           </TabsContent>
 
           <TabsContent value="weibull" className="focus-visible:outline-none focus-visible:ring-0">
