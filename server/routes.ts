@@ -203,7 +203,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Maintenance Event endpoints
-  app.get("/api/maintenance-events/:assetId", async (req, res) => {
+  app.get("/api/maintenance-events", async (req, res) => {
+    try {
+      // Get all assets
+      const assets = await storage.getAssets();
+      
+      // Get all maintenance events for all assets
+      const allEvents = [];
+      for (const asset of assets) {
+        const assetEvents = await storage.getMaintenanceEventsByAssetId(asset.id);
+        allEvents.push(...assetEvents);
+      }
+      
+      // Return all events
+      res.json(allEvents);
+    } catch (error) {
+      console.error("Error fetching all maintenance events:", error);
+      res.status(500).json({ message: "Failed to fetch maintenance events" });
+    }
+  });
+
+  app.get("/api/assets/:assetId/maintenance-events", async (req, res) => {
     try {
       const assetId = parseInt(req.params.assetId);
       const events = await storage.getMaintenanceEventsByAssetId(assetId);
@@ -217,6 +237,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/maintenance-events", async (req, res) => {
     try {
       const eventData = insertMaintenanceEventSchema.parse(req.body);
+      
+      // Verify that the asset ID exists before creating the maintenance event
+      const asset = await storage.getAsset(eventData.assetId);
+      if (!asset) {
+        return res.status(400).json({ 
+          message: "Invalid asset ID. The asset ID must match an existing asset in the asset master." 
+        });
+      }
+      
       const event = await storage.createMaintenanceEvent(eventData);
       res.status(201).json(event);
     } catch (error) {
@@ -232,15 +261,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Expected an array of maintenance events" });
       }
       
+      // First, gather all asset IDs to validate them in one step
+      const assetIds = new Set(req.body.map(event => event.assetId));
+      const validAssetIds = new Set();
+      
+      // Verify all asset IDs exist
+      for (const assetId of assetIds) {
+        const asset = await storage.getAsset(assetId);
+        if (asset) {
+          validAssetIds.add(assetId);
+        }
+      }
+      
       const results = [];
+      const errors = [];
+      
       for (const eventData of req.body) {
         try {
           // Validate each event individually
           const validatedEvent = insertMaintenanceEventSchema.parse(eventData);
+          
+          // Check if asset ID is valid
+          if (!validAssetIds.has(validatedEvent.assetId)) {
+            errors.push({
+              event: eventData,
+              error: `Invalid asset ID: ${validatedEvent.assetId}. Asset does not exist in the master data.`
+            });
+            continue;
+          }
+          
           const event = await storage.createMaintenanceEvent(validatedEvent);
           results.push(event);
         } catch (error) {
           console.error("Error creating a maintenance event in batch:", error);
+          errors.push({
+            event: eventData,
+            error: error instanceof Error ? error.message : "Unknown error"
+          });
           // Continue with the rest of the events even if one fails
         }
       }
@@ -248,7 +305,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json({
         success: true,
         imported: results.length,
-        total: req.body.length
+        total: req.body.length,
+        errors: errors.length > 0 ? errors : undefined
       });
     } catch (error) {
       console.error("Error in batch import of maintenance events:", error);
