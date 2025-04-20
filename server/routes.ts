@@ -433,6 +433,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Failure Mode endpoints
+  // Get all failure modes
+  app.get("/api/failure-modes", async (req, res) => {
+    try {
+      // Get all assets to have access to equipment classes
+      const assets = await storage.getAssets();
+      
+      // Get all failure modes
+      const allFailureModes = await Promise.all(
+        assets.map(async (asset) => {
+          const modes = await storage.getFailureModesByAssetId(asset.id);
+          // Enrich each mode with the equipment class from its parent asset
+          return modes.map(mode => ({
+            ...mode,
+            equipmentClass: asset.equipmentClass
+          }));
+        })
+      );
+      
+      // Flatten the array of arrays
+      const failureModes = allFailureModes.flat();
+      
+      res.json(failureModes);
+    } catch (error) {
+      console.error("Error fetching all failure modes:", error);
+      res.status(500).json({ message: "Failed to fetch failure modes" });
+    }
+  });
+
+  // Get failure modes for a specific asset
   app.get("/api/failure-modes/:assetId", async (req, res) => {
     try {
       const assetId = parseInt(req.params.assetId);
