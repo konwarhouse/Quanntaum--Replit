@@ -1,24 +1,22 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
-import { format } from "date-fns";
-import { CalendarIcon, Trash2, FileUp, Plus, Filter } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { MaintenanceEvent, Asset } from "@shared/schema";
-
+import * as z from "zod";
+import { format } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
+import { 
+  Asset, FailureMode, FailureHistory as FailureHistoryType
+} from "@shared/schema";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-  DialogClose,
-} from "@/components/ui/dialog";
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -28,14 +26,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -52,381 +42,826 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Calendar as CalendarIcon,
+  Search,
+  Plus,
+  FilePlus,
+  FileEdit,
+  Trash2,
+  AlertTriangle,
+  Info,
+  RefreshCw,
+  Filter,
+  XCircle,
+  Check,
+  ChevronRight,
+} from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
-// Form schema for maintenance event
-const maintenanceEventSchema = z.object({
-  assetId: z.string().min(1, "Asset is required"),
-  eventType: z.string().min(1, "Event type is required"),
-  eventDate: z.date({
-    required_error: "Event date is required",
+// Define the form schema for creating/editing failure records
+const failureRecordFormSchema = z.object({
+  assetId: z.coerce.number().min(1, "Please select an asset"),
+  failureModeId: z.coerce.number().optional(),
+  failureDate: z.date({
+    required_error: "Please select the failure date",
   }),
-  cost: z.coerce.number().min(0, "Cost must be a positive number"),
-  downtime: z.coerce.number().min(0, "Downtime must be a positive number"),
-  description: z.string().min(5, "Description is required and must be at least 5 characters"),
+  repairCompleteDate: z.date({
+    required_error: "Please select the repair completion date",
+  }),
+  downtimeHours: z.coerce.number().min(0, "Downtime hours must be a positive number"),
+  repairTimeHours: z.coerce.number().min(0, "Repair time hours must be a positive number"),
+  operatingHoursAtFailure: z.union([z.coerce.number().min(0), z.literal("")]).optional().transform(val => val === "" ? undefined : val),
+  failureDescription: z.string().min(5, "Please provide a failure description"),
+  failureMechanism: z.string().optional(),
+  failureCause: z.string().min(3, "Please provide the failure cause"),
+  failureClassification: z.string().optional(),
+  failureDetectionMethod: z.string().min(1, "Please select how the failure was detected"),
+  safetyImpact: z.string().optional(),
+  environmentalImpact: z.string().optional(),
+  productionImpact: z.string().optional(),
+  repairCost: z.union([z.coerce.number().min(0), z.literal("")]).optional().transform(val => val === "" ? undefined : val),
+  consequentialCost: z.union([z.coerce.number().min(0), z.literal("")]).optional().transform(val => val === "" ? undefined : val),
+  partsReplaced: z.string().optional(),
+  repairActions: z.string().min(3, "Please describe the repair actions taken"),
+  repairTechnician: z.string().optional(),
+  operatingConditions: z.string().optional(),
+  preventability: z.string().optional(),
+  recommendedPreventiveAction: z.string().optional(),
+  recordedBy: z.string().optional(),
 });
 
-// Type for form values
-type MaintenanceEventFormValues = z.infer<typeof maintenanceEventSchema>;
+type FailureRecordFormValues = z.infer<typeof failureRecordFormSchema>;
 
+// Main Failure History component
 const FailureHistory = () => {
   const { toast } = useToast();
-  const [isAddEventOpen, setIsAddEventOpen] = useState(false);
-  const [filterAssetId, setFilterAssetId] = useState<string>("");
-  const [filterEventType, setFilterEventType] = useState<string>("");
-  const [filterDateFrom, setFilterDateFrom] = useState<Date | undefined>(undefined);
-  const [filterDateTo, setFilterDateTo] = useState<Date | undefined>(undefined);
-  const [showFilters, setShowFilters] = useState(false);
+  const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
+  const [selectedRecordId, setSelectedRecordId] = useState<number | null>(null);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("all");
+  const [dateRange, setDateRange] = useState<{ start: Date | null; end: Date | null }>({
+    start: null,
+    end: null,
+  });
 
-  // Fetch all assets for the dropdown
+  // Fetch assets
   const { data: assets = [] } = useQuery<Asset[]>({
     queryKey: ['/api/assets'],
-    staleTime: 5000,
+    staleTime: 60000,
   });
 
-  // Fetch all maintenance events
-  const { data: allEvents = [], isLoading: isLoadingEvents } = useQuery<MaintenanceEvent[]>({
-    queryKey: ['/api/maintenance-events'],
-    staleTime: 5000,
+  // Fetch failure modes
+  const { data: failureModes = [] } = useQuery<FailureMode[]>({
+    queryKey: ['/api/failure-modes', selectedAssetId],
+    enabled: !!selectedAssetId,
+    queryFn: async () => {
+      if (!selectedAssetId) return [];
+      const response = await fetch(`/api/failure-modes/${selectedAssetId}`);
+      if (!response.ok) throw new Error('Failed to fetch failure modes');
+      return response.json();
+    },
   });
 
-  // Filter events based on selected filters
-  const filteredEvents = allEvents.filter(event => {
-    // Filter by asset ID if selected
-    if (filterAssetId && event.assetId.toString() !== filterAssetId) {
-      return false;
-    }
-    
-    // Filter by event type if selected
-    if (filterEventType && event.eventType !== filterEventType) {
-      return false;
-    }
-    
-    // Filter by date range if selected
-    if (filterDateFrom && new Date(event.eventDate) < filterDateFrom) {
-      return false;
-    }
-    
-    if (filterDateTo) {
-      // Add one day to include the end date in the range
-      const endDate = new Date(filterDateTo);
-      endDate.setDate(endDate.getDate() + 1);
-      
-      if (new Date(event.eventDate) > endDate) {
-        return false;
+  // Fetch failure history records
+  const { 
+    data: failureRecords = [], 
+    isLoading,
+    refetch: refetchFailureRecords 
+  } = useQuery<FailureHistoryType[]>({
+    queryKey: ['/api/failure-history', selectedAssetId],
+    enabled: true,
+    queryFn: async () => {
+      let url = `/api/failure-history`;
+      if (selectedAssetId) {
+        url += `?assetId=${selectedAssetId}`;
       }
-    }
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Failed to fetch failure history');
+      return response.json();
+    },
+  });
+
+  // Filter records based on date range
+  const filteredRecords = failureRecords.filter(record => {
+    if (!dateRange.start && !dateRange.end) return true;
     
+    const recordDate = new Date(record.failureDate);
+    if (dateRange.start && dateRange.end) {
+      return recordDate >= dateRange.start && recordDate <= dateRange.end;
+    } else if (dateRange.start) {
+      return recordDate >= dateRange.start;
+    } else if (dateRange.end) {
+      return recordDate <= dateRange.end;
+    }
     return true;
   });
 
-  // Mutation to add a new maintenance event
-  const addEventMutation = useMutation({
-    mutationFn: async (data: MaintenanceEventFormValues) => {
-      const response = await fetch('/api/maintenance-events', {
+  // Mutations for CRUD operations
+  const createFailureRecordMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await fetch('/api/failure-history', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          assetId: parseInt(data.assetId),
-          eventType: data.eventType,
-          eventDate: data.eventDate,
-          cost: data.cost,
-          downtime: data.downtime,
-          description: data.description,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
       });
       
       if (!response.ok) {
-        throw new Error('Failed to add maintenance event');
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to create failure record');
       }
       
       return response.json();
     },
     onSuccess: () => {
-      // Invalidate the events query to refetch
-      queryClient.invalidateQueries({ queryKey: ['/api/maintenance-events'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/failure-history'] });
       toast({
-        title: "Success",
-        description: "Maintenance event has been added",
+        title: 'Success',
+        description: 'Failure record has been created',
       });
-      setIsAddEventOpen(false);
+      setIsAddDialogOpen(false);
     },
     onError: (error) => {
-      console.error("Error adding maintenance event:", error);
       toast({
-        title: "Error",
-        description: "Failed to add maintenance event",
-        variant: "destructive",
+        variant: 'destructive',
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to create failure record',
       });
     },
   });
 
-  // Delete maintenance event mutation
-  const deleteEventMutation = useMutation({
-    mutationFn: async (eventId: number) => {
-      const response = await fetch(`/api/maintenance-events/${eventId}`, {
+  const updateFailureRecordMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+      const response = await fetch(`/api/failure-history/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to update failure record');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/failure-history'] });
+      toast({
+        title: 'Success',
+        description: 'Failure record has been updated',
+      });
+      setIsEditDialogOpen(false);
+    },
+    onError: (error) => {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to update failure record',
+      });
+    },
+  });
+
+  const deleteFailureRecordMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await fetch(`/api/failure-history/${id}`, {
         method: 'DELETE',
       });
       
       if (!response.ok) {
-        throw new Error('Failed to delete maintenance event');
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to delete failure record');
       }
       
       return true;
     },
     onSuccess: () => {
-      // Invalidate the events query to refetch
-      queryClient.invalidateQueries({ queryKey: ['/api/maintenance-events'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/failure-history'] });
       toast({
-        title: "Success",
-        description: "Maintenance event has been deleted",
+        title: 'Success',
+        description: 'Failure record has been deleted',
       });
+      setIsDeleteDialogOpen(false);
+      setSelectedRecordId(null);
     },
     onError: (error) => {
-      console.error("Error deleting maintenance event:", error);
       toast({
-        title: "Error",
-        description: "Failed to delete maintenance event",
-        variant: "destructive",
+        variant: 'destructive',
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to delete failure record',
       });
     },
   });
 
-  // Form for adding new maintenance event
-  const form = useForm<MaintenanceEventFormValues>({
-    resolver: zodResolver(maintenanceEventSchema),
+  // Form setup for adding a new failure record
+  const addForm = useForm<FailureRecordFormValues>({
+    resolver: zodResolver(failureRecordFormSchema),
+    defaultValues: {
+      assetId: selectedAssetId || "",
+      failureModeId: "",
+      failureDate: new Date(),
+      repairCompleteDate: new Date(),
+      downtimeHours: "",
+      repairTimeHours: "",
+      operatingHoursAtFailure: "",
+      failureDescription: "",
+      failureMechanism: "",
+      failureCause: "",
+      failureClassification: "",
+      failureDetectionMethod: "",
+      safetyImpact: "",
+      environmentalImpact: "",
+      productionImpact: "",
+      repairCost: "",
+      consequentialCost: "",
+      partsReplaced: "",
+      repairActions: "",
+      repairTechnician: "",
+      operatingConditions: "",
+      preventability: "",
+      recommendedPreventiveAction: "",
+      recordedBy: "",
+    },
+  });
+
+  // Form setup for editing an existing record
+  const editForm = useForm<FailureRecordFormValues>({
+    resolver: zodResolver(failureRecordFormSchema),
     defaultValues: {
       assetId: "",
-      eventType: "",
-      cost: 0,
-      downtime: 0,
-      description: "",
+      failureModeId: "",
+      failureDate: new Date(),
+      repairCompleteDate: new Date(),
+      downtimeHours: "",
+      repairTimeHours: "",
+      operatingHoursAtFailure: "",
+      failureDescription: "",
+      failureMechanism: "",
+      failureCause: "",
+      failureClassification: "",
+      failureDetectionMethod: "",
+      safetyImpact: "",
+      environmentalImpact: "",
+      productionImpact: "",
+      repairCost: "",
+      consequentialCost: "",
+      partsReplaced: "",
+      repairActions: "",
+      repairTechnician: "",
+      operatingConditions: "",
+      preventability: "",
+      recommendedPreventiveAction: "",
+      recordedBy: "",
     },
   });
 
-  // Reset form when dialog opens
+  // Reset the add form when the dialog opens
   useEffect(() => {
-    if (isAddEventOpen) {
-      form.reset({
-        assetId: "",
-        eventType: "",
-        cost: 0,
-        downtime: 0,
-        description: "",
+    if (isAddDialogOpen) {
+      addForm.reset({
+        assetId: selectedAssetId || "",
+        failureModeId: "",
+        failureDate: new Date(),
+        repairCompleteDate: new Date(),
+        downtimeHours: "",
+        repairTimeHours: "",
+        operatingHoursAtFailure: "",
+        failureDescription: "",
+        failureMechanism: "",
+        failureCause: "",
+        failureClassification: "",
+        failureDetectionMethod: "",
+        safetyImpact: "",
+        environmentalImpact: "",
+        productionImpact: "",
+        repairCost: "",
+        consequentialCost: "",
+        partsReplaced: "",
+        repairActions: "",
+        repairTechnician: "",
+        operatingConditions: "",
+        preventability: "",
+        recommendedPreventiveAction: "",
+        recordedBy: "",
       });
     }
-  }, [isAddEventOpen, form]);
+  }, [isAddDialogOpen, selectedAssetId, addForm]);
 
-  // Handle form submission
-  const onSubmit = (data: MaintenanceEventFormValues) => {
-    addEventMutation.mutate(data);
+  // Load the selected record when editing
+  useEffect(() => {
+    if (isEditDialogOpen && selectedRecordId) {
+      const record = failureRecords.find(r => r.id === selectedRecordId);
+      if (record) {
+        editForm.reset({
+          assetId: record.assetId.toString(),
+          failureModeId: record.failureModeId?.toString() || "",
+          failureDate: new Date(record.failureDate),
+          repairCompleteDate: new Date(record.repairCompleteDate),
+          downtimeHours: record.downtimeHours.toString(),
+          repairTimeHours: record.repairTimeHours.toString(),
+          operatingHoursAtFailure: record.operatingHoursAtFailure?.toString() || "",
+          failureDescription: record.failureDescription,
+          failureMechanism: record.failureMechanism || "",
+          failureCause: record.failureCause,
+          failureClassification: record.failureClassification || "",
+          failureDetectionMethod: record.failureDetectionMethod,
+          safetyImpact: record.safetyImpact || "",
+          environmentalImpact: record.environmentalImpact || "",
+          productionImpact: record.productionImpact || "",
+          repairCost: record.repairCost?.toString() || "",
+          consequentialCost: record.consequentialCost?.toString() || "",
+          partsReplaced: record.partsReplaced || "",
+          repairActions: record.repairActions,
+          repairTechnician: record.repairTechnician || "",
+          operatingConditions: record.operatingConditions || "",
+          preventability: record.preventability || "",
+          recommendedPreventiveAction: record.recommendedPreventiveAction || "",
+          recordedBy: record.recordedBy || "",
+        });
+      }
+    }
+  }, [isEditDialogOpen, selectedRecordId, failureRecords, editForm]);
+
+  // Handle form submission for adding a new record
+  const onAddSubmit = (data: FailureRecordFormValues) => {
+    createFailureRecordMutation.mutate({
+      assetId: parseInt(data.assetId),
+      failureModeId: data.failureModeId ? parseInt(data.failureModeId) : null,
+      failureDate: data.failureDate,
+      repairCompleteDate: data.repairCompleteDate,
+      downtimeHours: data.downtimeHours,
+      repairTimeHours: data.repairTimeHours,
+      operatingHoursAtFailure: data.operatingHoursAtFailure,
+      failureDescription: data.failureDescription,
+      failureMechanism: data.failureMechanism,
+      failureCause: data.failureCause,
+      failureClassification: data.failureClassification,
+      failureDetectionMethod: data.failureDetectionMethod,
+      safetyImpact: data.safetyImpact,
+      environmentalImpact: data.environmentalImpact,
+      productionImpact: data.productionImpact,
+      repairCost: data.repairCost,
+      consequentialCost: data.consequentialCost,
+      partsReplaced: data.partsReplaced,
+      repairActions: data.repairActions,
+      repairTechnician: data.repairTechnician,
+      operatingConditions: data.operatingConditions,
+      preventability: data.preventability,
+      recommendedPreventiveAction: data.recommendedPreventiveAction,
+      recordedBy: data.recordedBy,
+    });
   };
 
-  // Clear all filters
-  const clearFilters = () => {
-    setFilterAssetId("");
-    setFilterEventType("");
-    setFilterDateFrom(undefined);
-    setFilterDateTo(undefined);
+  // Handle form submission for editing an existing record
+  const onEditSubmit = (data: FailureRecordFormValues) => {
+    if (!selectedRecordId) return;
+    
+    updateFailureRecordMutation.mutate({
+      id: selectedRecordId,
+      data: {
+        assetId: parseInt(data.assetId),
+        failureModeId: data.failureModeId ? parseInt(data.failureModeId) : null,
+        failureDate: data.failureDate,
+        repairCompleteDate: data.repairCompleteDate,
+        downtimeHours: data.downtimeHours,
+        repairTimeHours: data.repairTimeHours,
+        operatingHoursAtFailure: data.operatingHoursAtFailure,
+        failureDescription: data.failureDescription,
+        failureMechanism: data.failureMechanism,
+        failureCause: data.failureCause,
+        failureClassification: data.failureClassification,
+        failureDetectionMethod: data.failureDetectionMethod,
+        safetyImpact: data.safetyImpact,
+        environmentalImpact: data.environmentalImpact,
+        productionImpact: data.productionImpact,
+        repairCost: data.repairCost,
+        consequentialCost: data.consequentialCost,
+        partsReplaced: data.partsReplaced,
+        repairActions: data.repairActions,
+        repairTechnician: data.repairTechnician,
+        operatingConditions: data.operatingConditions,
+        preventability: data.preventability,
+        recommendedPreventiveAction: data.recommendedPreventiveAction,
+        recordedBy: data.recordedBy,
+      }
+    });
   };
 
-  // Get asset name by ID
-  const getAssetName = (assetId: number) => {
-    const asset = assets.find(a => a.id === assetId);
-    return asset ? `${asset.assetNumber} - ${asset.name}` : `Asset ID: ${assetId}`;
+  // Handle delete confirmation
+  const handleDeleteConfirm = () => {
+    if (selectedRecordId) {
+      deleteFailureRecordMutation.mutate(selectedRecordId);
+    }
   };
+
+  // Helper function for rendering form fields
+  const renderFormField = (
+    form: any,
+    name: string,
+    label: string,
+    description: string | null = null,
+    type: string = "text",
+    options: { value: string; label: string }[] = []
+  ) => (
+    <FormField
+      control={form.control}
+      name={name}
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>{label}</FormLabel>
+          <FormControl>
+            {type === "select" ? (
+              <Select
+                onValueChange={field.onChange}
+                value={field.value}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={`Select ${label.toLowerCase()}`} />
+                </SelectTrigger>
+                <SelectContent>
+                  {options.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : type === "textarea" ? (
+              <Textarea
+                placeholder={`Enter ${label.toLowerCase()}`}
+                {...field}
+                value={field.value || ""}
+              />
+            ) : type === "date" ? (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={!field.value ? "text-muted-foreground" : ""}
+                  >
+                    {field.value ? (
+                      format(field.value, "PPP")
+                    ) : (
+                      <span>Pick a date</span>
+                    )}
+                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={field.value}
+                    onSelect={field.onChange}
+                    disabled={(date) =>
+                      date > new Date() || date < new Date("1900-01-01")
+                    }
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            ) : (
+              <Input
+                type={type}
+                placeholder={`Enter ${label.toLowerCase()}`}
+                {...field}
+                value={field.value || ""}
+              />
+            )}
+          </FormControl>
+          {description && <FormDescription>{description}</FormDescription>}
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  );
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-start">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Failure History</h2>
           <p className="text-muted-foreground">
-            Track and analyze equipment failures and maintenance events
+            Track and analyze equipment failures to improve reliability and prevent recurrence
           </p>
         </div>
-        <div className="flex space-x-2">
-          <Button 
-            variant="outline" 
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            <Filter className="h-4 w-4 mr-2" />
-            Filters
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => refetchFailureRecords()}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Refresh
           </Button>
-          <Dialog open={isAddEventOpen} onOpenChange={setIsAddEventOpen}>
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
               <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Event
+                <Plus className="mr-2 h-4 w-4" />
+                Add Failure Record
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px]">
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Add Maintenance Event</DialogTitle>
+                <DialogTitle>Add New Failure Record</DialogTitle>
                 <DialogDescription>
-                  Record details of a maintenance event or failure for an asset
+                  Enter the details of the failure event. This information is crucial for reliability analysis.
                 </DialogDescription>
               </DialogHeader>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="assetId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Asset</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select an asset" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {assets.map((asset) => (
-                              <SelectItem key={asset.id} value={asset.id.toString()}>
-                                {asset.assetNumber} - {asset.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="eventType"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Event Type</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select event type" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="PM">Preventive Maintenance (PM)</SelectItem>
-                            <SelectItem value="CM">Corrective Maintenance (CM)</SelectItem>
-                            <SelectItem value="FF">Functional Failure</SelectItem>
-                            <SelectItem value="PF">Potential Failure</SelectItem>
-                            <SelectItem value="I">Inspection</SelectItem>
-                            <SelectItem value="O">Other</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="eventDate"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Event Date</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant={"outline"}
-                                className={
-                                  "pl-3 text-left font-normal flex justify-between"
-                                }
-                              >
-                                {field.value ? (
-                                  format(field.value, "PPP")
-                                ) : (
-                                  <span>Select a date</span>
-                                )}
-                                <CalendarIcon className="h-4 w-4" />
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={field.value}
-                              onSelect={field.onChange}
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="cost"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Cost</FormLabel>
-                          <FormControl>
-                            <Input type="number" min="0" step="0.01" {...field} />
-                          </FormControl>
-                          <FormDescription>Cost in local currency</FormDescription>
-                          <FormMessage />
-                        </FormItem>
+              <Form {...addForm}>
+                <form onSubmit={addForm.handleSubmit(onAddSubmit)} className="space-y-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium">Basic Information</h3>
+                      <Separator />
+                      {renderFormField(
+                        addForm,
+                        "assetId",
+                        "Asset",
+                        "Select the equipment that failed",
+                        "select",
+                        assets.map((asset) => ({
+                          value: asset.id.toString(),
+                          label: `${asset.assetNumber} - ${asset.name}`,
+                        }))
                       )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="downtime"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Downtime (hours)</FormLabel>
-                          <FormControl>
-                            <Input type="number" min="0" step="0.1" {...field} />
-                          </FormControl>
-                          <FormDescription>Duration in hours</FormDescription>
-                          <FormMessage />
-                        </FormItem>
+                      {renderFormField(
+                        addForm,
+                        "failureModeId",
+                        "Failure Mode",
+                        "Select the specific failure mode if known",
+                        "select",
+                        failureModes.map((mode) => ({
+                          value: mode.id.toString(),
+                          label: mode.description,
+                        }))
                       )}
-                    />
+                      {renderFormField(
+                        addForm,
+                        "failureDate",
+                        "Failure Date",
+                        "When did the failure occur?",
+                        "date"
+                      )}
+                      {renderFormField(
+                        addForm,
+                        "repairCompleteDate",
+                        "Repair Complete Date",
+                        "When was the repair completed?",
+                        "date"
+                      )}
+                      {renderFormField(
+                        addForm,
+                        "downtimeHours",
+                        "Downtime Hours",
+                        "Total equipment unavailable time",
+                        "number"
+                      )}
+                      {renderFormField(
+                        addForm,
+                        "repairTimeHours",
+                        "Repair Time Hours",
+                        "Actual hands-on repair time",
+                        "number"
+                      )}
+                      {renderFormField(
+                        addForm,
+                        "operatingHoursAtFailure",
+                        "Operating Hours at Failure",
+                        "Machine hours/cycles at failure (if applicable)",
+                        "number"
+                      )}
+                    </div>
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium">Failure Details</h3>
+                      <Separator />
+                      {renderFormField(
+                        addForm,
+                        "failureDescription",
+                        "Failure Description",
+                        "Describe what happened in detail",
+                        "textarea"
+                      )}
+                      {renderFormField(
+                        addForm,
+                        "failureMechanism",
+                        "Failure Mechanism",
+                        "Physical/chemical process that caused the failure",
+                        "textarea"
+                      )}
+                      {renderFormField(
+                        addForm,
+                        "failureCause",
+                        "Failure Cause",
+                        "Root cause of the failure",
+                        "textarea"
+                      )}
+                      {renderFormField(
+                        addForm,
+                        "failureClassification",
+                        "Failure Classification",
+                        "Category per ISO 14224",
+                        "select",
+                        [
+                          { value: "mechanical", label: "Mechanical" },
+                          { value: "electrical", label: "Electrical" },
+                          { value: "instrumentation", label: "Instrumentation" },
+                          { value: "external", label: "External Influence" },
+                          { value: "material", label: "Material/Corrosion" },
+                          { value: "misoperation", label: "Misoperation" },
+                        ]
+                      )}
+                      {renderFormField(
+                        addForm,
+                        "failureDetectionMethod",
+                        "Detection Method",
+                        "How was the failure discovered?",
+                        "select",
+                        [
+                          { value: "inspection", label: "Inspection" },
+                          { value: "testing", label: "Testing" },
+                          { value: "monitoring", label: "Condition Monitoring" },
+                          { value: "operation", label: "During Operation" },
+                          { value: "maintenance", label: "During Maintenance" },
+                          { value: "other", label: "Other" },
+                        ]
+                      )}
+                    </div>
                   </div>
                   
-                  <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Description</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Describe the maintenance event or failure in detail"
-                            className="resize-none min-h-[120px]"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Include root cause, parts replaced, and any relevant observations
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium">Impact Assessment</h3>
+                      <Separator />
+                      {renderFormField(
+                        addForm,
+                        "safetyImpact",
+                        "Safety Impact",
+                        null,
+                        "select",
+                        [
+                          { value: "none", label: "None" },
+                          { value: "minor", label: "Minor" },
+                          { value: "major", label: "Major" },
+                          { value: "critical", label: "Critical" },
+                        ]
+                      )}
+                      {renderFormField(
+                        addForm,
+                        "environmentalImpact",
+                        "Environmental Impact",
+                        null,
+                        "select",
+                        [
+                          { value: "none", label: "None" },
+                          { value: "minor", label: "Minor" },
+                          { value: "major", label: "Major" },
+                          { value: "critical", label: "Critical" },
+                        ]
+                      )}
+                      {renderFormField(
+                        addForm,
+                        "productionImpact",
+                        "Production Impact",
+                        null,
+                        "select",
+                        [
+                          { value: "none", label: "None" },
+                          { value: "minor", label: "Minor" },
+                          { value: "major", label: "Major" },
+                          { value: "critical", label: "Critical" },
+                        ]
+                      )}
+                      {renderFormField(
+                        addForm,
+                        "repairCost",
+                        "Repair Cost",
+                        "Direct cost of repairs",
+                        "number"
+                      )}
+                      {renderFormField(
+                        addForm,
+                        "consequentialCost",
+                        "Consequential Cost",
+                        "Business impact costs",
+                        "number"
+                      )}
+                    </div>
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium">Repair Details</h3>
+                      <Separator />
+                      {renderFormField(
+                        addForm,
+                        "partsReplaced",
+                        "Parts Replaced",
+                        "List components that were replaced",
+                        "textarea"
+                      )}
+                      {renderFormField(
+                        addForm,
+                        "repairActions",
+                        "Repair Actions",
+                        "Describe what was done to fix the issue",
+                        "textarea"
+                      )}
+                      {renderFormField(
+                        addForm,
+                        "repairTechnician",
+                        "Repair Technician",
+                        "Who performed the repair",
+                        "text"
+                      )}
+                      {renderFormField(
+                        addForm,
+                        "operatingConditions",
+                        "Operating Conditions",
+                        "Conditions at time of failure",
+                        "textarea"
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium">Prevention</h3>
+                      <Separator />
+                      {renderFormField(
+                        addForm,
+                        "preventability",
+                        "Preventability",
+                        "Could this failure have been prevented?",
+                        "select",
+                        [
+                          { value: "preventable", label: "Preventable" },
+                          { value: "nonPreventable", label: "Non-Preventable" },
+                          { value: "unknown", label: "Unknown" },
+                        ]
+                      )}
+                      {renderFormField(
+                        addForm,
+                        "recommendedPreventiveAction",
+                        "Recommended Preventive Action",
+                        "Suggestions to prevent recurrence",
+                        "textarea"
+                      )}
+                    </div>
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium">Metadata</h3>
+                      <Separator />
+                      {renderFormField(
+                        addForm,
+                        "recordedBy",
+                        "Recorded By",
+                        "Who recorded this failure",
+                        "text"
+                      )}
+                    </div>
+                  </div>
                   
                   <DialogFooter>
-                    <DialogClose asChild>
-                      <Button type="button" variant="outline">Cancel</Button>
-                    </DialogClose>
-                    <Button 
-                      type="submit" 
-                      disabled={addEventMutation.isPending}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsAddDialogOpen(false)}
                     >
-                      {addEventMutation.isPending ? "Saving..." : "Save Event"}
+                      Cancel
+                    </Button>
+                    <Button 
+                      type="submit"
+                      disabled={createFailureRecordMutation.isPending}
+                    >
+                      {createFailureRecordMutation.isPending ? (
+                        <>
+                          <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        "Save Record"
+                      )}
                     </Button>
                   </DialogFooter>
                 </form>
@@ -435,252 +870,569 @@ const FailureHistory = () => {
           </Dialog>
         </div>
       </div>
-      
-      {/* Filters section */}
-      {showFilters && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle>Filter Events</CardTitle>
-            <CardDescription>
-              Narrow down maintenance events by specific criteria
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <label className="text-sm font-medium">Asset</label>
-                <Select value={filterAssetId} onValueChange={setFilterAssetId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All Assets" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">All Assets</SelectItem>
-                    {assets.map((asset) => (
-                      <SelectItem key={asset.id} value={asset.id.toString()}>
-                        {asset.assetNumber} - {asset.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium">Event Type</label>
-                <Select value={filterEventType} onValueChange={setFilterEventType}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All Types" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">All Types</SelectItem>
-                    <SelectItem value="PM">Preventive Maintenance (PM)</SelectItem>
-                    <SelectItem value="CM">Corrective Maintenance (CM)</SelectItem>
-                    <SelectItem value="FF">Functional Failure</SelectItem>
-                    <SelectItem value="PF">Potential Failure</SelectItem>
-                    <SelectItem value="I">Inspection</SelectItem>
-                    <SelectItem value="O">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium">From Date</label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      className={"w-full pl-3 text-left font-normal flex justify-between"}
-                    >
-                      {filterDateFrom ? (
-                        format(filterDateFrom, "PP")
-                      ) : (
-                        <span>Select start date</span>
-                      )}
-                      <CalendarIcon className="h-4 w-4" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={filterDateFrom}
-                      onSelect={setFilterDateFrom}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium">To Date</label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      className={"w-full pl-3 text-left font-normal flex justify-between"}
-                    >
-                      {filterDateTo ? (
-                        format(filterDateTo, "PP")
-                      ) : (
-                        <span>Select end date</span>
-                      )}
-                      <CalendarIcon className="h-4 w-4" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={filterDateTo}
-                      onSelect={setFilterDateTo}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </div>
-          </CardContent>
-          <CardFooter className="border-t pt-3 flex justify-between">
-            <div>
-              <span className="text-sm text-muted-foreground">
-                {filteredEvents.length} events found
-              </span>
-            </div>
-            <Button 
-              variant="outline" 
-              onClick={clearFilters}
-            >
-              Clear Filters
-            </Button>
-          </CardFooter>
-        </Card>
-      )}
-      
-      {/* Events table */}
+
+      {/* Filters */}
       <Card>
-        <CardContent className="pt-6">
-          <Table>
-            <TableCaption>
-              {isLoadingEvents 
-                ? "Loading maintenance history..." 
-                : filteredEvents.length 
-                  ? `Showing ${filteredEvents.length} maintenance events` 
-                  : "No maintenance events found"
-              }
-            </TableCaption>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Asset</TableHead>
-                <TableHead>Event Type</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Cost</TableHead>
-                <TableHead>Downtime (hrs)</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead className="w-[100px]">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoadingEvents ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-10">
-                    Loading maintenance history...
-                  </TableCell>
-                </TableRow>
-              ) : filteredEvents.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-10">
-                    No maintenance events found
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredEvents.map((event) => (
-                  <TableRow key={event.id}>
-                    <TableCell className="font-medium">
-                      {getAssetName(event.assetId)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge 
-                        variant="outline" 
-                        className={
-                          event.eventType === "PM" 
-                            ? "bg-green-100 text-green-800" 
-                            : event.eventType === "CM" 
-                            ? "bg-orange-100 text-orange-800"
-                            : event.eventType === "FF"
-                            ? "bg-red-100 text-red-800"
-                            : "bg-blue-100 text-blue-800"
-                        }
-                      >
-                        {event.eventType === "PM" 
-                          ? "Preventive" 
-                          : event.eventType === "CM" 
-                          ? "Corrective"
-                          : event.eventType === "FF"
-                          ? "Functional Failure"
-                          : event.eventType === "PF"
-                          ? "Potential Failure"
-                          : event.eventType === "I"
-                          ? "Inspection"
-                          : "Other"
-                        }
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{format(new Date(event.eventDate), "MMM d, yyyy")}</TableCell>
-                    <TableCell>${event.cost.toFixed(2)}</TableCell>
-                    <TableCell>{event.downtime.toFixed(1)}</TableCell>
-                    <TableCell className="max-w-[300px] truncate">
-                      {event.description}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          if (confirm("Are you sure you want to delete this event?")) {
-                            deleteEventMutation.mutate(event.id);
-                          }
-                        }}
-                        disabled={deleteEventMutation.isPending}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-      
-      {/* Data Import Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Import Failure History</CardTitle>
-          <CardDescription>
-            Import maintenance history from CSV or Excel files
-          </CardDescription>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg font-medium">Filters</CardTitle>
+          <CardDescription>Filter failure records by asset, date, and other criteria</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center border-2 border-dashed rounded-lg p-10">
-            <div className="space-y-2 text-center">
-              <FileUp className="h-10 w-10 text-muted-foreground mx-auto" />
-              <h3 className="font-medium">Upload maintenance history file</h3>
-              <p className="text-sm text-muted-foreground">
-                Drag and drop or click to upload CSV or Excel files with maintenance history data
-              </p>
-              <Button variant="outline" className="mt-2">
-                Select File
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="assetFilter">Asset</Label>
+              <Select
+                value={selectedAssetId || ""}
+                onValueChange={(value) => setSelectedAssetId(value === "" ? null : value)}
+              >
+                <SelectTrigger id="assetFilter">
+                  <SelectValue placeholder="All assets" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All assets</SelectItem>
+                  {assets.map((asset) => (
+                    <SelectItem key={asset.id} value={asset.id.toString()}>
+                      {asset.assetNumber} - {asset.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Date Range</Label>
+              <div className="flex gap-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={!dateRange.start ? "text-muted-foreground" : ""}
+                    >
+                      {dateRange.start ? (
+                        format(dateRange.start, "PP")
+                      ) : (
+                        <span>Start date</span>
+                      )}
+                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={dateRange.start || undefined}
+                      onSelect={(date) =>
+                        setDateRange({ ...dateRange, start: date })
+                      }
+                      disabled={(date) =>
+                        date > new Date() || (dateRange.end ? date > dateRange.end : false)
+                      }
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                <span className="flex items-center">to</span>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={!dateRange.end ? "text-muted-foreground" : ""}
+                    >
+                      {dateRange.end ? (
+                        format(dateRange.end, "PP")
+                      ) : (
+                        <span>End date</span>
+                      )}
+                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={dateRange.end || undefined}
+                      onSelect={(date) =>
+                        setDateRange({ ...dateRange, end: date })
+                      }
+                      disabled={(date) =>
+                        date > new Date() || (dateRange.start ? date < dateRange.start : false)
+                      }
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+            <div className="flex items-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSelectedAssetId(null);
+                  setDateRange({ start: null, end: null });
+                }}
+              >
+                <XCircle className="mr-2 h-4 w-4" />
+                Clear Filters
               </Button>
-              <p className="text-xs text-muted-foreground mt-2">
-                Data must include asset ID, event type, date, and other required fields
-              </p>
             </div>
           </div>
         </CardContent>
-        <CardFooter className="border-t pt-3">
-          <p className="text-sm text-muted-foreground">
-            Need a template? <Button variant="link" className="p-0 h-auto">Download sample file</Button>
-          </p>
-        </CardFooter>
       </Card>
+
+      {/* Records Table */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle>Failure Records</CardTitle>
+          <CardDescription>
+            {filteredRecords.length} 
+            {selectedAssetId ? ` record${filteredRecords.length !== 1 ? 's' : ''} for selected asset` : ' total records'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex justify-center py-8">
+              <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : filteredRecords.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <Info className="h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-medium">No failure records found</h3>
+              <p className="text-muted-foreground mt-2 max-w-md">
+                {selectedAssetId ? 
+                  "There are no failure records for the selected asset. Add a new failure record to begin tracking reliability data." : 
+                  "There are no failure records in the system. Add a new failure record to begin tracking reliability data."}
+              </p>
+              <Button
+                className="mt-4"
+                onClick={() => setIsAddDialogOpen(true)}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add Failure Record
+              </Button>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[180px]">Asset</TableHead>
+                  <TableHead>Failure Date</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Downtime (hrs)</TableHead>
+                  <TableHead>Impact</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredRecords.map((record) => {
+                  const asset = assets.find(a => a.id === record.assetId);
+                  
+                  return (
+                    <TableRow key={record.id}>
+                      <TableCell className="font-medium">
+                        {asset ? (
+                          <div>
+                            <div>{asset.name}</div>
+                            <div className="text-xs text-muted-foreground">{asset.assetNumber}</div>
+                          </div>
+                        ) : (
+                          `Asset ${record.assetId}`
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {format(new Date(record.failureDate), "PPP")}
+                      </TableCell>
+                      <TableCell>
+                        <div className="max-w-[300px] truncate" title={record.failureDescription}>
+                          {record.failureDescription}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Cause: {record.failureCause}
+                        </div>
+                      </TableCell>
+                      <TableCell>{record.downtimeHours.toFixed(1)}</TableCell>
+                      <TableCell>
+                        {record.safetyImpact && record.safetyImpact !== "none" && (
+                          <Badge 
+                            className={
+                              record.safetyImpact === "critical" ? "bg-red-100 text-red-800" :
+                              record.safetyImpact === "major" ? "bg-orange-100 text-orange-800" :
+                              "bg-yellow-100 text-yellow-800"
+                            }
+                            variant="outline"
+                          >
+                            Safety: {record.safetyImpact}
+                          </Badge>
+                        )}
+                        {record.productionImpact && record.productionImpact !== "none" && (
+                          <Badge 
+                            className={
+                              record.productionImpact === "critical" ? "bg-red-100 text-red-800" :
+                              record.productionImpact === "major" ? "bg-orange-100 text-orange-800" :
+                              "bg-yellow-100 text-yellow-800"
+                            }
+                            variant="outline"
+                          >
+                            Production: {record.productionImpact}
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setSelectedRecordId(record.id);
+                              setIsEditDialogOpen(true);
+                            }}
+                          >
+                            <FileEdit className="h-4 w-4" />
+                            <span className="sr-only">Edit</span>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setSelectedRecordId(record.id);
+                              setIsDeleteDialogOpen(true);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            <span className="sr-only">Delete</span>
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Failure Record</DialogTitle>
+            <DialogDescription>
+              Update the details of this failure event.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Basic Information</h3>
+                  <Separator />
+                  {renderFormField(
+                    editForm,
+                    "assetId",
+                    "Asset",
+                    "Select the equipment that failed",
+                    "select",
+                    assets.map((asset) => ({
+                      value: asset.id.toString(),
+                      label: `${asset.assetNumber} - ${asset.name}`,
+                    }))
+                  )}
+                  {renderFormField(
+                    editForm,
+                    "failureModeId",
+                    "Failure Mode",
+                    "Select the specific failure mode if known",
+                    "select",
+                    failureModes.map((mode) => ({
+                      value: mode.id.toString(),
+                      label: mode.description,
+                    }))
+                  )}
+                  {renderFormField(
+                    editForm,
+                    "failureDate",
+                    "Failure Date",
+                    "When did the failure occur?",
+                    "date"
+                  )}
+                  {renderFormField(
+                    editForm,
+                    "repairCompleteDate",
+                    "Repair Complete Date",
+                    "When was the repair completed?",
+                    "date"
+                  )}
+                  {renderFormField(
+                    editForm,
+                    "downtimeHours",
+                    "Downtime Hours",
+                    "Total equipment unavailable time",
+                    "number"
+                  )}
+                  {renderFormField(
+                    editForm,
+                    "repairTimeHours",
+                    "Repair Time Hours",
+                    "Actual hands-on repair time",
+                    "number"
+                  )}
+                  {renderFormField(
+                    editForm,
+                    "operatingHoursAtFailure",
+                    "Operating Hours at Failure",
+                    "Machine hours/cycles at failure (if applicable)",
+                    "number"
+                  )}
+                </div>
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Failure Details</h3>
+                  <Separator />
+                  {renderFormField(
+                    editForm,
+                    "failureDescription",
+                    "Failure Description",
+                    "Describe what happened in detail",
+                    "textarea"
+                  )}
+                  {renderFormField(
+                    editForm,
+                    "failureMechanism",
+                    "Failure Mechanism",
+                    "Physical/chemical process that caused the failure",
+                    "textarea"
+                  )}
+                  {renderFormField(
+                    editForm,
+                    "failureCause",
+                    "Failure Cause",
+                    "Root cause of the failure",
+                    "textarea"
+                  )}
+                  {renderFormField(
+                    editForm,
+                    "failureClassification",
+                    "Failure Classification",
+                    "Category per ISO 14224",
+                    "select",
+                    [
+                      { value: "mechanical", label: "Mechanical" },
+                      { value: "electrical", label: "Electrical" },
+                      { value: "instrumentation", label: "Instrumentation" },
+                      { value: "external", label: "External Influence" },
+                      { value: "material", label: "Material/Corrosion" },
+                      { value: "misoperation", label: "Misoperation" },
+                    ]
+                  )}
+                  {renderFormField(
+                    editForm,
+                    "failureDetectionMethod",
+                    "Detection Method",
+                    "How was the failure discovered?",
+                    "select",
+                    [
+                      { value: "inspection", label: "Inspection" },
+                      { value: "testing", label: "Testing" },
+                      { value: "monitoring", label: "Condition Monitoring" },
+                      { value: "operation", label: "During Operation" },
+                      { value: "maintenance", label: "During Maintenance" },
+                      { value: "other", label: "Other" },
+                    ]
+                  )}
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Impact Assessment</h3>
+                  <Separator />
+                  {renderFormField(
+                    editForm,
+                    "safetyImpact",
+                    "Safety Impact",
+                    null,
+                    "select",
+                    [
+                      { value: "none", label: "None" },
+                      { value: "minor", label: "Minor" },
+                      { value: "major", label: "Major" },
+                      { value: "critical", label: "Critical" },
+                    ]
+                  )}
+                  {renderFormField(
+                    editForm,
+                    "environmentalImpact",
+                    "Environmental Impact",
+                    null,
+                    "select",
+                    [
+                      { value: "none", label: "None" },
+                      { value: "minor", label: "Minor" },
+                      { value: "major", label: "Major" },
+                      { value: "critical", label: "Critical" },
+                    ]
+                  )}
+                  {renderFormField(
+                    editForm,
+                    "productionImpact",
+                    "Production Impact",
+                    null,
+                    "select",
+                    [
+                      { value: "none", label: "None" },
+                      { value: "minor", label: "Minor" },
+                      { value: "major", label: "Major" },
+                      { value: "critical", label: "Critical" },
+                    ]
+                  )}
+                  {renderFormField(
+                    editForm,
+                    "repairCost",
+                    "Repair Cost",
+                    "Direct cost of repairs",
+                    "number"
+                  )}
+                  {renderFormField(
+                    editForm,
+                    "consequentialCost",
+                    "Consequential Cost",
+                    "Business impact costs",
+                    "number"
+                  )}
+                </div>
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Repair Details</h3>
+                  <Separator />
+                  {renderFormField(
+                    editForm,
+                    "partsReplaced",
+                    "Parts Replaced",
+                    "List components that were replaced",
+                    "textarea"
+                  )}
+                  {renderFormField(
+                    editForm,
+                    "repairActions",
+                    "Repair Actions",
+                    "Describe what was done to fix the issue",
+                    "textarea"
+                  )}
+                  {renderFormField(
+                    editForm,
+                    "repairTechnician",
+                    "Repair Technician",
+                    "Who performed the repair",
+                    "text"
+                  )}
+                  {renderFormField(
+                    editForm,
+                    "operatingConditions",
+                    "Operating Conditions",
+                    "Conditions at time of failure",
+                    "textarea"
+                  )}
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Prevention</h3>
+                  <Separator />
+                  {renderFormField(
+                    editForm,
+                    "preventability",
+                    "Preventability",
+                    "Could this failure have been prevented?",
+                    "select",
+                    [
+                      { value: "preventable", label: "Preventable" },
+                      { value: "nonPreventable", label: "Non-Preventable" },
+                      { value: "unknown", label: "Unknown" },
+                    ]
+                  )}
+                  {renderFormField(
+                    editForm,
+                    "recommendedPreventiveAction",
+                    "Recommended Preventive Action",
+                    "Suggestions to prevent recurrence",
+                    "textarea"
+                  )}
+                </div>
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Metadata</h3>
+                  <Separator />
+                  {renderFormField(
+                    editForm,
+                    "recordedBy",
+                    "Recorded By",
+                    "Who recorded this failure",
+                    "text"
+                  )}
+                </div>
+              </div>
+              
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsEditDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit"
+                  disabled={updateFailureRecordMutation.isPending}
+                >
+                  {updateFailureRecordMutation.isPending ? (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    "Update Record"
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Failure Record</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this failure record? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center space-x-2 py-4">
+            <AlertTriangle className="h-6 w-6 text-yellow-500" />
+            <p>This will permanently remove this record from the database.</p>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleDeleteConfirm}
+              disabled={deleteFailureRecordMutation.isPending}
+            >
+              {deleteFailureRecordMutation.isPending ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

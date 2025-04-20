@@ -2,10 +2,10 @@ import { eq } from "drizzle-orm";
 import { db } from "./db";
 import { IStorage } from "./storage";
 import {
-  users, messages, assets, maintenanceEvents, failureModes,
+  users, messages, assets, maintenanceEvents, failureModes, failureHistory,
   User, InsertUser, Message, InsertMessage,
   Asset, InsertAsset, MaintenanceEvent, InsertMaintenanceEvent,
-  FailureMode, InsertFailureMode
+  FailureMode, InsertFailureMode, FailureHistory, InsertFailureHistory
 } from "@shared/schema";
 
 /**
@@ -125,6 +125,45 @@ export class DatabaseStorage implements IStorage {
 
   async deleteFailureMode(id: number): Promise<boolean> {
     const result = await db.delete(failureModes).where(eq(failureModes.id, id));
+    return true; // Assume success if no error is thrown
+  }
+  
+  // Failure History operations
+  async getFailureHistory(id: number): Promise<FailureHistory | undefined> {
+    const [record] = await db.select().from(failureHistory).where(eq(failureHistory.id, id));
+    return record;
+  }
+  
+  async getFailureHistoryByAssetId(assetId: number): Promise<FailureHistory[]> {
+    return db.select().from(failureHistory).where(eq(failureHistory.assetId, assetId));
+  }
+  
+  async getFailureHistoryByFailureModeId(failureModeId: number): Promise<FailureHistory[]> {
+    return db.select().from(failureHistory).where(eq(failureHistory.failureModeId, failureModeId));
+  }
+  
+  async createFailureHistory(insertFailureHistory: InsertFailureHistory): Promise<FailureHistory> {
+    // Set the record date to current date if not provided
+    const data = {
+      ...insertFailureHistory,
+      recordDate: new Date(),
+    };
+    
+    const [record] = await db.insert(failureHistory).values(data).returning();
+    return record;
+  }
+  
+  async updateFailureHistory(id: number, failureHistoryUpdate: Partial<InsertFailureHistory>): Promise<FailureHistory | undefined> {
+    const [updatedRecord] = await db
+      .update(failureHistory)
+      .set(failureHistoryUpdate)
+      .where(eq(failureHistory.id, id))
+      .returning();
+    return updatedRecord;
+  }
+  
+  async deleteFailureHistory(id: number): Promise<boolean> {
+    const result = await db.delete(failureHistory).where(eq(failureHistory.id, id));
     return true; // Assume success if no error is thrown
   }
 }
