@@ -55,7 +55,17 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
-import { CalendarIcon, MoreHorizontal, Plus, Search, Download } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { CalendarIcon, MoreHorizontal, Plus, Search, Download, Pencil, Trash2 } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -718,10 +728,78 @@ const AssetMaster = () => {
               <Button onClick={() => setIsNewAssetOpen(true)}>Add your first asset</Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredAssets.map(asset => (
-                <AssetCard key={asset.id} asset={asset} />
-              ))}
+            <div className="overflow-x-auto border rounded-md mt-4">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Asset ID</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Equipment Class</TableHead>
+                    <TableHead>Criticality</TableHead>
+                    <TableHead>Installation Date</TableHead>
+                    <TableHead>Weibull Parameters</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredAssets.map(asset => (
+                    <TableRow key={asset.id}>
+                      <TableCell className="font-medium">{asset.assetNumber}</TableCell>
+                      <TableCell>{asset.name}</TableCell>
+                      <TableCell>{asset.equipmentClass || "-"}</TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="outline"
+                          className={
+                            asset.criticality === "High" 
+                              ? "bg-red-100 text-red-800 hover:bg-red-100" 
+                              : asset.criticality === "Medium"
+                              ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-100"
+                              : "bg-green-100 text-green-800 hover:bg-green-100"
+                          }
+                        >
+                          {asset.criticality}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{asset.installationDate ? format(new Date(asset.installationDate), 'MMM d, yyyy') : "Unknown"}</TableCell>
+                      <TableCell>
+                        β: {asset.weibullBeta.toFixed(2)}, η: {asset.weibullEta.toFixed(0)} {asset.timeUnit}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button variant="ghost" size="icon" onClick={() => handleEditClick(asset)}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="text-red-500">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will permanently delete the asset "{asset.name}" and all associated failure modes and maintenance events.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction 
+                                  onClick={() => handleDeleteAsset(asset.id)}
+                                  className="bg-red-600 hover:bg-red-700"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           )}
         </>
