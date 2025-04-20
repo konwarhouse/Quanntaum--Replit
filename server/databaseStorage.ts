@@ -108,6 +108,10 @@ export class DatabaseStorage implements IStorage {
   async getFailureModesByAssetId(assetId: number): Promise<FailureMode[]> {
     return db.select().from(failureModes).where(eq(failureModes.assetId, assetId));
   }
+  
+  async getFailureModesByEquipmentClass(equipmentClass: string): Promise<FailureMode[]> {
+    return db.select().from(failureModes).where(eq(failureModes.equipmentClass, equipmentClass));
+  }
 
   async createFailureMode(insertFailureMode: InsertFailureMode): Promise<FailureMode> {
     const [failureMode] = await db.insert(failureModes).values(insertFailureMode).returning();

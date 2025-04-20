@@ -35,6 +35,7 @@ export interface IStorage {
   // Failure Mode operations
   getFailureMode(id: number): Promise<FailureMode | undefined>;
   getFailureModesByAssetId(assetId: number): Promise<FailureMode[]>;
+  getFailureModesByEquipmentClass(equipmentClass: string): Promise<FailureMode[]>;
   createFailureMode(failureMode: InsertFailureMode): Promise<FailureMode>;
   updateFailureMode(id: number, failureMode: Partial<InsertFailureMode>): Promise<FailureMode | undefined>;
   deleteFailureMode(id: number): Promise<boolean>;
@@ -188,6 +189,11 @@ export class MemStorage implements IStorage {
   async getFailureModesByAssetId(assetId: number): Promise<FailureMode[]> {
     return Array.from(this.failureModesMap.values())
       .filter(failureMode => failureMode.assetId === assetId);
+  }
+  
+  async getFailureModesByEquipmentClass(equipmentClass: string): Promise<FailureMode[]> {
+    return Array.from(this.failureModesMap.values())
+      .filter(failureMode => failureMode.equipmentClass === equipmentClass);
   }
   
   async createFailureMode(insertFailureMode: InsertFailureMode): Promise<FailureMode> {

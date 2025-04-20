@@ -444,10 +444,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const allFailureModes = await Promise.all(
         assets.map(async (asset) => {
           const modes = await storage.getFailureModesByAssetId(asset.id);
-          // Enrich each mode with the equipment class from its parent asset
+          // Enrich each mode with the equipment class from its parent asset if not already set
           return modes.map(mode => ({
             ...mode,
-            equipmentClass: asset.equipmentClass
+            equipmentClass: mode.equipmentClass || asset.equipmentClass
           }));
         })
       );
@@ -455,29 +455,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Flatten the array of arrays
       const failureModes = allFailureModes.flat();
       
-      res.json(failureModes);
-    } catch (error) {
-      console.error("Error fetching all failure modes:", error);
-      res.status(500).json({ message: "Failed to fetch failure modes" });
-    }
-  });
-
-  // Get all failure modes
-  app.get("/api/failure-modes", async (req, res) => {
-    try {
-      // Storage API doesn't have a method to get all failure modes, so we'll fetch all assets
-      // and collect their failure modes
-      const assets = await storage.getAssets();
-      let allFailureModes: any[] = [];
-      
-      for (const asset of assets) {
-        const assetModes = await storage.getFailureModesByAssetId(asset.id);
-        allFailureModes = [...allFailureModes, ...assetModes];
-      }
-      
       // Remove duplicates (in case some failure modes are shared)
-      // Using array filter instead of Set for better TypeScript compatibility
-      const uniqueFailureModes = allFailureModes.filter(
+      const uniqueFailureModes = failureModes.filter(
         (mode, index, self) => 
           index === self.findIndex(m => m.id === mode.id)
       );
@@ -486,6 +465,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching all failure modes:", error);
       res.status(500).json({ message: "Failed to fetch failure modes" });
+    }
+  });
+  
+  // Get failure modes by equipment class
+  app.get("/api/failure-modes/class/:equipmentClass", async (req, res) => {
+    try {
+      const equipmentClass = req.params.equipmentClass;
+      
+      // First get all assets of this equipment class
+      const assets = await storage.getAssets();
+      const matchingAssets = assets.filter(asset => 
+        asset.equipmentClass === equipmentClass
+      );
+      
+      if (matchingAssets.length === 0) {
+        return res.json([]);
+      }
+      
+      // Get all failure modes for these assets
+      const allFailureModes = await Promise.all(
+        matchingAssets.map(async (asset) => {
+          const modes = await storage.getFailureModesByAssetId(asset.id);
+          // Ensure equipment class is set
+          return modes.map(mode => ({
+            ...mode,
+            equipmentClass: mode.equipmentClass || asset.equipmentClass
+          }));
+        })
+      );
+      
+      // Flatten and deduplicate
+      const failureModes = allFailureModes.flat().filter(
+        (mode, index, self) => 
+          index === self.findIndex(m => m.id === mode.id)
+      );
+      
+      res.json(failureModes);
+    } catch (error) {
+      console.error(`Error fetching failure modes for equipment class ${req.params.equipmentClass}:`, error);
+      res.status(500).json({ message: "Failed to fetch failure modes by equipment class" });
     }
   });
 
