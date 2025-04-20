@@ -168,6 +168,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  // Batch import assets
+  app.post("/api/assets/batch", async (req, res) => {
+    try {
+      if (!Array.isArray(req.body)) {
+        return res.status(400).json({ message: "Expected an array of assets" });
+      }
+      
+      const results = [];
+      const errors = [];
+      
+      for (const assetData of req.body) {
+        try {
+          // Validate each asset individually
+          const validatedAsset = insertAssetSchema.parse(assetData);
+          
+          // Check if asset number already exists
+          const existingAssets = await storage.getAssets();
+          const duplicateAsset = existingAssets.find(a => a.assetNumber === validatedAsset.assetNumber);
+          
+          if (duplicateAsset) {
+            errors.push({
+              assetNumber: validatedAsset.assetNumber,
+              error: `Asset number ${validatedAsset.assetNumber} already exists in the database`
+            });
+            continue;
+          }
+          
+          const asset = await storage.createAsset(validatedAsset);
+          results.push(asset);
+        } catch (error) {
+          console.error("Error creating an asset in batch:", error);
+          errors.push({
+            asset: assetData,
+            error: error instanceof Error ? error.message : "Unknown error"
+          });
+          // Continue with the rest of the assets even if one fails
+        }
+      }
+      
+      res.status(201).json({
+        success: true,
+        imported: results.length,
+        total: req.body.length,
+        errors: errors.length > 0 ? errors : undefined
+      });
+    } catch (error) {
+      console.error("Error in batch import of assets:", error);
+      res.status(500).json({ 
+        message: "Failed to import assets",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
 
   app.put("/api/assets/:id", async (req, res) => {
     try {
@@ -262,11 +316,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // First, gather all asset IDs to validate them in one step
-      const assetIds = new Set(req.body.map(event => event.assetId));
-      const validAssetIds = new Set();
+      const assetIds = req.body.map(event => event.assetId);
+      const uniqueAssetIds = [...new Set(assetIds)];
+      const validAssetIds = new Set<number>();
       
       // Verify all asset IDs exist
-      for (const assetId of assetIds) {
+      for (const assetId of uniqueAssetIds) {
         const asset = await storage.getAsset(assetId);
         if (asset) {
           validAssetIds.add(assetId);
