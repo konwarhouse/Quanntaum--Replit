@@ -28,13 +28,13 @@ const RCMAnalysisForm = () => {
   const [results, setResults] = useState<RCMAnalysisResponse | null>(null);
 
   // Fetch assets for dropdown
-  const { data: assets, isLoading: isLoadingAssets } = useQuery({
+  const { data: assets = [], isLoading: isLoadingAssets } = useQuery<Asset[]>({
     queryKey: ['/api/assets'],
     staleTime: 5000,
   });
 
   // RCM analysis mutation
-  const rcmMutation = useMutation({
+  const rcmMutation = useMutation<RCMAnalysisResponse, Error, RCMParameters>({
     mutationFn: (params: RCMParameters) => 
       apiRequest("POST", "/api/rcm-analysis", params),
     onSuccess: (data) => {

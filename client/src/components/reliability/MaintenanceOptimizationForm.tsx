@@ -36,15 +36,15 @@ const MaintenanceOptimizationForm = () => {
   const [results, setResults] = useState<MaintenanceOptimizationResponse | null>(null);
 
   // Fetch assets for dropdown
-  const { data: assets, isLoading: isLoadingAssets } = useQuery({
+  const { data: assets = [], isLoading: isLoadingAssets } = useQuery<Asset[]>({
     queryKey: ['/api/assets'],
     staleTime: 5000,
   });
 
   // Optimization mutation
-  const optimizationMutation = useMutation({
+  const optimizationMutation = useMutation<MaintenanceOptimizationResponse, Error, MaintenanceOptimizationParameters>({
     mutationFn: (params: MaintenanceOptimizationParameters) => 
-      apiRequest("POST", "/api/maintenance-optimization", params),
+      apiRequest<MaintenanceOptimizationResponse>("POST", "/api/maintenance-optimization", params),
     onSuccess: (data) => {
       setResults(data);
       toast({ 

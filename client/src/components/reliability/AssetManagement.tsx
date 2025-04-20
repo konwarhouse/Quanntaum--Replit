@@ -29,7 +29,7 @@ const AssetManagement = () => {
   });
   
   // Fetch assets
-  const { data: assets, isLoading } = useQuery({
+  const { data: assets = [], isLoading } = useQuery<Asset[]>({
     queryKey: ['/api/assets'],
     staleTime: 5000,
   });

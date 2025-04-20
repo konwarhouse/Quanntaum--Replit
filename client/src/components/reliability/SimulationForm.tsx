@@ -38,13 +38,13 @@ const SimulationForm = () => {
   const [results, setResults] = useState<SimulationResponse | null>(null);
 
   // Fetch assets for dropdown
-  const { data: assets, isLoading: isLoadingAssets } = useQuery({
+  const { data: assets = [], isLoading: isLoadingAssets } = useQuery<Asset[]>({
     queryKey: ['/api/assets'],
     staleTime: 5000,
   });
 
   // Simulation mutation
-  const simulationMutation = useMutation({
+  const simulationMutation = useMutation<SimulationResponse, Error, SimulationParameters>({
     mutationFn: (params: SimulationParameters) => 
       apiRequest("POST", "/api/simulation", params),
     onSuccess: (data) => {

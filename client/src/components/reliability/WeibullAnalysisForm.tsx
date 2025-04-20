@@ -35,15 +35,15 @@ const WeibullAnalysisForm = () => {
   const [activeTab, setActiveTab] = useState("reliability");
   
   // Fetch assets for dropdown
-  const { data: assets, isLoading: isLoadingAssets } = useQuery({
+  const { data: assets = [], isLoading: isLoadingAssets } = useQuery<Asset[]>({
     queryKey: ['/api/assets'],
     staleTime: 5000,
   });
   
   // Weibull analysis mutation
-  const analysisMutation = useMutation({
+  const analysisMutation = useMutation<WeibullAnalysisResponse, Error, WeibullParameters>({
     mutationFn: (params: WeibullParameters) => 
-      apiRequest("POST", "/api/weibull-analysis", params),
+      apiRequest<WeibullAnalysisResponse>("POST", "/api/weibull-analysis", params),
     onSuccess: (data) => {
       setResults(data);
       toast({ 
