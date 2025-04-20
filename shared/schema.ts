@@ -1,6 +1,7 @@
-import { pgTable, text, serial, integer, boolean, timestamp, real, date } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, real, date, foreignKey } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { relations } from "drizzle-orm";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -17,7 +18,7 @@ export const messages = pgTable("messages", {
   id: serial("id").primaryKey(),
   content: text("content").notNull(),
   role: text("role").notNull(), // 'user' or 'assistant'
-  username: text("username").notNull(),
+  username: text("username").notNull().references(() => users.username, { onDelete: 'cascade' }),
   timestamp: timestamp("timestamp").defaultNow().notNull(),
 });
 
@@ -52,7 +53,7 @@ export const insertAssetSchema = createInsertSchema(assets).pick({
 // Maintenance Events table
 export const maintenanceEvents = pgTable("maintenance_events", {
   id: serial("id").primaryKey(),
-  assetId: integer("asset_id").notNull(),
+  assetId: integer("asset_id").notNull().references(() => assets.id, { onDelete: 'cascade' }),
   eventType: text("event_type").notNull(), // PM (Preventive Maintenance) or CM (Corrective Maintenance)
   eventDate: date("event_date").notNull(),
   cost: real("cost").notNull(),
@@ -72,7 +73,7 @@ export const insertMaintenanceEventSchema = createInsertSchema(maintenanceEvents
 // Failure Modes table
 export const failureModes = pgTable("failure_modes", {
   id: serial("id").primaryKey(),
-  assetId: integer("asset_id").notNull(),
+  assetId: integer("asset_id").notNull().references(() => assets.id, { onDelete: 'cascade' }),
   description: text("description").notNull(),
   consequences: text("consequences").notNull(),
   detectionMethod: text("detection_method"),
@@ -160,3 +161,34 @@ export interface WeibullAnalysisResponse {
   mtbf: number;
   cumulativeFailureProbability: { time: number; probability: number }[];
 }
+
+// Relations
+export const usersRelations = relations(users, ({ many }) => ({
+  messages: many(messages),
+}));
+
+export const messagesRelations = relations(messages, ({ one }) => ({
+  user: one(users, {
+    fields: [messages.username],
+    references: [users.username],
+  }),
+}));
+
+export const assetsRelations = relations(assets, ({ many }) => ({
+  maintenanceEvents: many(maintenanceEvents),
+  failureModes: many(failureModes),
+}));
+
+export const maintenanceEventsRelations = relations(maintenanceEvents, ({ one }) => ({
+  asset: one(assets, {
+    fields: [maintenanceEvents.assetId],
+    references: [assets.id],
+  }),
+}));
+
+export const failureModesRelations = relations(failureModes, ({ one }) => ({
+  asset: one(assets, {
+    fields: [failureModes.assetId],
+    references: [assets.id],
+  }),
+}));

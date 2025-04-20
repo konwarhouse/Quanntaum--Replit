@@ -38,6 +38,18 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Test database connection before starting the server
+  try {
+    const isConnected = await testDatabaseConnection();
+    if (!isConnected) {
+      log("Warning: Database connection failed. Some features may not work properly.");
+    } else {
+      log("Database connection successful.");
+    }
+  } catch (error) {
+    log(`Database connection error: ${error}`);
+  }
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
