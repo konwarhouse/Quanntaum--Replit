@@ -33,6 +33,11 @@ const AssetManagement = () => {
     weibullEta: 1000.0,
     timeUnit: 'hours'
   });
+  
+  // Use separate state for input values to prevent focus issues
+  const [name, setName] = useState('');
+  const [assetNumber, setAssetNumber] = useState('');
+  const [description, setDescription] = useState('');
   const [date, setDate] = useState<Date | undefined>(undefined);
 
   // Fetch assets
@@ -106,6 +111,17 @@ const AssetManagement = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    
+    // Update individual state variables to prevent focus issues
+    if (name === 'name') {
+      setName(value);
+    } else if (name === 'assetNumber') {
+      setAssetNumber(value);
+    } else if (name === 'description') {
+      setDescription(value);
+    }
+    
+    // Also update the newAsset object for form submission
     setNewAsset(prev => ({
       ...prev,
       [name]: name === 'weibullBeta' || name === 'weibullEta' ? parseFloat(value) : value
@@ -297,7 +313,7 @@ const AssetManagement = () => {
         <Input
           id="name"
           name="name"
-          value={newAsset.name}
+          value={name}
           onChange={handleInputChange}
           required
         />
@@ -308,7 +324,7 @@ const AssetManagement = () => {
         <Input
           id="assetNumber"
           name="assetNumber"
-          value={newAsset.assetNumber}
+          value={assetNumber}
           onChange={handleInputChange}
           placeholder="e.g., ABC-2024-001"
           required
@@ -320,7 +336,7 @@ const AssetManagement = () => {
         <Textarea
           id="description"
           name="description"
-          value={newAsset.description}
+          value={description}
           onChange={handleInputChange}
           rows={3}
         />
