@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -140,17 +140,20 @@ const FailureHistory = () => {
     staleTime: 60000,
   });
 
-  // Fetch failure modes
-  const { data: failureModes = [] } = useQuery<FailureMode[]>({
-    queryKey: ['/api/failure-modes', selectedAssetId],
-    enabled: !!selectedAssetId,
-    queryFn: async () => {
-      if (!selectedAssetId) return [];
-      const response = await fetch(`/api/failure-modes/${selectedAssetId}`);
-      if (!response.ok) throw new Error('Failed to fetch failure modes');
-      return response.json();
-    },
+  // Fetch all failure modes - we'll filter by asset when needed
+  const { data: allFailureModes = [] } = useQuery<FailureMode[]>({
+    queryKey: ['/api/failure-modes'],
+    staleTime: 60000,
   });
+  
+  // State to track the currently selected asset in the add form
+  const [currentAssetId, setCurrentAssetId] = useState<number | null>(null);
+  
+  // Filter failure modes for the currently selected asset
+  const assetFailureModes = useMemo(() => {
+    if (!currentAssetId) return [];
+    return allFailureModes.filter(mode => mode.assetId === currentAssetId);
+  }, [currentAssetId, allFailureModes]);
 
   // Fetch failure history records
   const { 
@@ -381,6 +384,9 @@ const FailureHistory = () => {
     if (isEditDialogOpen && selectedRecordId) {
       const record = failureRecords.find(r => r.id === selectedRecordId);
       if (record) {
+        // Set current asset ID for edit mode to filter failure modes for this asset
+        setCurrentAssetId(record.assetId);
+        
         editForm.reset({
           assetId: record.assetId.toString(),
           failureModeId: record.failureModeId?.toString() || "",
@@ -416,14 +422,28 @@ const FailureHistory = () => {
     // Use the data as a FailureRecordFormValues
     const formValues = data as FailureRecordFormValues;
     
+    // Format dates properly for PostgreSQL timestamp format
+    const formattedFailureDate = formValues.failureDate instanceof Date 
+      ? format(formValues.failureDate, 'yyyy-MM-dd HH:mm:ss')
+      : formValues.failureDate;
+    
+    const formattedRepairDate = formValues.repairCompleteDate instanceof Date
+      ? format(formValues.repairCompleteDate, 'yyyy-MM-dd HH:mm:ss')
+      : formValues.repairCompleteDate;
+
+    // Convert form values to numbers where needed
+    const assetId = parseInt(formValues.assetId as string);
+    // Allow null for failure mode if not selected
+    const failureModeId = formValues.failureModeId ? parseInt(formValues.failureModeId as string) : null;
+    
     createFailureRecordMutation.mutate({
-      assetId: formValues.assetId,
-      failureModeId: formValues.failureModeId,
-      failureDate: formValues.failureDate,
-      repairCompleteDate: formValues.repairCompleteDate,
-      downtimeHours: formValues.downtimeHours,
-      repairTimeHours: formValues.repairTimeHours,
-      operatingHoursAtFailure: formValues.operatingHoursAtFailure,
+      assetId: assetId,
+      failureModeId: failureModeId,
+      failureDate: formattedFailureDate,
+      repairCompleteDate: formattedRepairDate,
+      downtimeHours: parseFloat(formValues.downtimeHours as string) || 0,
+      repairTimeHours: parseFloat(formValues.repairTimeHours as string) || 0,
+      operatingHoursAtFailure: formValues.operatingHoursAtFailure ? parseFloat(formValues.operatingHoursAtFailure as string) : null,
       failureDescription: formValues.failureDescription,
       failureMechanism: formValues.failureMechanism,
       failureCause: formValues.failureCause,
@@ -432,8 +452,8 @@ const FailureHistory = () => {
       safetyImpact: formValues.safetyImpact,
       environmentalImpact: formValues.environmentalImpact,
       productionImpact: formValues.productionImpact,
-      repairCost: formValues.repairCost,
-      consequentialCost: formValues.consequentialCost,
+      repairCost: formValues.repairCost ? parseFloat(formValues.repairCost as string) : null,
+      consequentialCost: formValues.consequentialCost ? parseFloat(formValues.consequentialCost as string) : null,
       partsReplaced: formValues.partsReplaced,
       repairActions: formValues.repairActions,
       repairTechnician: formValues.repairTechnician,
@@ -451,16 +471,30 @@ const FailureHistory = () => {
     // Use the data as a FailureRecordFormValues
     const formValues = data as FailureRecordFormValues;
     
+    // Format dates properly for PostgreSQL timestamp format
+    const formattedFailureDate = formValues.failureDate instanceof Date 
+      ? format(formValues.failureDate, 'yyyy-MM-dd HH:mm:ss')
+      : formValues.failureDate;
+    
+    const formattedRepairDate = formValues.repairCompleteDate instanceof Date
+      ? format(formValues.repairCompleteDate, 'yyyy-MM-dd HH:mm:ss')
+      : formValues.repairCompleteDate;
+
+    // Convert form values to numbers where needed
+    const assetId = parseInt(formValues.assetId as string);
+    // Allow null for failure mode if not selected
+    const failureModeId = formValues.failureModeId ? parseInt(formValues.failureModeId as string) : null;
+    
     updateFailureRecordMutation.mutate({
       id: selectedRecordId,
       data: {
-        assetId: formValues.assetId,
-        failureModeId: formValues.failureModeId,
-        failureDate: formValues.failureDate,
-        repairCompleteDate: formValues.repairCompleteDate,
-        downtimeHours: formValues.downtimeHours,
-        repairTimeHours: formValues.repairTimeHours,
-        operatingHoursAtFailure: formValues.operatingHoursAtFailure,
+        assetId: assetId,
+        failureModeId: failureModeId,
+        failureDate: formattedFailureDate,
+        repairCompleteDate: formattedRepairDate,
+        downtimeHours: parseFloat(formValues.downtimeHours as string) || 0,
+        repairTimeHours: parseFloat(formValues.repairTimeHours as string) || 0,
+        operatingHoursAtFailure: formValues.operatingHoursAtFailure ? parseFloat(formValues.operatingHoursAtFailure as string) : null,
         failureDescription: formValues.failureDescription,
         failureMechanism: formValues.failureMechanism,
         failureCause: formValues.failureCause,
@@ -469,8 +503,8 @@ const FailureHistory = () => {
         safetyImpact: formValues.safetyImpact,
         environmentalImpact: formValues.environmentalImpact,
         productionImpact: formValues.productionImpact,
-        repairCost: formValues.repairCost,
-        consequentialCost: formValues.consequentialCost,
+        repairCost: formValues.repairCost ? parseFloat(formValues.repairCost as string) : null,
+        consequentialCost: formValues.consequentialCost ? parseFloat(formValues.consequentialCost as string) : null,
         partsReplaced: formValues.partsReplaced,
         repairActions: formValues.repairActions,
         repairTechnician: formValues.repairTechnician,
@@ -604,24 +638,47 @@ const FailureHistory = () => {
                     <div className="space-y-4">
                       <h3 className="text-lg font-medium">Basic Information</h3>
                       <Separator />
-                      {renderFormField(
-                        addForm,
-                        "assetId",
-                        "Asset",
-                        "Select the equipment that failed",
-                        "select",
-                        assets.map((asset) => ({
-                          value: asset.id.toString(),
-                          label: `${asset.assetNumber} - ${asset.name}`,
-                        }))
-                      )}
+                      <FormField
+                        control={addForm.control}
+                        name="assetId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Asset</FormLabel>
+                            <FormControl>
+                              <Select
+                                onValueChange={(value) => {
+                                  field.onChange(value);
+                                  // Update the current asset ID to filter failure modes
+                                  setCurrentAssetId(parseInt(value));
+                                  // Reset failure mode when asset changes
+                                  addForm.setValue("failureModeId", "");
+                                }}
+                                value={field.value}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select asset" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {assets.map((asset) => (
+                                    <SelectItem key={asset.id} value={asset.id.toString()}>
+                                      {asset.assetNumber} - {asset.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </FormControl>
+                            <FormDescription>Select the equipment that failed</FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                       {renderFormField(
                         addForm,
                         "failureModeId",
                         "Failure Mode",
                         "Select the specific failure mode if known",
                         "select",
-                        failureModes.map((mode) => ({
+                        assetFailureModes.map((mode) => ({
                           value: mode.id.toString(),
                           label: mode.description,
                         }))
