@@ -137,21 +137,29 @@ const FailureHistory = () => {
     end: null,
   });
 
+  // State to track the currently selected asset in the add form
+  const [currentAssetId, setCurrentAssetId] = useState<number | null>(null);
+  const [currentEquipmentClass, setCurrentEquipmentClass] = useState<string | null>(null);
+
   // Fetch assets
   const { data: assets = [] } = useQuery<Asset[]>({
     queryKey: ['/api/assets'],
     staleTime: 60000,
   });
 
-  // Fetch all failure modes - we'll filter by asset when needed
+  // Fetch failure modes based on current equipment class
   const { data: allFailureModes = [] } = useQuery<FailureMode[]>({
-    queryKey: ['/api/failure-modes'],
+    queryKey: ['/api/failure-modes/class', currentEquipmentClass],
     staleTime: 60000,
+    queryFn: async () => {
+      if (!currentEquipmentClass) return [];
+      
+      const response = await fetch(`/api/failure-modes/class/${encodeURIComponent(currentEquipmentClass)}`);
+      if (!response.ok) throw new Error('Failed to fetch failure modes');
+      return response.json();
+    },
+    enabled: !!currentEquipmentClass, // Only run the query when we have an equipment class
   });
-  
-  // State to track the currently selected asset in the add form
-  const [currentAssetId, setCurrentAssetId] = useState<number | null>(null);
-  const [currentEquipmentClass, setCurrentEquipmentClass] = useState<string | null>(null);
   
   // When asset changes, update the equipment class
   useEffect(() => {
