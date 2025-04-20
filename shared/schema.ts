@@ -84,6 +84,7 @@ export const failureModes = pgTable("failure_modes", {
   currentControl: text("current_control"),
   isPredictable: boolean("is_predictable").default(false),
   costOfFailure: real("cost_of_failure"),
+  equipmentClass: text("equipment_class"), // ISO 14224 equipment class reference
 });
 
 export const insertFailureModeSchema = createInsertSchema(failureModes).pick({
@@ -91,9 +92,10 @@ export const insertFailureModeSchema = createInsertSchema(failureModes).pick({
   description: true,
   consequences: true,
   detectionMethod: true,
-  currentControl: true,
+  currentControl: true, 
   isPredictable: true,
   costOfFailure: true,
+  equipmentClass: true,
 });
 
 // Failure History table - Comprehensive version for reliability analysis
