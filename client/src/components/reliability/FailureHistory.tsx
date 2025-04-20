@@ -1061,12 +1061,46 @@ const FailureHistory = () => {
 
       {/* Records Table */}
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle>Failure Records</CardTitle>
-          <CardDescription>
-            {filteredRecords.length} 
-            {selectedAssetId ? ` record${filteredRecords.length !== 1 ? 's' : ''} for selected asset` : ' total records'}
-          </CardDescription>
+        <CardHeader className="pb-3 flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Failure Records</CardTitle>
+            <CardDescription>
+              {filteredRecords.length} 
+              {selectedAssetId ? ` record${filteredRecords.length !== 1 ? 's' : ''} for selected asset` : ' total records'}
+            </CardDescription>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setIsAddDialogOpen(true)}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add Record
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              disabled={filteredRecords.length === 0}
+              onClick={() => {
+                // Construct URL with the current filter for asset ID if applicable
+                let url = "/api/failure-history/export/excel";
+                if (selectedAssetId) {
+                  url += `?assetId=${selectedAssetId}`;
+                }
+                // Trigger file download
+                window.location.href = url;
+                
+                toast({
+                  title: "Export Started",
+                  description: "Your failure history data is being downloaded",
+                });
+              }}
+            >
+              <FileDown className="mr-2 h-4 w-4" />
+              Export to Excel
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (

@@ -140,6 +140,7 @@ export const failureHistory = pgTable("failure_history", {
   // RCM and prevention
   preventability: text("preventability"), // Preventable or non-preventable
   recommendedPreventiveAction: text("recommended_preventive_action"), // For future prevention
+  needsRCA: text("needs_rca"), // Whether a Root Cause Analysis is required (yes/no)
   
   // Statistical analysis
   weibullBeta: real("weibull_beta"), // Shape parameter (if calculated)
@@ -176,6 +177,7 @@ export const insertFailureHistorySchema = createInsertSchema(failureHistory)
   operatingConditions: true,
   preventability: true,
   recommendedPreventiveAction: true,
+  needsRCA: true,
   weibullBeta: true,
   weibullEta: true,
   recordedBy: true,
