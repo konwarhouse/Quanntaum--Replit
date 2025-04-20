@@ -185,25 +185,20 @@ const FailureHistory = () => {
     if (currentEquipmentClass) {
       console.log("Searching for modes with equipment class:", currentEquipmentClass);
       
+      // Direct debugging to check all modes
+      console.log("All failure modes with equipmentClass:", 
+        allFailureModes.map(mode => {
+          return {
+            id: mode.id,
+            description: mode.description,
+            equipmentClass: mode.equipmentClass
+          };
+        })
+      );
+      
       const classModes = allFailureModes.filter(mode => {
-        // Type-safe check for equipmentClass property and handle different object structures
-        if (!mode) return false;
-        
-        console.log("Checking mode:", mode);
-        let modeEquipmentClass = null;
-        
-        if (typeof mode === 'object') {
-          if ('equipmentClass' in mode) {
-            modeEquipmentClass = mode.equipmentClass;
-          }
-        }
-        
-        console.log(`Mode ${mode.id} equipment class:`, modeEquipmentClass);
-        
-        // Match if either the equipment classes match OR if the mode has no equipment class
-        const isMatch = modeEquipmentClass === currentEquipmentClass;
-        console.log("Is a match?", isMatch);
-        return isMatch;
+        // Simple string comparison with the equipment class
+        return mode.equipmentClass === currentEquipmentClass;
       });
       
       console.log("Found equipment class modes:", classModes);
@@ -720,9 +715,18 @@ const FailureHistory = () => {
                                   setCurrentAssetId(assetId);
                                   console.log("Set current asset ID to:", assetId);
                                   
-                                  // Find selected asset to get its equipment class
+                                  // Find selected asset to get its equipment class and update it immediately
                                   const selectedAsset = assets.find(a => a.id === assetId);
                                   console.log("Selected asset:", selectedAsset);
+                                  
+                                  // Update equipment class directly when asset changes
+                                  if (selectedAsset && selectedAsset.equipmentClass) {
+                                    console.log("Setting equipment class to:", selectedAsset.equipmentClass);
+                                    setCurrentEquipmentClass(selectedAsset.equipmentClass);
+                                  } else {
+                                    console.log("No equipment class found for this asset");
+                                    setCurrentEquipmentClass(null);
+                                  }
                                   
                                   // Reset failure mode when asset changes
                                   addForm.setValue("failureModeId", "");
