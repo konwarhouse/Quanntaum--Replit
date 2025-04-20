@@ -33,6 +33,7 @@ export const assets = pgTable("assets", {
   id: serial("id").primaryKey(),
   assetNumber: text("asset_number").notNull().unique(), // Alphanumeric asset identifier, up to 20 chars
   name: text("name").notNull(),
+  equipmentClass: text("equipment_class"), // ISO 14224 equipment class (pump, motor, compressor, etc.)
   description: text("description").notNull(), // Text fields can hold long descriptions by default
   criticality: text("criticality").notNull(), // High, Medium, Low
   installationDate: date("installation_date"),
@@ -44,6 +45,7 @@ export const assets = pgTable("assets", {
 export const insertAssetSchema = createInsertSchema(assets).pick({
   assetNumber: true,
   name: true,
+  equipmentClass: true,
   description: true,
   criticality: true,
   installationDate: true,

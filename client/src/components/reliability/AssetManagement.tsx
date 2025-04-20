@@ -26,6 +26,7 @@ const AssetManagement = () => {
   const [newAsset, setNewAsset] = useState({
     name: '',
     assetNumber: '',
+    equipmentClass: '',
     description: '',
     criticality: 'Medium',
     installationDate: '',
@@ -37,6 +38,7 @@ const AssetManagement = () => {
   // Use separate state for input values to prevent focus issues
   const [name, setName] = useState('');
   const [assetNumber, setAssetNumber] = useState('');
+  const [equipmentClass, setEquipmentClass] = useState('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState<Date | undefined>(undefined);
 
@@ -117,6 +119,8 @@ const AssetManagement = () => {
       setName(value);
     } else if (name === 'assetNumber') {
       setAssetNumber(value);
+    } else if (name === 'equipmentClass') {
+      setEquipmentClass(value);
     } else if (name === 'description') {
       setDescription(value);
     }
@@ -154,6 +158,7 @@ const AssetManagement = () => {
     // Reset individual fields' state
     setName('');
     setAssetNumber('');
+    setEquipmentClass('');
     setDescription('');
     setDate(undefined);
     
@@ -161,6 +166,7 @@ const AssetManagement = () => {
     setNewAsset({
       name: '',
       assetNumber: '',
+      equipmentClass: '',
       description: '',
       criticality: 'Medium',
       installationDate: '',
@@ -209,12 +215,14 @@ const AssetManagement = () => {
     // Update individual state variables
     setName(asset.name);
     setAssetNumber(asset.assetNumber || '');
+    setEquipmentClass(asset.equipmentClass || '');
     setDescription(asset.description || '');
     
     // Update main form state object
     setNewAsset({
       name: asset.name,
       assetNumber: asset.assetNumber || '',
+      equipmentClass: asset.equipmentClass || '',
       description: asset.description || '',
       criticality: asset.criticality,
       installationDate: asset.installationDate || '',
@@ -240,6 +248,7 @@ const AssetManagement = () => {
         <CardTitle className="text-xl">{asset.name}</CardTitle>
         <CardDescription>
           ID: {asset.assetNumber}<br />
+          {asset.equipmentClass && <span>Class: {asset.equipmentClass}<br /></span>}
           Installed: {asset.installationDate ? format(new Date(asset.installationDate), 'MMM d, yyyy') : 'Unknown'}
         </CardDescription>
       </CardHeader>
@@ -345,6 +354,30 @@ const AssetManagement = () => {
           placeholder="e.g., ABC-2024-001"
           required
         />
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="equipmentClass">Equipment Class (ISO 14224)</Label>
+        <Select
+          value={newAsset.equipmentClass || ''}
+          onValueChange={(value) => handleSelectChange("equipmentClass", value)}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select equipment class" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Pump">Pump</SelectItem>
+            <SelectItem value="Compressor">Compressor</SelectItem>
+            <SelectItem value="Motor">Motor</SelectItem>
+            <SelectItem value="Generator">Generator</SelectItem>
+            <SelectItem value="Conveyor">Conveyor</SelectItem>
+            <SelectItem value="Heat Exchanger">Heat Exchanger</SelectItem>
+            <SelectItem value="Valve">Valve</SelectItem>
+            <SelectItem value="Turbine">Turbine</SelectItem>
+            <SelectItem value="Transformer">Transformer</SelectItem>
+            <SelectItem value="Other">Other</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       
       <div className="space-y-2">
