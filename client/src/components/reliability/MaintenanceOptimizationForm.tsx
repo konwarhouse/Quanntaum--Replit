@@ -310,7 +310,7 @@ const MaintenanceOptimizationForm = () => {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis 
                       dataKey="interval" 
-                      label={{ value: `Maintenance Interval (${formatTimeLabel(getTimeUnit())})`, position: 'insideBottomRight', offset: -10 }} 
+                      label={{ value: `Maintenance Interval (${getTimeUnit().charAt(0).toUpperCase() + getTimeUnit().slice(1)})`, position: 'insideBottomRight', offset: -10 }} 
                     />
                     <YAxis 
                       label={{ value: 'Total Cost ($)', angle: -90, position: 'insideLeft' }}
