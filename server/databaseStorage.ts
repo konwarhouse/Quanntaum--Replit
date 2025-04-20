@@ -2,8 +2,9 @@ import { eq } from "drizzle-orm";
 import { db } from "./db";
 import { IStorage } from "./storage";
 import {
-  users, messages, assets, maintenanceEvents, failureModes, failureHistory,
+  users, messages, equipmentClasses, assets, maintenanceEvents, failureModes, failureHistory,
   User, InsertUser, Message, InsertMessage,
+  EquipmentClass, InsertEquipmentClass,
   Asset, InsertAsset, MaintenanceEvent, InsertMaintenanceEvent,
   FailureMode, InsertFailureMode, FailureHistory, InsertFailureHistory
 } from "@shared/schema";

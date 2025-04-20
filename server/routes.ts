@@ -11,6 +11,7 @@ import {
   insertMaintenanceEventSchema, 
   insertFailureModeSchema,
   insertFailureHistorySchema,
+  insertEquipmentClassSchema,
   WeibullParameters,
   MaintenanceOptimizationParameters,
   RCMParameters,
@@ -928,6 +929,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Failed to run simulation",
         error: error instanceof Error ? error.message : "Unknown error"
       });
+    }
+  });
+
+  // Equipment Class endpoints
+  app.get("/api/equipment-classes", async (req, res) => {
+    try {
+      const equipmentClasses = await storage.getEquipmentClasses();
+      res.json(equipmentClasses);
+    } catch (error) {
+      console.error("Error fetching equipment classes:", error);
+      res.status(500).json({ message: "Failed to fetch equipment classes" });
+    }
+  });
+
+  app.get("/api/equipment-classes/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const equipmentClass = await storage.getEquipmentClass(id);
+      
+      if (!equipmentClass) {
+        return res.status(404).json({ message: "Equipment class not found" });
+      }
+      
+      res.json(equipmentClass);
+    } catch (error) {
+      console.error("Error fetching equipment class:", error);
+      res.status(500).json({ message: "Failed to fetch equipment class" });
+    }
+  });
+
+  app.post("/api/equipment-classes", async (req, res) => {
+    try {
+      // Validate the user role in the header
+      const userRole = req.header('X-User-Role');
+      if (userRole !== UserRole.ADMIN) {
+        return res.status(403).json({ message: "Only administrators can create equipment classes" });
+      }
+
+      const equipmentClassData = insertEquipmentClassSchema.parse(req.body);
+      const equipmentClass = await storage.createEquipmentClass(equipmentClassData);
+      res.status(201).json(equipmentClass);
+    } catch (error) {
+      console.error("Error creating equipment class:", error);
+      res.status(500).json({ 
+        message: "Failed to create equipment class",
+        error: error instanceof Error ? error.message : "Unknown error" 
+      });
+    }
+  });
+
+  app.delete("/api/equipment-classes/:id", async (req, res) => {
+    try {
+      // Validate the user role in the header
+      const userRole = req.header('X-User-Role');
+      if (userRole !== UserRole.ADMIN) {
+        return res.status(403).json({ message: "Only administrators can delete equipment classes" });
+      }
+
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteEquipmentClass(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Equipment class not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting equipment class:", error);
+      res.status(500).json({ message: "Failed to delete equipment class" });
     }
   });
 
