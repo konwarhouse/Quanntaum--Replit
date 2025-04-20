@@ -4,7 +4,7 @@ import WeibullAnalysisForm from "@/components/reliability/WeibullAnalysisForm";
 import MaintenanceOptimizationForm from "@/components/reliability/MaintenanceOptimizationForm";
 import RCMAnalysisForm from "@/components/reliability/RCMAnalysisForm";
 import SimulationForm from "@/components/reliability/SimulationForm";
-import AssetManagement from "@/components/reliability/AssetManagement";
+import AssetMaster from "@/components/reliability/AssetMaster";
 import CriticalityAssessment from "@/components/reliability/CriticalityAssessment";
 import FailureHistory from "@/components/reliability/FailureHistory";
 import { useQuery } from "@tanstack/react-query";
@@ -35,9 +35,9 @@ const ReliabilityPage = () => {
         className="w-full"
       >
         <TabsList className="grid grid-cols-2 md:grid-cols-7 w-full">
-          <TabsTrigger value="assets">Asset Management</TabsTrigger>
+          <TabsTrigger value="assets">Asset Master</TabsTrigger>
+          <TabsTrigger value="criticality">Criticality</TabsTrigger>
           <TabsTrigger value="failures">Failure History</TabsTrigger>
-          <TabsTrigger value="criticality">Criticality Assessment</TabsTrigger>
           <TabsTrigger value="weibull">Weibull Analysis</TabsTrigger>
           <TabsTrigger value="maintenance">Maintenance Optimization</TabsTrigger>
           <TabsTrigger value="rcm">RCM Analysis</TabsTrigger>
@@ -46,7 +46,7 @@ const ReliabilityPage = () => {
 
         <div className="mt-6">
           <TabsContent value="assets" className="focus-visible:outline-none focus-visible:ring-0">
-            <AssetManagement />
+            <AssetMaster />
           </TabsContent>
 
           <TabsContent value="failures" className="focus-visible:outline-none focus-visible:ring-0">
