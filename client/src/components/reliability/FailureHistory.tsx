@@ -169,19 +169,31 @@ const FailureHistory = () => {
   const assetFailureModes = useMemo(() => {
     if (!currentAssetId) return [];
     
+    console.log("Current asset ID:", currentAssetId);
+    console.log("Current equipment class:", currentEquipmentClass);
+    console.log("All failure modes:", allFailureModes);
+    
     // First try to find modes specifically for this asset
     const exactAssetModes = allFailureModes.filter(mode => mode.assetId === currentAssetId);
-    if (exactAssetModes.length > 0) return exactAssetModes;
+    
+    if (exactAssetModes.length > 0) {
+      console.log("Found exact asset modes:", exactAssetModes);
+      return exactAssetModes;
+    }
     
     // If no specific failure modes for this asset, try to find modes matching the equipment class
     if (currentEquipmentClass) {
-      return allFailureModes.filter(mode => 
-        mode.equipmentClass === currentEquipmentClass || 
-        // Also include general failure modes with no equipment class specified
-        !mode.equipmentClass
-      );
+      const classModes = allFailureModes.filter(mode => {
+        // Type-safe check for equipmentClass property
+        const modeEquipmentClass = "equipmentClass" in mode ? mode.equipmentClass : null;
+        return modeEquipmentClass === currentEquipmentClass || !modeEquipmentClass;
+      });
+      
+      console.log("Found equipment class modes:", classModes);
+      return classModes;
     }
     
+    console.log("No failure modes found for this asset");
     return [];
   }, [currentAssetId, currentEquipmentClass, allFailureModes]);
 
