@@ -67,6 +67,10 @@ const CriticalityAssessment = () => {
   const [residualRiskLevel, setResidualRiskLevel] = useState<number | null>(null);
   const [residualCriticalityLevel, setResidualCriticalityLevel] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState("guide");
+  
+  // Add state for selected asset and whether assessments have been completed
+  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
+  const [assessmentCompleted, setAssessmentCompleted] = useState(false);
 
   // Fetch assets for the form
   const { data: assets = [] } = useQuery<Asset[]>({
@@ -132,10 +136,6 @@ const CriticalityAssessment = () => {
     setResidualRiskLevel(residualRisk);
     setResidualCriticalityLevel(determineCriticalityLevel(residualRisk));
   });
-
-  // Add state for selected asset and whether assessments have been completed
-  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
-  const [assessmentCompleted, setAssessmentCompleted] = useState(false);
   
   // Update asset mutation
   const updateAssetMutation = useMutation({
@@ -333,370 +333,104 @@ const CriticalityAssessment = () => {
         </Tabs>
       </div>
 
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          {/* Step 1: Asset Details and Condition */}
-          {assessmentStep === 1 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Step 1: Asset Details and Condition</CardTitle>
-                <CardDescription>Record general details and current condition of the asset</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="assetId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Asset</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select an asset" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {assets.map((asset) => (
-                            <SelectItem key={asset.id} value={asset.id.toString()}>
-                              {asset.assetNumber} - {asset.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        Select the asset to assess from the registered assets
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="conditionReading"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Hours/km/tonnes/calendar</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g. 100,562 km" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Enter the current usage reading of the asset
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="conditionStatus"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Current Condition</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select current condition" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="excellent">Excellent</SelectItem>
-                          <SelectItem value="good">Good</SelectItem>
-                          <SelectItem value="fair">Fair</SelectItem>
-                          <SelectItem value="poor">Poor</SelectItem>
-                          <SelectItem value="failed">Failed</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        Assess the current condition based on performance history
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-              <CardFooter className="flex justify-end">
-                <Button type="button" onClick={nextStep}>
-                  Next <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </CardFooter>
-            </Card>
-          )}
-
-          {/* Step 2: Inherent Risk Assessment */}
-          {assessmentStep === 2 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Step 2: Inherent Risk Assessment</CardTitle>
-                <CardDescription>
-                  Assess the inherent risk associated with the failure of the asset (assuming no controls)
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="consequenceDescription"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Consequence of Inherent Failure</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Describe the most credible worst case scenario if this asset fails" 
-                          {...field} 
-                          className="min-h-[100px]"
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Consider consequences to people, environment, and business
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="inherentConsequence"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Inherent Consequence</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select level" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="1">1 - Minor</SelectItem>
-                            <SelectItem value="2">2 - Moderate</SelectItem>
-                            <SelectItem value="3">3 - Serious</SelectItem>
-                            <SelectItem value="4">4 - Major</SelectItem>
-                            <SelectItem value="5">5 - Catastrophic</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="inherentLikelihood"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Inherent Likelihood</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select level" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="A">A - Almost Certain</SelectItem>
-                            <SelectItem value="B">B - Likely</SelectItem>
-                            <SelectItem value="C">C - Possible</SelectItem>
-                            <SelectItem value="D">D - Unlikely</SelectItem>
-                            <SelectItem value="E">E - Rare</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="consequenceCategory"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Consequence Category</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select category" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="people">People (Health & Safety)</SelectItem>
-                            <SelectItem value="environment">Environment</SelectItem>
-                            <SelectItem value="business_financial">Business - Financial/Production</SelectItem>
-                            <SelectItem value="business_reputation">Business - Reputation/Community</SelectItem>
-                            <SelectItem value="business_regulatory">Business - Regulatory/Legal/Compliance</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+      {assessmentCompleted ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Check className="h-6 w-6 text-green-600 mr-2" />
+              Assessment Complete
+            </CardTitle>
+            <CardDescription>
+              The asset criticality has been updated successfully
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Alert className="bg-green-50 border-green-200">
+              <Check className="h-4 w-4 text-green-600" />
+              <AlertTitle>Assessment applied</AlertTitle>
+              <AlertDescription>
+                The asset criticality rating has been updated based on your assessment. This will affect maintenance scheduling and resource allocation.
+              </AlertDescription>
+            </Alert>
+            
+            <div className="p-4 border rounded-md space-y-3">
+              <h3 className="font-medium text-lg">Assessment Summary</h3>
+              <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Asset</p>
+                  <p>{selectedAsset?.name} ({selectedAsset?.assetNumber})</p>
                 </div>
-
-                {riskLevel !== null && criticalityLevel !== null && (
-                  <div className="mt-4 p-4 border rounded-md">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-medium">Assessment Results</h3>
-                        <p className="text-sm text-muted-foreground">Based on your selections</p>
-                      </div>
-                      <div className="flex items-center space-x-4">
-                        <div className="text-right">
-                          <p className="text-sm font-medium">Inherent Risk Level</p>
-                          <Badge variant="outline" className="mt-1">{riskLevel}</Badge>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-medium">Inherent Criticality</p>
-                          <Badge className={`mt-1 ${getCriticalityColor(criticalityLevel)}`}>
-                            Level {criticalityLevel}
-                          </Badge>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-              <CardFooter className="flex justify-between">
-                <Button type="button" variant="outline" onClick={prevStep}>
-                  Previous
-                </Button>
-                <Button type="button" onClick={nextStep}>
-                  Next <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </CardFooter>
-            </Card>
-          )}
-
-          {/* Step 3: Controls */}
-          {assessmentStep === 3 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Step 3: Required Controls</CardTitle>
-                <CardDescription>
-                  Define the controls required to achieve an acceptable residual risk level
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {criticalityLevel !== null && criticalityLevel <= 2 ? (
-                  <>
-                    <div className="p-4 border rounded-md bg-amber-50 flex items-start space-x-3">
-                      <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
-                      <div>
-                        <h3 className="font-medium text-amber-800">High Criticality Asset</h3>
-                        <p className="text-sm text-amber-800">
-                          This is a Level {criticalityLevel} criticality asset which requires additional controls and careful management
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="border rounded-md p-4">
-                      <h3 className="font-medium mb-2">Required Controls</h3>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex items-start space-x-2">
-                          <input type="checkbox" className="mt-1" />
-                          <div>
-                            <p className="font-medium">Maintenance Strategy Review (MSR)</p>
-                            <p className="text-muted-foreground">Complete review of maintenance strategy and update as needed</p>
-                          </div>
-                        </div>
-                        <div className="flex items-start space-x-2">
-                          <input type="checkbox" className="mt-1" />
-                          <div>
-                            <p className="font-medium">Critical Spares Review</p>
-                            <p className="text-muted-foreground">Identify and maintain critical spare parts for this asset</p>
-                          </div>
-                        </div>
-                        <div className="flex items-start space-x-2">
-                          <input type="checkbox" className="mt-1" />
-                          <div>
-                            <p className="font-medium">Reliability Centered Maintenance (RCM)</p>
-                            <p className="text-muted-foreground">Conduct detailed RCM analysis for this asset</p>
-                          </div>
-                        </div>
-                        <div className="flex items-start space-x-2">
-                          <input type="checkbox" className="mt-1" />
-                          <div>
-                            <p className="font-medium">Contingency Planning</p>
-                            <p className="text-muted-foreground">Develop specific contingency plans for failure scenarios</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="p-4 border rounded-md bg-green-50 flex items-start space-x-3">
-                    <Info className="h-5 w-5 text-green-600 mt-0.5" />
-                    <div>
-                      <h3 className="font-medium text-green-800">Lower Criticality Asset</h3>
-                      <p className="text-sm text-green-800">
-                        This asset has been assessed as Level {criticalityLevel || 3} criticality. Standard maintenance practices are usually sufficient.
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                <FormField
-                  control={form.control}
-                  name="controlsDescription"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Additional Controls</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Describe any additional controls needed to mitigate the risk of failure" 
-                          {...field} 
-                          className="min-h-[100px]"
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Include any specific controls not covered by standard procedures
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-              <CardFooter className="flex justify-between">
-                <Button type="button" variant="outline" onClick={prevStep}>
-                  Previous
-                </Button>
-                <Button type="button" onClick={nextStep}>
-                  Next <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </CardFooter>
-            </Card>
-          )}
-
-          {/* Step 4: Residual Risk Assessment */}
-          {assessmentStep === 4 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Step 4: Residual Risk Assessment</CardTitle>
-                <CardDescription>
-                  Assess the residual risk after implementing the controls
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Inherent Criticality</p>
+                  <Badge className={getCriticalityColor(criticalityLevel)}>
+                    Level {criticalityLevel}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Residual Criticality</p>
+                  <Badge className={getCriticalityColor(residualCriticalityLevel)}>
+                    Level {residualCriticalityLevel}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Applied Rating</p>
+                  <Badge className={
+                    residualCriticalityLevel === 1 ? "bg-red-100 text-red-800" :
+                    residualCriticalityLevel === 2 ? "bg-orange-100 text-orange-800" :
+                    "bg-green-100 text-green-800"
+                  }>
+                    {residualCriticalityLevel === 1 ? "High" : 
+                     residualCriticalityLevel === 2 ? "Medium" : "Low"}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button 
+              onClick={() => {
+                form.reset();
+                setAssessmentCompleted(false);
+                setAssessmentStep(1);
+              }}
+            >
+              Start New Assessment
+            </Button>
+          </CardFooter>
+        </Card>
+      ) : (
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Step 1: Asset Details and Condition */}
+            {assessmentStep === 1 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Step 1: Asset Details and Condition</CardTitle>
+                  <CardDescription>Record general details and current condition of the asset</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   <FormField
                     control={form.control}
-                    name="residualConsequence"
+                    name="assetId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Residual Consequence</FormLabel>
+                        <FormLabel>Asset</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select level" />
+                              <SelectValue placeholder="Select an asset" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="1">1 - Minor</SelectItem>
-                            <SelectItem value="2">2 - Moderate</SelectItem>
-                            <SelectItem value="3">3 - Serious</SelectItem>
+                            {assets.map((asset) => (
+                              <SelectItem key={asset.id} value={asset.id.toString()}>
+                                {asset.assetNumber} - {asset.name}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                         <FormDescription>
-                          Should be less than inherent consequence
+                          Select the asset to assess from the registered assets
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -705,94 +439,353 @@ const CriticalityAssessment = () => {
 
                   <FormField
                     control={form.control}
-                    name="residualLikelihood"
+                    name="conditionReading"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Residual Likelihood</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select level" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="B">B - Likely</SelectItem>
-                            <SelectItem value="C">C - Possible</SelectItem>
-                            <SelectItem value="D">D - Unlikely</SelectItem>
-                            <SelectItem value="E">E - Rare</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <FormLabel>Hours/km/tonnes/calendar</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g. 100,562 km" {...field} />
+                        </FormControl>
                         <FormDescription>
-                          Should be less than inherent likelihood
+                          Enter the current usage reading of the asset
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                </div>
 
-                {residualRiskLevel !== null && residualCriticalityLevel !== null && (
-                  <div className="mt-4 p-4 border rounded-md">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-medium">Assessment Results</h3>
-                        <p className="text-sm text-muted-foreground">After implementing controls</p>
-                      </div>
-                      <div className="flex items-center space-x-4">
-                        <div className="text-right">
-                          <p className="text-sm font-medium">Residual Risk Level</p>
-                          <Badge variant="outline" className="mt-1">{residualRiskLevel}</Badge>
+                  <FormField
+                    control={form.control}
+                    name="conditionStatus"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Current Condition</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select current condition" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="excellent">Excellent</SelectItem>
+                            <SelectItem value="good">Good</SelectItem>
+                            <SelectItem value="fair">Fair</SelectItem>
+                            <SelectItem value="poor">Poor</SelectItem>
+                            <SelectItem value="failed">Failed</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Assess the current condition based on performance history
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+                <CardFooter className="flex justify-end">
+                  <Button type="button" onClick={nextStep}>
+                    Next <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </CardFooter>
+              </Card>
+            )}
+
+            {/* Step 2: Inherent Risk Assessment */}
+            {assessmentStep === 2 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Step 2: Inherent Risk Assessment</CardTitle>
+                  <CardDescription>
+                    Assess the inherent risk associated with the failure of the asset (assuming no controls)
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="consequenceDescription"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Consequence of Inherent Failure</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Describe the most credible worst case scenario if this asset fails" 
+                            {...field} 
+                            className="min-h-[100px]"
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Consider consequences to people, environment, and business
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="inherentConsequence"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Inherent Consequence</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select level" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="1">1 - Minor</SelectItem>
+                              <SelectItem value="2">2 - Moderate</SelectItem>
+                              <SelectItem value="3">3 - Serious</SelectItem>
+                              <SelectItem value="4">4 - Major</SelectItem>
+                              <SelectItem value="5">5 - Catastrophic</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="inherentLikelihood"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Inherent Likelihood</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select level" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="A">A - Almost Certain</SelectItem>
+                              <SelectItem value="B">B - Likely</SelectItem>
+                              <SelectItem value="C">C - Possible</SelectItem>
+                              <SelectItem value="D">D - Unlikely</SelectItem>
+                              <SelectItem value="E">E - Rare</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="consequenceCategory"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Consequence Category</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select category" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="people">People (Health & Safety)</SelectItem>
+                              <SelectItem value="environment">Environment</SelectItem>
+                              <SelectItem value="business_financial">Business - Financial/Production</SelectItem>
+                              <SelectItem value="business_reputation">Business - Reputation/Community</SelectItem>
+                              <SelectItem value="business_regulatory">Business - Regulatory/Legal/Compliance</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {riskLevel !== null && criticalityLevel !== null && (
+                    <div className="mt-4 p-4 border rounded-md">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="font-medium">Inherent Risk Assessment</h3>
+                          <p className="text-sm text-muted-foreground">Without controls</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm font-medium">Residual Criticality</p>
-                          <Badge className={`mt-1 ${getCriticalityColor(residualCriticalityLevel)}`}>
-                            Level {residualCriticalityLevel}
+                          <p className="text-sm font-medium">Risk Level: {riskLevel}</p>
+                          <Badge className={getCriticalityColor(criticalityLevel)}>
+                            Criticality Level {criticalityLevel}
                           </Badge>
                         </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </CardContent>
+                <CardFooter className="flex justify-between">
+                  <Button type="button" variant="outline" onClick={prevStep}>
+                    Previous
+                  </Button>
+                  <Button type="button" onClick={nextStep}>
+                    Next <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </CardFooter>
+              </Card>
+            )}
 
-                {residualCriticalityLevel !== null && residualCriticalityLevel <= 2 && (
-                  <div className="p-4 border rounded-md bg-red-50 flex items-start space-x-3">
-                    <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5" />
-                    <div>
-                      <h3 className="font-medium text-red-800">Insufficient Risk Reduction</h3>
-                      <p className="text-sm text-red-800">
-                        The controls defined are not sufficient to reduce the criticality level to an acceptable level (3 or 4).
-                        Review and strengthen the controls to further mitigate the risk.
-                      </p>
+            {/* Step 3: Controls */}
+            {assessmentStep === 3 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Step 3: Control Measures</CardTitle>
+                  <CardDescription>
+                    Define the control measures that are or should be in place to reduce risk
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="controlsDescription"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Control Measures</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Describe the control measures that are or should be in place" 
+                            {...field} 
+                            className="min-h-[150px]"
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Consider engineering controls, maintenance strategies, monitoring, procedures, etc.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="p-4 border rounded-md border-amber-200 bg-amber-50">
+                    <div className="flex gap-2">
+                      <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5" />
+                      <div>
+                        <h3 className="font-medium">Control Types to Consider</h3>
+                        <ul className="mt-2 text-sm space-y-1 list-disc ml-5">
+                          <li><span className="font-medium">Engineering:</span> Physical barriers, fail-safes, redundancy</li>
+                          <li><span className="font-medium">Maintenance:</span> Preventive tasks, condition monitoring</li>
+                          <li><span className="font-medium">Administrative:</span> Procedures, training, certification</li>
+                          <li><span className="font-medium">Mitigating:</span> Emergency response, containment</li>
+                        </ul>
+                      </div>
                     </div>
                   </div>
-                )}
 
-                {residualRiskLevel !== null && riskLevel !== null && residualRiskLevel >= riskLevel && (
-                  <div className="p-4 border rounded-md bg-red-50 flex items-start space-x-3">
-                    <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5" />
-                    <div>
-                      <h3 className="font-medium text-red-800">No Risk Reduction</h3>
-                      <p className="text-sm text-red-800">
-                        The residual risk is not lower than the inherent risk.
-                        The controls are not effective in reducing the risk.
-                      </p>
-                    </div>
+                </CardContent>
+                <CardFooter className="flex justify-between">
+                  <Button type="button" variant="outline" onClick={prevStep}>
+                    Previous
+                  </Button>
+                  <Button type="button" onClick={nextStep}>
+                    Next <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </CardFooter>
+              </Card>
+            )}
+
+            {/* Step 4: Residual Risk Assessment */}
+            {assessmentStep === 4 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Step 4: Residual Risk Assessment</CardTitle>
+                  <CardDescription>
+                    Assess the residual risk with control measures implemented
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="residualConsequence"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Residual Consequence</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select level" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="1">1 - Minor</SelectItem>
+                              <SelectItem value="2">2 - Moderate</SelectItem>
+                              <SelectItem value="3">3 - Serious</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            Should be less than inherent consequence
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="residualLikelihood"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Residual Likelihood</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select level" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="B">B - Likely</SelectItem>
+                              <SelectItem value="C">C - Possible</SelectItem>
+                              <SelectItem value="D">D - Unlikely</SelectItem>
+                              <SelectItem value="E">E - Rare</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            Should be less than inherent likelihood
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
-                )}
-              </CardContent>
-              <CardFooter className="flex justify-between">
-                <Button type="button" variant="outline" onClick={prevStep}>
-                  Previous
-                </Button>
-                <Button type="submit" 
-                        disabled={residualCriticalityLevel !== null && residualCriticalityLevel <= 2}>
-                  Complete Assessment
-                </Button>
-              </CardFooter>
-            </Card>
-          )}
-        </form>
-      </Form>
+
+                  {residualRiskLevel !== null && residualCriticalityLevel !== null && (
+                    <div className="mt-4 p-4 border rounded-md">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="font-medium">Residual Risk Assessment</h3>
+                          <p className="text-sm text-muted-foreground">After implementing controls</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-medium">Risk Level: {residualRiskLevel}</p>
+                          <Badge className={getCriticalityColor(residualCriticalityLevel)}>
+                            Criticality Level {residualCriticalityLevel}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+                <CardFooter className="flex justify-between">
+                  <Button type="button" variant="outline" onClick={prevStep}>
+                    Previous
+                  </Button>
+                  {!updateAssetMutation.isPending ? (
+                    <Button type="submit">
+                      Complete Assessment
+                    </Button>
+                  ) : (
+                    <Button disabled>
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                      Updating Asset...
+                    </Button>
+                  )}
+                </CardFooter>
+              </Card>
+            )}
+          </form>
+        </Form>
+      )}
       
       {/* Criticality Summary Table */}
       <Card>
