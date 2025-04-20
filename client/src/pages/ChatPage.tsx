@@ -1,97 +1,119 @@
 import { useState, useEffect } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
 import ChatWindow from "@/components/ChatWindow";
 import ChatInput from "@/components/ChatInput";
 import UsernameModal from "@/components/UsernameModal";
 import { fetchChatHistory, sendChatMessage } from "@/lib/openai";
-import type { ChatMessage } from "@/lib/openai";
+import { ChatMessage } from "@/lib/types";
+import { BarChart2 } from "lucide-react";
 
 const ChatPage = () => {
-  const [username, setUsername] = useState<string | null>(
-    localStorage.getItem("aiChatUsername")
-  );
-  const [isModalOpen, setIsModalOpen] = useState(!username);
   const { toast } = useToast();
+  const [username, setUsername] = useState<string>("");
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [showModal, setShowModal] = useState<boolean>(true);
 
-  // Fetch chat history for the user
-  const {
-    data: messages,
-    isLoading: isLoadingHistory,
-    refetch,
-  } = useQuery({
-    queryKey: username ? [`/api/messages/${username}`] : null,
-    enabled: !!username,
-  });
+  useEffect(() => {
+    // Check if username is in localStorage
+    const storedUsername = localStorage.getItem("username");
+    if (storedUsername) {
+      setUsername(storedUsername);
+      setShowModal(false);
+      loadChatHistory(storedUsername);
+    }
+  }, []);
 
-  // Send message mutation
-  const { mutate: sendMessage, isPending: isSending } = useMutation({
-    mutationFn: async ({ message }: { message: string }) => {
-      if (!username) throw new Error("Username not set");
-      return sendChatMessage(username, message);
-    },
-    onSuccess: () => {
-      refetch();
-    },
-    onError: (error) => {
+  const loadChatHistory = async (username: string) => {
+    try {
+      setIsLoading(true);
+      const history = await fetchChatHistory(username);
+      setMessages(history);
+    } catch (error) {
+      console.error("Error loading chat history:", error);
       toast({
-        title: "Error sending message",
-        description: error instanceof Error ? error.message : "Unknown error occurred",
+        title: "Error",
+        description: "Failed to load chat history",
         variant: "destructive",
       });
-    },
-  });
-
-  // Handle username change
-  const handleUsernameChange = (newUsername: string) => {
-    localStorage.setItem("aiChatUsername", newUsername);
-    setUsername(newUsername);
-    setIsModalOpen(false);
-    refetch();
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  // Handle message submit
-  const handleSendMessage = (message: string) => {
+  const handleSendMessage = async (message: string) => {
     if (!message.trim()) return;
-    sendMessage({ message });
+
+    try {
+      setIsLoading(true);
+      
+      // Optimistically add user message to UI
+      const userMessage: ChatMessage = {
+        id: messages.length + 1,
+        content: message,
+        role: "user",
+        username,
+        timestamp: new Date(),
+      };
+      
+      setMessages((prev) => [...prev, userMessage]);
+      
+      // Send message to API
+      const response = await sendChatMessage(username, message);
+      
+      // Add AI response to UI
+      setMessages((prev) => [...prev, response]);
+    } catch (error) {
+      console.error("Error sending message:", error);
+      toast({
+        title: "Error",
+        description: "Failed to send message",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUsernameSubmit = (newUsername: string) => {
+    setUsername(newUsername);
+    localStorage.setItem("username", newUsername);
+    setShowModal(false);
+    loadChatHistory(newUsername);
   };
 
   return (
-    <div className="h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-md h-[600px] bg-white rounded-lg shadow-lg flex flex-col overflow-hidden">
-        {/* Header */}
-        <div className="bg-primary p-4 flex items-center justify-between">
-          <h1 className="text-white font-semibold text-xl">AI Chat Assistant</h1>
-          <div className="flex items-center">
-            <span className="text-white text-sm mr-2">{username || "Guest"}</span>
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="text-white opacity-80 hover:opacity-100 text-xs bg-accent px-2 py-1 rounded"
-            >
-              Change
-            </button>
-          </div>
+    <div className="flex flex-col h-screen">
+      <header className="bg-background border-b p-4">
+        <div className="container mx-auto flex justify-between items-center">
+          <h1 className="text-2xl font-bold">AI Chat with Reliability Analysis</h1>
+          <Link href="/reliability">
+            <Button variant="outline">
+              <BarChart2 className="h-4 w-4 mr-2" />
+              Reliability Dashboard
+            </Button>
+          </Link>
         </div>
-
-        {/* Chat Window */}
+      </header>
+      
+      <main className="flex-1 overflow-hidden container mx-auto p-4 flex flex-col">
         <ChatWindow 
-          messages={messages || []} 
-          isLoading={isLoadingHistory || isSending} 
-          username={username || "Guest"} 
+          messages={messages} 
+          isLoading={isLoading} 
+          username={username} 
         />
-
-        {/* Chat Input */}
         <ChatInput 
           onSendMessage={handleSendMessage} 
-          isDisabled={isSending || !username} 
+          isDisabled={isLoading || !username} 
         />
-      </div>
-
-      {/* Username Modal */}
-      {isModalOpen && (
+      </main>
+      
+      {showModal && (
         <UsernameModal
-          initialUsername={username || ""}
-          onSubmit={handleUsernameChange}
+          initialUsername={username}
+          onSubmit={handleUsernameSubmit}
         />
       )}
     </div>

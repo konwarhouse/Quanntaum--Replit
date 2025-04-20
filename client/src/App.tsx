@@ -5,11 +5,13 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import ChatPage from "@/pages/ChatPage";
+import ReliabilityPage from "@/pages/ReliabilityPage";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={ChatPage} />
+      <Route path="/reliability" component={ReliabilityPage} />
       {/* Fallback to 404 */}
       <Route component={NotFound} />
     </Switch>
