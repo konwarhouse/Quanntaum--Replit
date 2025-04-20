@@ -89,7 +89,7 @@ import {
 // Define the form schema for creating/editing failure records
 const failureRecordFormSchema = z.object({
   assetId: z.coerce.number().min(1, "Please select an asset"),
-  failureModeId: z.coerce.number().optional(),
+  failureModeId: z.coerce.number().min(1, "Please select a failure mode"),
   failureDate: z.date({
     required_error: "Please select the failure date",
   }),
@@ -433,8 +433,8 @@ const FailureHistory = () => {
 
     // Convert form values to numbers where needed
     const assetId = parseInt(formValues.assetId as string);
-    // Allow null for failure mode if not selected
-    const failureModeId = formValues.failureModeId ? parseInt(formValues.failureModeId as string) : null;
+    // Failure mode is now required by the schema
+    const failureModeId = parseInt(formValues.failureModeId as string);
     
     createFailureRecordMutation.mutate({
       assetId: assetId,
@@ -482,8 +482,8 @@ const FailureHistory = () => {
 
     // Convert form values to numbers where needed
     const assetId = parseInt(formValues.assetId as string);
-    // Allow null for failure mode if not selected
-    const failureModeId = formValues.failureModeId ? parseInt(formValues.failureModeId as string) : null;
+    // Failure mode is now required by the schema
+    const failureModeId = parseInt(formValues.failureModeId as string);
     
     updateFailureRecordMutation.mutate({
       id: selectedRecordId,
@@ -676,7 +676,7 @@ const FailureHistory = () => {
                         addForm,
                         "failureModeId",
                         "Failure Mode",
-                        "Select the specific failure mode if known",
+                        "Select the failure mode that occurred (required)",
                         "select",
                         assetFailureModes.map((mode) => ({
                           value: mode.id.toString(),
@@ -1186,24 +1186,47 @@ const FailureHistory = () => {
                 <div className="space-y-4">
                   <h3 className="text-lg font-medium">Basic Information</h3>
                   <Separator />
-                  {renderFormField(
-                    editForm,
-                    "assetId",
-                    "Asset",
-                    "Select the equipment that failed",
-                    "select",
-                    assets.map((asset) => ({
-                      value: asset.id.toString(),
-                      label: `${asset.assetNumber} - ${asset.name}`,
-                    }))
-                  )}
+                  <FormField
+                    control={editForm.control}
+                    name="assetId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Asset</FormLabel>
+                        <FormControl>
+                          <Select
+                            onValueChange={(value) => {
+                              field.onChange(value);
+                              // Update the current asset ID to filter failure modes
+                              setCurrentAssetId(parseInt(value));
+                              // Reset failure mode when asset changes
+                              editForm.setValue("failureModeId", "");
+                            }}
+                            value={field.value}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select asset" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {assets.map((asset) => (
+                                <SelectItem key={asset.id} value={asset.id.toString()}>
+                                  {asset.assetNumber} - {asset.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormDescription>Select the equipment that failed</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   {renderFormField(
                     editForm,
                     "failureModeId",
                     "Failure Mode",
-                    "Select the specific failure mode if known",
+                    "Select the failure mode that occurred (required)",
                     "select",
-                    failureModes.map((mode) => ({
+                    assetFailureModes.map((mode) => ({
                       value: mode.id.toString(),
                       label: mode.description,
                     }))
