@@ -272,15 +272,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         "Name": asset.name,
         "Description": asset.description || "",
         "Installation Date": asset.installationDate ? new Date(asset.installationDate).toISOString().split('T')[0] : "",
-        "Location": asset.location || "",
-        "Manufacturer": asset.manufacturer || "",
-        "Model": asset.model || "",
-        "Serial Number": asset.serialNumber || "",
         "Equipment Class": asset.equipmentClass || "",
         "Criticality": asset.criticality || "",
-        "Residual Criticality": asset.residualCriticality || "",
-        "Status": asset.status || "",
-        "Comments": asset.comments || ""
+        "Weibull Beta": asset.weibullBeta,
+        "Weibull Eta": asset.weibullEta,
+        "Time Unit": asset.timeUnit
       }));
       
       // Create the worksheet

@@ -4,6 +4,7 @@ import { queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { Asset } from '@shared/schema';
+import * as XLSX from 'xlsx';
 
 import {
   Card,
@@ -54,7 +55,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
-import { CalendarIcon, MoreHorizontal, Plus, Search } from 'lucide-react';
+import { CalendarIcon, MoreHorizontal, Plus, Search, Download } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -350,6 +351,49 @@ const AssetMaster = () => {
     
     setIsEditAssetOpen(true);
   };
+
+  // Export assets to Excel
+  const handleExportAssets = () => {
+    if (assets.length === 0) {
+      toast({
+        title: 'Nothing to export',
+        description: 'There are no assets to export.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Format date for file name
+    const dateStr = format(new Date(), 'yyyy-MM-dd');
+    
+    // Prepare data for export
+    const exportData = assets.map(asset => ({
+      'Asset ID': asset.assetNumber,
+      'Name': asset.name,
+      'Equipment Class': asset.equipmentClass || '',
+      'Description': asset.description || '',
+      'Criticality': asset.criticality,
+      'Installation Date': asset.installationDate || '',
+      'Beta Value': asset.weibullBeta,
+      'Eta Value': asset.weibullEta,
+      'Time Unit': asset.timeUnit
+    }));
+    
+    // Create workbook and worksheet
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Assets');
+    
+    // Generate Excel file and trigger download
+    XLSX.writeFile(workbook, `Asset_Master_${dateStr}.xlsx`);
+    
+    toast({
+      title: 'Export successful',
+      description: 'Asset data has been exported to Excel.',
+    });
+  };
   
   // Asset card
   const AssetCard = ({ asset }: { asset: Asset }) => (
@@ -459,13 +503,18 @@ const AssetMaster = () => {
             {importMode ? "View Assets" : "Batch Import"}
           </Button>
           {!importMode && (
-            <Dialog open={isNewAssetOpen} onOpenChange={setIsNewAssetOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add New Asset
-                </Button>
-              </DialogTrigger>
+            <>
+              <Button variant="outline" onClick={handleExportAssets}>
+                <Download className="h-4 w-4 mr-2" />
+                Export to Excel
+              </Button>
+              <Dialog open={isNewAssetOpen} onOpenChange={setIsNewAssetOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add New Asset
+                  </Button>
+                </DialogTrigger>
               <DialogContent className="sm:max-w-md">
                 <DialogHeader>
                   <DialogTitle>Add New Asset</DialogTitle>
@@ -640,6 +689,7 @@ const AssetMaster = () => {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+            </>
           )}
         </div>
       </div>
