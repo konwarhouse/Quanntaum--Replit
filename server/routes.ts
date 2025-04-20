@@ -457,7 +457,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else if (failureModeId) {
         failureRecords = await storage.getFailureHistoryByFailureModeId(failureModeId);
       } else {
-        return res.status(400).json({ message: "Either asset ID or failure mode ID is required" });
+        // Get all failure records when no filter is specified
+        // Implement a method to get all failure history records
+        failureRecords = await Promise.all(
+          (await storage.getAssets()).map(async (asset) => {
+            return await storage.getFailureHistoryByAssetId(asset.id);
+          })
+        );
+        // Flatten the array of arrays
+        failureRecords = failureRecords.flat();
       }
       
       res.json(failureRecords);
