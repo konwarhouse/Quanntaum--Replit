@@ -95,7 +95,7 @@ const failureRecordFormSchema = z.object({
   }),
   repairCompleteDate: z.date({
     required_error: "Please select the repair completion date",
-  }),
+  }).nullable(),
   downtimeHours: z.coerce.number().min(0, "Downtime hours must be a positive number"),
   repairTimeHours: z.coerce.number().min(0, "Repair time hours must be a positive number"),
   operatingHoursAtFailure: z.union([z.coerce.number().min(0), z.literal("")]).optional().transform(val => val === "" ? undefined : val),
@@ -283,7 +283,7 @@ const FailureHistory = () => {
   });
 
   // Form setup for adding a new failure record
-  const addForm = useForm<FailureRecordFormValues>({
+  const addForm = useForm<any>({
     resolver: zodResolver(failureRecordFormSchema),
     defaultValues: {
       assetId: selectedAssetId || "",
@@ -314,7 +314,7 @@ const FailureHistory = () => {
   });
 
   // Form setup for editing an existing record
-  const editForm = useForm<FailureRecordFormValues>({
+  const editForm = useForm<any>({
     resolver: zodResolver(failureRecordFormSchema),
     defaultValues: {
       assetId: "",
@@ -412,66 +412,72 @@ const FailureHistory = () => {
   }, [isEditDialogOpen, selectedRecordId, failureRecords, editForm]);
 
   // Handle form submission for adding a new record
-  const onAddSubmit = (data: FailureRecordFormValues) => {
+  const onAddSubmit = (data: any) => {
+    // Use the data as a FailureRecordFormValues
+    const formValues = data as FailureRecordFormValues;
+    
     createFailureRecordMutation.mutate({
-      assetId: parseInt(data.assetId),
-      failureModeId: data.failureModeId ? parseInt(data.failureModeId) : null,
-      failureDate: data.failureDate,
-      repairCompleteDate: data.repairCompleteDate,
-      downtimeHours: data.downtimeHours,
-      repairTimeHours: data.repairTimeHours,
-      operatingHoursAtFailure: data.operatingHoursAtFailure,
-      failureDescription: data.failureDescription,
-      failureMechanism: data.failureMechanism,
-      failureCause: data.failureCause,
-      failureClassification: data.failureClassification,
-      failureDetectionMethod: data.failureDetectionMethod,
-      safetyImpact: data.safetyImpact,
-      environmentalImpact: data.environmentalImpact,
-      productionImpact: data.productionImpact,
-      repairCost: data.repairCost,
-      consequentialCost: data.consequentialCost,
-      partsReplaced: data.partsReplaced,
-      repairActions: data.repairActions,
-      repairTechnician: data.repairTechnician,
-      operatingConditions: data.operatingConditions,
-      preventability: data.preventability,
-      recommendedPreventiveAction: data.recommendedPreventiveAction,
-      recordedBy: data.recordedBy,
+      assetId: formValues.assetId,
+      failureModeId: formValues.failureModeId,
+      failureDate: formValues.failureDate,
+      repairCompleteDate: formValues.repairCompleteDate,
+      downtimeHours: formValues.downtimeHours,
+      repairTimeHours: formValues.repairTimeHours,
+      operatingHoursAtFailure: formValues.operatingHoursAtFailure,
+      failureDescription: formValues.failureDescription,
+      failureMechanism: formValues.failureMechanism,
+      failureCause: formValues.failureCause,
+      failureClassification: formValues.failureClassification,
+      failureDetectionMethod: formValues.failureDetectionMethod,
+      safetyImpact: formValues.safetyImpact,
+      environmentalImpact: formValues.environmentalImpact,
+      productionImpact: formValues.productionImpact,
+      repairCost: formValues.repairCost,
+      consequentialCost: formValues.consequentialCost,
+      partsReplaced: formValues.partsReplaced,
+      repairActions: formValues.repairActions,
+      repairTechnician: formValues.repairTechnician,
+      operatingConditions: formValues.operatingConditions,
+      preventability: formValues.preventability,
+      recommendedPreventiveAction: formValues.recommendedPreventiveAction,
+      recordedBy: formValues.recordedBy,
     });
   };
 
   // Handle form submission for editing an existing record
-  const onEditSubmit = (data: FailureRecordFormValues) => {
+  const onEditSubmit = (data: any) => {
     if (!selectedRecordId) return;
+    
+    // Use the data as a FailureRecordFormValues
+    const formValues = data as FailureRecordFormValues;
     
     updateFailureRecordMutation.mutate({
       id: selectedRecordId,
       data: {
-        assetId: parseInt(data.assetId),
-        failureModeId: data.failureModeId ? parseInt(data.failureModeId) : null,
-        failureDate: data.failureDate,
-        repairCompleteDate: data.repairCompleteDate,
-        downtimeHours: data.downtimeHours,
-        repairTimeHours: data.repairTimeHours,
-        operatingHoursAtFailure: data.operatingHoursAtFailure,
-        failureDescription: data.failureDescription,
-        failureMechanism: data.failureMechanism,
-        failureCause: data.failureCause,
-        failureClassification: data.failureClassification,
-        failureDetectionMethod: data.failureDetectionMethod,
-        safetyImpact: data.safetyImpact,
-        environmentalImpact: data.environmentalImpact,
-        productionImpact: data.productionImpact,
-        repairCost: data.repairCost,
-        consequentialCost: data.consequentialCost,
-        partsReplaced: data.partsReplaced,
-        repairActions: data.repairActions,
-        repairTechnician: data.repairTechnician,
-        operatingConditions: data.operatingConditions,
-        preventability: data.preventability,
-        recommendedPreventiveAction: data.recommendedPreventiveAction,
-        recordedBy: data.recordedBy,
+        assetId: formValues.assetId,
+        failureModeId: formValues.failureModeId,
+        failureDate: formValues.failureDate,
+        repairCompleteDate: formValues.repairCompleteDate,
+        downtimeHours: formValues.downtimeHours,
+        repairTimeHours: formValues.repairTimeHours,
+        operatingHoursAtFailure: formValues.operatingHoursAtFailure,
+        failureDescription: formValues.failureDescription,
+        failureMechanism: formValues.failureMechanism,
+        failureCause: formValues.failureCause,
+        failureClassification: formValues.failureClassification,
+        failureDetectionMethod: formValues.failureDetectionMethod,
+        safetyImpact: formValues.safetyImpact,
+        environmentalImpact: formValues.environmentalImpact,
+        productionImpact: formValues.productionImpact,
+        repairCost: formValues.repairCost,
+        consequentialCost: formValues.consequentialCost,
+        partsReplaced: formValues.partsReplaced,
+        repairActions: formValues.repairActions,
+        repairTechnician: formValues.repairTechnician,
+        operatingConditions: formValues.operatingConditions,
+        preventability: formValues.preventability,
+        recommendedPreventiveAction: formValues.recommendedPreventiveAction,
+        recordedBy: formValues.recordedBy,
       }
     });
   };
