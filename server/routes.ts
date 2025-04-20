@@ -462,6 +462,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all failure modes
+  app.get("/api/failure-modes", async (req, res) => {
+    try {
+      // Storage API doesn't have a method to get all failure modes, so we'll fetch all assets
+      // and collect their failure modes
+      const assets = await storage.getAssets();
+      let allFailureModes: any[] = [];
+      
+      for (const asset of assets) {
+        const assetModes = await storage.getFailureModesByAssetId(asset.id);
+        allFailureModes = [...allFailureModes, ...assetModes];
+      }
+      
+      // Remove duplicates (in case some failure modes are shared)
+      // Using array filter instead of Set for better TypeScript compatibility
+      const uniqueFailureModes = allFailureModes.filter(
+        (mode, index, self) => 
+          index === self.findIndex(m => m.id === mode.id)
+      );
+      
+      res.json(uniqueFailureModes);
+    } catch (error) {
+      console.error("Error fetching all failure modes:", error);
+      res.status(500).json({ message: "Failed to fetch failure modes" });
+    }
+  });
+
   // Get failure modes for a specific asset
   app.get("/api/failure-modes/:assetId", async (req, res) => {
     try {

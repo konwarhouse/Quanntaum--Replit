@@ -183,10 +183,27 @@ const FailureHistory = () => {
     
     // If no specific failure modes for this asset, try to find modes matching the equipment class
     if (currentEquipmentClass) {
+      console.log("Searching for modes with equipment class:", currentEquipmentClass);
+      
       const classModes = allFailureModes.filter(mode => {
-        // Type-safe check for equipmentClass property
-        const modeEquipmentClass = "equipmentClass" in mode ? mode.equipmentClass : null;
-        return modeEquipmentClass === currentEquipmentClass || !modeEquipmentClass;
+        // Type-safe check for equipmentClass property and handle different object structures
+        if (!mode) return false;
+        
+        console.log("Checking mode:", mode);
+        let modeEquipmentClass = null;
+        
+        if (typeof mode === 'object') {
+          if ('equipmentClass' in mode) {
+            modeEquipmentClass = mode.equipmentClass;
+          }
+        }
+        
+        console.log(`Mode ${mode.id} equipment class:`, modeEquipmentClass);
+        
+        // Match if either the equipment classes match OR if the mode has no equipment class
+        const isMatch = modeEquipmentClass === currentEquipmentClass;
+        console.log("Is a match?", isMatch);
+        return isMatch;
       });
       
       console.log("Found equipment class modes:", classModes);
