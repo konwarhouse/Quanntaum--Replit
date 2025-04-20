@@ -123,15 +123,20 @@ export interface WeibullParameters {
 
 // Maintenance optimization input parameters
 export interface MaintenanceOptimizationParameters {
+  beta: number;
+  eta: number;
   preventiveMaintenanceCost: number;
   correctiveMaintenanceCost: number;
   targetReliabilityThreshold: number; // percentage 0-100
   maximumAcceptableDowntime: number;
+  timeHorizon: number;
 }
 
 // RCM analysis input parameters
 export interface RCMParameters {
   assetCriticality: 'High' | 'Medium' | 'Low';
+  isPredictable: boolean;
+  costOfFailure: number;
   failureModeDescriptions: string[];
   failureConsequences: string[];
   currentMaintenancePractices: string;
@@ -139,8 +144,13 @@ export interface RCMParameters {
 
 // Simulation input parameters
 export interface SimulationParameters {
+  beta: number;
+  eta: number;
   numberOfRuns: number;
   timeHorizon: number;
+  pmInterval?: number;
+  pmCost: number;
+  failureCost: number;
 }
 
 // Weibull calculation response

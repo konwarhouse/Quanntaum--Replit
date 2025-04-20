@@ -373,67 +373,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         currentMaintenancePractices: z.string(),
       });
       
-      const data = schema.parse(req.body);
-      const { assetCriticality, isPredictable, costOfFailure } = data;
+      const data = schema.parse(req.body) as RCMParameters;
       
       // Determine maintenance strategy
-      const maintenanceStrategy = determineMaintenanceStrategy(
-        assetCriticality,
-        isPredictable,
-        costOfFailure
-      );
+      const results = determineMaintenanceStrategy(data);
       
-      // Generate task recommendations based on strategy
-      let taskRecommendations: string[] = [];
-      
-      switch (maintenanceStrategy) {
-        case 'Predictive Maintenance':
-          taskRecommendations = [
-            'Implement condition monitoring system',
-            'Establish baseline measurements',
-            'Set up alert thresholds',
-            'Train staff on predictive techniques',
-            'Schedule regular data analysis'
-          ];
-          break;
-        case 'Preventive Maintenance':
-          taskRecommendations = [
-            'Schedule fixed-interval inspections',
-            'Replace components before failure',
-            'Develop detailed maintenance procedures',
-            'Maintain spare parts inventory',
-            'Document all maintenance activities'
-          ];
-          break;
-        case 'Run-to-Failure':
-          taskRecommendations = [
-            'Prepare for rapid response when failure occurs',
-            'Document failure response procedures',
-            'Ensure spare parts availability',
-            'Cross-train staff for rapid repairs',
-            'Monitor for signs of impending failure'
-          ];
-          break;
-        case 'Redesign':
-          taskRecommendations = [
-            'Conduct root cause analysis of failures',
-            'Redesign component for higher reliability',
-            'Consider redundancy or diverse technologies',
-            'Implement design verification testing',
-            'Document design changes and expected results'
-          ];
-          break;
-      }
-      
-      res.json({
-        maintenanceStrategy,
-        taskRecommendations,
-        analysisInputs: {
-          assetCriticality,
-          isPredictable,
-          costOfFailure
-        }
-      });
+      // Return the RCM analysis results
+      res.json(results);
     } catch (error) {
       console.error("Error in RCM analysis:", error);
       res.status(500).json({ 
@@ -474,11 +420,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Run simulation
       const simulationResults = runSimulation(simulationParams);
       
-      res.json({
-        totalCost: simulationResults.totalCost,
-        averageFailures: simulationResults.averageFailures,
-        histogram: histogramData,
-      });
+      // Just return the simulation results directly
+      res.json(simulationResults);
     } catch (error) {
       console.error("Error in simulation:", error);
       res.status(500).json({ 

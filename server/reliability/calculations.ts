@@ -342,14 +342,14 @@ export function determineMaintenanceStrategy(params: RCMParameters) {
   }
   
   // Recommendations based on failure modes
-  if (failureModeDescriptions.some(fm => fm.toLowerCase().includes("wear"))) {
+  if (failureModeDescriptions.some((fm: string) => fm.toLowerCase().includes("wear"))) {
     taskRecommendations.push(
       "Implement lubrication program to reduce wear-related failures",
       "Consider surface treatments or hardening to improve wear resistance"
     );
   }
   
-  if (failureConsequences.some(fc => fc.toLowerCase().includes("safety"))) {
+  if (failureConsequences.some((fc: string) => fc.toLowerCase().includes("safety"))) {
     taskRecommendations.push(
       "Develop emergency response procedures for safety-critical failures",
       "Implement additional safety controls and monitoring"

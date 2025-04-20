@@ -1,4 +1,3 @@
-// Message types
 export type MessageRole = "user" | "assistant";
 
 export interface ChatMessage {
@@ -9,7 +8,6 @@ export interface ChatMessage {
   timestamp: Date;
 }
 
-// Reliability types
 export interface Asset {
   id: number;
   name: string;
@@ -42,7 +40,6 @@ export interface FailureMode {
   costOfFailure: number | null;
 }
 
-// Weibull analysis types
 export interface WeibullParameters {
   beta: number;
   eta: number;
@@ -57,7 +54,6 @@ export interface WeibullAnalysisResponse {
   cumulativeFailureProbability: { time: number; probability: number }[];
 }
 
-// Maintenance optimization types
 export interface MaintenanceOptimizationParameters {
   beta: number;
   eta: number;
@@ -74,7 +70,6 @@ export interface MaintenanceOptimizationResponse {
   costCurve: { interval: number; cost: number }[];
 }
 
-// RCM analysis types
 export interface RCMParameters {
   assetCriticality: 'High' | 'Medium' | 'Low';
   isPredictable: boolean;
@@ -94,7 +89,6 @@ export interface RCMAnalysisResponse {
   };
 }
 
-// Simulation types
 export interface SimulationParameters {
   beta: number;
   eta: number;
