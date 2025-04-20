@@ -224,6 +224,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to create maintenance event" });
     }
   });
+  
+  // Batch import maintenance events
+  app.post("/api/maintenance-events/batch", async (req, res) => {
+    try {
+      if (!Array.isArray(req.body)) {
+        return res.status(400).json({ message: "Expected an array of maintenance events" });
+      }
+      
+      const results = [];
+      for (const eventData of req.body) {
+        try {
+          // Validate each event individually
+          const validatedEvent = insertMaintenanceEventSchema.parse(eventData);
+          const event = await storage.createMaintenanceEvent(validatedEvent);
+          results.push(event);
+        } catch (error) {
+          console.error("Error creating a maintenance event in batch:", error);
+          // Continue with the rest of the events even if one fails
+        }
+      }
+      
+      res.status(201).json({
+        success: true,
+        imported: results.length,
+        total: req.body.length
+      });
+    } catch (error) {
+      console.error("Error in batch import of maintenance events:", error);
+      res.status(500).json({ 
+        message: "Failed to import maintenance events",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
 
   app.delete("/api/maintenance-events/:id", async (req, res) => {
     try {

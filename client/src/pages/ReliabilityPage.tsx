@@ -5,9 +5,19 @@ import MaintenanceOptimizationForm from "@/components/reliability/MaintenanceOpt
 import RCMAnalysisForm from "@/components/reliability/RCMAnalysisForm";
 import SimulationForm from "@/components/reliability/SimulationForm";
 import AssetManagement from "@/components/reliability/AssetManagement";
+import MaintenanceImport from "@/components/reliability/MaintenanceImport";
+import DataFittingCalculator from "@/components/reliability/DataFittingCalculator";
+import { useQuery } from "@tanstack/react-query";
+import { Asset } from "@shared/schema";
 
 const ReliabilityPage = () => {
   const [activeTab, setActiveTab] = useState("assets");
+  
+  // Fetch assets for maintenance import
+  const { data: assets = [] } = useQuery<Asset[]>({
+    queryKey: ['/api/assets'],
+    staleTime: 5000,
+  });
 
   return (
     <div className="container py-8 space-y-6">
@@ -24,8 +34,10 @@ const ReliabilityPage = () => {
         onValueChange={setActiveTab}
         className="w-full"
       >
-        <TabsList className="grid grid-cols-2 md:grid-cols-5 w-full">
+        <TabsList className="grid grid-cols-2 md:grid-cols-7 w-full">
           <TabsTrigger value="assets">Asset Management</TabsTrigger>
+          <TabsTrigger value="import">Import Data</TabsTrigger>
+          <TabsTrigger value="fitting">Data Fitting</TabsTrigger>
           <TabsTrigger value="weibull">Weibull Analysis</TabsTrigger>
           <TabsTrigger value="maintenance">Maintenance Optimization</TabsTrigger>
           <TabsTrigger value="rcm">RCM Analysis</TabsTrigger>
@@ -35,6 +47,26 @@ const ReliabilityPage = () => {
         <div className="mt-6">
           <TabsContent value="assets" className="focus-visible:outline-none focus-visible:ring-0">
             <AssetManagement />
+          </TabsContent>
+
+          <TabsContent value="import" className="focus-visible:outline-none focus-visible:ring-0">
+            <div className="mb-4">
+              <h2 className="text-3xl font-bold tracking-tight">Import Maintenance Data</h2>
+              <p className="text-muted-foreground">
+                Import historical maintenance data to analyze reliability and optimize maintenance strategies
+              </p>
+            </div>
+            <MaintenanceImport assets={assets} />
+          </TabsContent>
+
+          <TabsContent value="fitting" className="focus-visible:outline-none focus-visible:ring-0">
+            <div className="mb-4">
+              <h2 className="text-3xl font-bold tracking-tight">Weibull Parameter Estimation</h2>
+              <p className="text-muted-foreground">
+                Estimate Weibull parameters from failure data to determine optimal maintenance intervals
+              </p>
+            </div>
+            <DataFittingCalculator />
           </TabsContent>
 
           <TabsContent value="weibull" className="focus-visible:outline-none focus-visible:ring-0">
