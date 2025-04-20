@@ -5,6 +5,7 @@ import MaintenanceOptimizationForm from "@/components/reliability/MaintenanceOpt
 import RCMAnalysisForm from "@/components/reliability/RCMAnalysisForm";
 import SimulationForm from "@/components/reliability/SimulationForm";
 import AssetManagement from "@/components/reliability/AssetManagement";
+import CriticalityAssessment from "@/components/reliability/CriticalityAssessment";
 import { useQuery } from "@tanstack/react-query";
 import { Asset } from "@shared/schema";
 
@@ -32,8 +33,9 @@ const ReliabilityPage = () => {
         onValueChange={setActiveTab}
         className="w-full"
       >
-        <TabsList className="grid grid-cols-2 md:grid-cols-5 w-full">
+        <TabsList className="grid grid-cols-2 md:grid-cols-6 w-full">
           <TabsTrigger value="assets">Asset Management</TabsTrigger>
+          <TabsTrigger value="criticality">Criticality Assessment</TabsTrigger>
           <TabsTrigger value="weibull">Weibull Analysis</TabsTrigger>
           <TabsTrigger value="maintenance">Maintenance Optimization</TabsTrigger>
           <TabsTrigger value="rcm">RCM Analysis</TabsTrigger>
@@ -43,6 +45,10 @@ const ReliabilityPage = () => {
         <div className="mt-6">
           <TabsContent value="assets" className="focus-visible:outline-none focus-visible:ring-0">
             <AssetManagement />
+          </TabsContent>
+
+          <TabsContent value="criticality" className="focus-visible:outline-none focus-visible:ring-0">
+            <CriticalityAssessment />
           </TabsContent>
 
           <TabsContent value="weibull" className="focus-visible:outline-none focus-visible:ring-0">

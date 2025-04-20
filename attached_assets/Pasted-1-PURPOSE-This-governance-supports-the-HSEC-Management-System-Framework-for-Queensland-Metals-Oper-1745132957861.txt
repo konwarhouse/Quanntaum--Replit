@@ -1,0 +1,174 @@
+1. PURPOSE
+This governance supports the HSEC Management System Framework for Queensland Metals Operations in defining the requirements for criticality assessments of Glencore Queensland Metals physical assets and their associated components: 
+1.	Recording general details/condition of each asset - see 3.1
+2.	Assessing the level of inherent risk associated with the failure of the asset - see 3.2
+3.	Using the inherent risk of failure to determine the inherent criticality level - see 3.3
+4.	Determining the controls required to achieve acceptable residual risk (criticality 1 or 2 assets) - see 3.4
+5.	Managing the controls for criticality level 1 or 2 assets according to the required standard - see 3.5
+6.	Communicating criticality information to relevant stakeholders – see 3.6
+Criticality is defined as a relative measure of the consequence of failure and its frequency of occurrence. Asset criticality assessments ensure that all items of plant and equipment have been properly assessed in order to determine the inherent and residual risk posed by failure.  The level of risk associated with inherent failure determines the level and type of controls required to achieve an acceptable residual risk of failure.
+Use of this governance will ensure that required controls are prioritised for high risk assets, resulting in the most business benefit.
+2. SCOPE
+This governance applies to all stakeholders involved in Asset Criticality Assessments. Reliability personnel must conduct the Asset Criticality Assessments (and Critical Spares Reviews) in accordance with this governance and the associated Glencore documents (detailed in the References section). 
+See Appendix A – Asset Criticality Assessment Process Flow Diagram – for a summary of the Asset Criticality Assessment Process and the corresponding documents/processes referred to at each section.
+3. GOVERNANCE
+All existing fixed and mobile assets must be included in an Asset Criticality Assessment. When an asset is acquired, it must be reviewed and added to the assessment. Asset Criticality Assessments must be reviewed at a minimum frequency of 2 yearly. 
+The following factors will prompt a review of criticality for the affected asset/s:
+•	Recent failures (failure analysis) 
+•	Design changes (Change Management)
+•	Changes in maintenance / operation strategy (over life of mine)
+G-NQ-HSEC-FRM-Asset Criticality Assessment Tool (41011) must be used to conduct and record Asset Criticality Assessments. Assets details must be recorded in G-NQ-HSEC-FRM-Asset Criticality Assessment Tool (41011) as per Appendix B – Asset Criticality Assessment Tool Example. Reference to these documents is required throughout this section.
+3.1. RECORDING GENERAL DETAILS AND CONDITION
+The Asset Criticality Assessment Tool must be used to record the general details of each asset. The Asset Equipment Register on the Computer Maintenance Management System (CMMS) will be used to ensure all required assets are included. Assets must be grouped into logical sections for separate analysis.  The following details must be recorded in the tool:
+•	Description (e.g. Cat 988H loader) 
+•	Equipment Reference Number (e.g. IMESLD03)
+
+The Asset Criticality Assessment Tool will be used to record the health of each asset. The following details must be recorded in the tool:
+•	Hours/km/tonnes/calendar (e.g. 100 562 km)
+•	Current Condition (i.e. excellent, good, fair, poor or failed)
+Hour/kilometre/tonnes/calendar readings must be obtained from the CMMS Operating Statistics. Stakeholder input/asset history must be used to help determine the current condition of the asset. Asset history must be analysed using the following data: 
+•	Lifecycle statistics ($ per Hour/kilometre/tonnes/calendar)
+•	Site Data Acquisition Software (i.e. Modular)
+•	Business reporting
+•	CMMS
+Having a strong understanding of the Asset Health ensures that appropriate risk levels and controls can be achieved.
+3.2. ASSESSING THE LEVEL OF INHERENT RISK
+The Asset Criticality Assessment Tool must be used to record the level of inherent risk associated with the failure of the asset. This involves assessing the risk level of failure of each asset in its inherent state (i.e. no maintenance strategy in place and no spares). 
+Risk level must be assessed using the consequence and likelihood of failure as per G-NQ-HSEC-GOV-Risk Management (119000). The inherent risk level recorded in the tool must be the highest risk level of failure in relation to the following consequence areas (the most credible worst case scenario): 
+•	Risks to people (health and safety risks) 
+•	Environmental risks 
+•	Business risks:
+o	Financial/production impact
+o	Image and reputation/community impact 
+o	Regulatory, legal and compliance risks
+Stakeholder input/asset history will be used to help determine the asset performance environment and therefore risk to the business upon failure. Having a strong understanding of the asset performance environment ensures appropriate risk levels and controls can be achieved.
+The consequence area with the most likely and highest risk level must be recorded in the tool: 
+•	Consequence of Inherent Failure (e.g. significant impact to production/paste fill)
+•	Inherent Consequence (i.e. 1 - 5)
+•	Inherent Likelihood (i.e. A - E)
+•	Inherent Risk Level (i.e. 1 – 25)
+•	Consequence Category (i.e. People, Environment or Business)
+ 
+3.3. DETERMINING THE INHERENT CRITICALITY LEVEL
+The Inherent Risk Level detailed in section 3.2 will be used to determine the Inherent Criticality Level for the asset using the Criticality Table:
+CRITICALITY TABLE
+Risk Level/Rating	Description	Criticality 
+18-25	Extreme	1
+10-17	High	2
+6-9	Moderate	3
+1-5	Low	4
+
+This level (Criticality 1-4) must be recorded in the Inherent Criticality Level section of the Asset Criticality Assessment tool with the corresponding risk matrix colour (detailed in the table above). 
+In all site Asset Criticality Assessments, a reasonable spread of criticality levels should be expected. If the majority of criticalities fall into one or two levels, the assigned consequences and likelihoods should be reviewed.
+3.4. DETERMINING THE CONTROLS REQUIRED
+The Asset Criticality Assessment Tool will be used to record the controls required to achieve an acceptable residual risk level (risk level after controls are in place) for criticality 1 or 2 assets. The acceptable residual risk level for these asset is a risk rating of 1 – 9, which will result in a Residual Criticality Level of 3 or 4 for each asset.
+Stakeholder input/asset history will be used to help determine appropriate controls required to achieve an acceptable residual risk level. Various controls must be considered using G-NQ-HSEC-GOV-Risk Management (119000) as a guide for reducing the risk level. 
+All site assets must be managed with the following controls in place: 
+•	CMMS standards and processes (including Maintenance Strategies)
+•	Operator training
+•	Maintenance training and qualifications 
+For assets with an Inherent Criticality Level of 1 or 2, the following controls must be used: 
+•	Maintenance Strategy Review (MSR)
+•	Critical Spares Review  
+**Once Inherent Criticality Level 1 or 2 assets have these reviews completed, reviews should also be conducted for assets with an Inherent Criticality Level of 3 or 4 (lesser priority assets).
+In addition to the above minimum controls, various forms of prevention and minimisation controls must also be considered for assets with an Inherent Criticality Level of 1 or 2:
+•	Strategy development and amendment e.g.:
+o	Preventive Maintenance Optimisation (PMO)
+o	Reliability Centred Maintenance (RCM) – for new design or complex/critical assets
+•	Failure analysis e.g.:
+o	Reliability study
+o	Root Cause Analysis (RCA)
+o	Fishbone Analysis 
+o	5 Whys Analysis
+•	Maintenance resource prioritising (during short term planning and scheduling)
+•	Contingency planning tools
+•	Resource skills or Training Needs Analysis
+The controls required for assets with an inherent criticality level of 1 or 2 must be recorded in the Controls section of the tool.
+**Some prevention and minimisation controls are required for assets with an Inherent Criticality Level of 3 or 4 (e.g. NDT for forklift tynes as part of statutory requirements).
+The Asset Criticality Assessment Tool will be used to record the level of residual risk associated with the failure of the asset. This involves assessing the risk level of failure of each asset with the controls in place. Risk level must be assessed using the consequence and likelihood of failure as per G-NQ-HSEC-GOV-Risk Management (119000). The residual risk level recorded in the tool must be the highest risk level of failure in relation to the following consequence areas (the most credible worst case scenario):
+•	Risks to people (health and safety risks) 
+•	Environmental risks 
+•	Business risks:
+o	Financial/production impact
+o	Image and reputation/community impact 
+o	Regulatory, legal and compliance risks
+The residual risk for assets with an inherent criticality level of 1 or 2 must be recorded in the tool: 
+•	Residual Consequence (should be between 1 and 3)
+•	Residual Likelihood (should be B, C, D or E)
+•	Residual Risk Level (should be between 1 and 9)
+The Residual Risk Level will be used to determine the Residual Criticality Level for the asset using the Criticality Table:
+CRITICALITY TABLE
+Risk Level/Rating	Description	Criticality 
+6-9	Moderate	3
+1-5	Low	4
+
+This level (should be a 3 or 4) must be recorded in the Residual Criticality Level section of the Asset Criticality Assessment tool with the corresponding risk matrix colour (detailed in the table above).
+3.5. MANAGING THE CONTROLS
+As per Asset Management Standard STD0410 – Part 2 Maintain Assets, controls for assets with an Inherent Criticality Level of 1 or 2 are classified as critical controls and must be managed according to this standard.
+The following controls must also be managed as detailed below.
+The Maintenance Strategy Review for the asset will occur at a frequency determined by the Asset Criticality Assessment.
+The Critical Spares Review for the asset must occur at a minimum frequency of 5 yearly and be conducted by Reliability Personnel as per site Critical Spares Review processes:
+•	The following procedures must be used to guide the Critical Spares Review process:
+o	C-MIM-SPLY-PRO-Inventory Management Standard and Procedures (292601)
+o	C-MIM-SPLY-PRO-Guide to Defining Stock Class and Stock Type During The ATC Process (292301)
+•	Items identified as Critical Spares must be:
+o	maintained during storage according to site processes 
+o	processed according to site stock code creation/modification processes (for George Fisher Mine, refer to Z-GFM-AAE-PRO-Create and Modify Stock Code (84470200)
+3.6. COMMUNICATING CRITICALITY INFORMATION TO RELEVANT STAKEHOLDERS
+The Inherent and Residual Criticality Levels for each asset (recorded on G-NQ-HSEC-FRM-Asset Criticality Assessment Tool (41011)) must be entered in the corresponding field for equipment master data in Ellipse according to site equipment creation/modification processes (for George Fisher Mine, refer to Z-GFM-AAE-PRO-Maintenance Create and Modify Equipment in Ellipse (84470300).
+Once completed, the Asset Criticality Assessment Register on the site Intranet must be updated. 
+Once the Critical Spares Review is completed, it must be uploaded to the Intranet Critical Spares Review Register and communicated to relevant stakeholders.
+4. DEFINITIONS
+Acronyms and key terms used within this Governance are defined in Table 4 1.
+Table 4 1 – Definitions of acronyms and key terms
+Acronym/term	Definition
+NIL	
+
+5. ROLES AND RESPONSIBILITIES
+Roles and responsibilities required for the implementation of this Governance are outlined in Table 5 1.
+Table 5 1 – Roles and responsibilities
+Role 	Responsibilities
+Reliability Personnel	•	Conduct site Asset Criticality Assessments according to the standard outlined in this governance
+•	Conduct Critical Spares Reviews according to the standard outlined in this governance
+•	Undertake identified reliability controls according to the standard outlined in this governance
+Operational Personnel	•	Provide stakeholder feedback when required
+Maintenance Personnel	•	Provide stakeholder feedback when required
+Asset Maintenance Planning Team	•	Provide stakeholder feedback when required
+Asset Management Personnel	•	Process changes when required according to the standard outlined in this governance
+
+ 
+6. REFERENCES
+Relevant reference information such as legislation and standards should be included in the site management system and must be regularly reviewed for updates.  Reference material cited in this section provides source information for developing and maintaining site compliance. 
+6.1. RELATED DOCUMENTS
+Internal documents, as listed in Table 6 1, are directly related to or specifically referenced in this Governance.
+Table 6 1 – Related documents
+Title
+STD-0410	 Asset Management Standard - Part 2 (Maintain Assets)
+G-NQ-HSEC-FRM-Asset Criticality Assessment Tool (41011)
+G-NQ-HSEC-GOV-Risk Management (119000)
+C-MIM-SPLY-PRO-Inventory Management Standard and Procedures (292601)
+C-MIM-SPLY-PRO-Guide to Defining Stock Class and Stock Type During The ATC Process (292301)
+Z-GFM-AAE-PRO-Create and Modify Stock Code (84470200)
+Z-GFM-AAE-PRO-Maintenance Create and Modify Equipment in Ellipse (84470300)
+6.2. REFERENCE INFORMATION
+External reference information, as listed in Table 6 2 is directly related to the development of this Governance or referenced from within this document.
+Table 6 2 - Reference Information
+Title
+Mining and Quarrying Safety & Health Act 1999
+Mining and Quarrying Safety & Health Regulation 2017
+Work Health and Safety Act 2011
+Work Health and Safety Regulation 2011
+
+ 
+7. CONTROL AND REVISION HISTORY
+Table 7 1 – Control and Revision History
+Version	Date	Reviewers	Change Summary
+N/A	02/07/2021	HSEC MS Team	Template Transfer.
+
+8. APPENDICES
+Appendix A – Asset Criticality Assessment Process Flow Diagram
+Appendix B – Asset Criticality Assessment Tool Example
+
+
+ 
+8.1. APPENDIX A – ASSET CRITICALITY ASSESSMENT PROCESS FLOW DIAGRAM
