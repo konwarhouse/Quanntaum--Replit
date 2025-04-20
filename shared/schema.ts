@@ -3,6 +3,18 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
+// Equipment Classes table for ISO 14224 categories
+export const equipmentClasses = pgTable("equipment_classes", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+});
+
+export const insertEquipmentClassSchema = createInsertSchema(equipmentClasses).pick({
+  name: true,
+  description: true,
+});
+
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
@@ -199,6 +211,9 @@ export const insertFailureHistorySchema = createInsertSchema(failureHistory)
 });
 
 // Types
+export type EquipmentClass = typeof equipmentClasses.$inferSelect;
+export type InsertEquipmentClass = z.infer<typeof insertEquipmentClassSchema>;
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 

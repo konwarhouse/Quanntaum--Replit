@@ -1,6 +1,7 @@
 import { 
   users, type User, type InsertUser, 
   messages, type Message, type InsertMessage,
+  equipmentClasses, type EquipmentClass, type InsertEquipmentClass,
   assets, type Asset, type InsertAsset,
   maintenanceEvents, type MaintenanceEvent, type InsertMaintenanceEvent,
   failureModes, type FailureMode, type InsertFailureMode,
@@ -18,6 +19,12 @@ export interface IStorage {
   // Message operations
   getMessagesByUsername(username: string): Promise<Message[]>;
   createMessage(message: InsertMessage): Promise<Message>;
+  
+  // Equipment Class operations
+  getEquipmentClass(id: number): Promise<EquipmentClass | undefined>;
+  getEquipmentClasses(): Promise<EquipmentClass[]>;
+  createEquipmentClass(equipmentClass: InsertEquipmentClass): Promise<EquipmentClass>;
+  deleteEquipmentClass(id: number): Promise<boolean>;
   
   // Asset operations
   getAsset(id: number): Promise<Asset | undefined>;
@@ -52,6 +59,7 @@ export interface IStorage {
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private messages: Map<number, Message>;
+  private equipmentClassesMap: Map<number, EquipmentClass>;
   private assetsMap: Map<number, Asset>;
   private maintenanceEventsMap: Map<number, MaintenanceEvent>;
   private failureModesMap: Map<number, FailureMode>;
@@ -59,6 +67,7 @@ export class MemStorage implements IStorage {
   
   private userCurrentId: number;
   private messageCurrentId: number;
+  private equipmentClassCurrentId: number;
   private assetCurrentId: number;
   private maintenanceEventCurrentId: number;
   private failureModeCurrentId: number;
@@ -67,6 +76,7 @@ export class MemStorage implements IStorage {
   constructor() {
     this.users = new Map();
     this.messages = new Map();
+    this.equipmentClassesMap = new Map();
     this.assetsMap = new Map();
     this.maintenanceEventsMap = new Map();
     this.failureModesMap = new Map();
@@ -74,6 +84,7 @@ export class MemStorage implements IStorage {
     
     this.userCurrentId = 1;
     this.messageCurrentId = 1;
+    this.equipmentClassCurrentId = 1;
     this.assetCurrentId = 1;
     this.maintenanceEventCurrentId = 1;
     this.failureModeCurrentId = 1;
@@ -111,6 +122,30 @@ export class MemStorage implements IStorage {
     const message: Message = { ...insertMessage, id, timestamp };
     this.messages.set(id, message);
     return message;
+  }
+
+  // Equipment Class operations
+  async getEquipmentClass(id: number): Promise<EquipmentClass | undefined> {
+    return this.equipmentClassesMap.get(id);
+  }
+
+  async getEquipmentClasses(): Promise<EquipmentClass[]> {
+    return Array.from(this.equipmentClassesMap.values());
+  }
+
+  async createEquipmentClass(insertEquipmentClass: InsertEquipmentClass): Promise<EquipmentClass> {
+    const id = this.equipmentClassCurrentId++;
+    const equipmentClass: EquipmentClass = { 
+      ...insertEquipmentClass, 
+      id,
+      description: insertEquipmentClass.description || null
+    };
+    this.equipmentClassesMap.set(id, equipmentClass);
+    return equipmentClass;
+  }
+
+  async deleteEquipmentClass(id: number): Promise<boolean> {
+    return this.equipmentClassesMap.delete(id);
   }
   
   // Asset operations
