@@ -96,6 +96,91 @@ export const insertFailureModeSchema = createInsertSchema(failureModes).pick({
   costOfFailure: true,
 });
 
+// Failure History table - Comprehensive version for reliability analysis
+export const failureHistory = pgTable("failure_history", {
+  id: serial("id").primaryKey(),
+  assetId: integer("asset_id").notNull().references(() => assets.id, { onDelete: 'cascade' }),
+  failureModeId: integer("failure_mode_id").references(() => failureModes.id),
+  
+  // Essential timing fields
+  failureDate: timestamp("failure_date").notNull(),
+  repairCompleteDate: timestamp("repair_complete_date").notNull(),
+  
+  // Duration metrics
+  downtimeHours: real("downtime_hours").notNull(), // Total unavailable time
+  repairTimeHours: real("repair_time_hours").notNull(), // Actual hands-on repair time
+  operatingHoursAtFailure: real("operating_hours_at_failure"), // Operating time since installation or last overhaul
+  
+  // Failure details
+  failureDescription: text("failure_description").notNull(), // What happened
+  failureMechanism: text("failure_mechanism"), // How it failed physically/chemically
+  failureCause: text("failure_cause").notNull(), // Root cause
+  
+  // Classification fields for analysis
+  failureClassification: text("failure_classification"), // Per ISO 14224 (mechanical, electrical, etc.)
+  failureDetectionMethod: text("failure_detection_method").notNull(), // How it was discovered
+  
+  // Impact assessment
+  safetyImpact: text("safety_impact"), // None, Minor, Major, Critical
+  environmentalImpact: text("environmental_impact"), // None, Minor, Major, Critical
+  productionImpact: text("production_impact"), // None, Minor, Major, Critical
+  
+  // Financial data
+  repairCost: real("repair_cost"), // Direct cost of repairs
+  consequentialCost: real("consequential_cost"), // Business impact costs
+  
+  // Repair details
+  partsReplaced: text("parts_replaced"), // Components replaced
+  repairActions: text("repair_actions").notNull(), // What was done
+  repairTechnician: text("repair_technician"), // Who performed the work
+  
+  // Operating conditions
+  operatingConditions: text("operating_conditions"), // Conditions at time of failure
+  
+  // RCM and prevention
+  preventability: text("preventability"), // Preventable or non-preventable
+  recommendedPreventiveAction: text("recommended_preventive_action"), // For future prevention
+  
+  // Statistical analysis
+  weibullBeta: real("weibull_beta"), // Shape parameter (if calculated)
+  weibullEta: real("weibull_eta"), // Scale parameter (if calculated)
+  
+  // Metadata
+  recordedBy: text("recorded_by"), // Who recorded this entry
+  verifiedBy: text("verified_by"), // Who verified the analysis
+  recordDate: timestamp("record_date").defaultNow().notNull(), // When this record was created
+});
+
+export const insertFailureHistorySchema = createInsertSchema(failureHistory).pick({
+  assetId: true,
+  failureModeId: true,
+  failureDate: true,
+  repairCompleteDate: true,
+  downtimeHours: true,
+  repairTimeHours: true,
+  operatingHoursAtFailure: true,
+  failureDescription: true,
+  failureMechanism: true,
+  failureCause: true,
+  failureClassification: true,
+  failureDetectionMethod: true,
+  safetyImpact: true,
+  environmentalImpact: true,
+  productionImpact: true,
+  repairCost: true,
+  consequentialCost: true,
+  partsReplaced: true,
+  repairActions: true,
+  repairTechnician: true,
+  operatingConditions: true,
+  preventability: true,
+  recommendedPreventiveAction: true,
+  weibullBeta: true,
+  weibullEta: true,
+  recordedBy: true,
+  verifiedBy: true,
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -111,6 +196,9 @@ export type InsertMaintenanceEvent = z.infer<typeof insertMaintenanceEventSchema
 
 export type FailureMode = typeof failureModes.$inferSelect;
 export type InsertFailureMode = z.infer<typeof insertFailureModeSchema>;
+
+export type FailureHistory = typeof failureHistory.$inferSelect;
+export type InsertFailureHistory = z.infer<typeof insertFailureHistorySchema>;
 
 // Chat completion request type
 export interface ChatCompletionRequest {
@@ -181,6 +269,7 @@ export const messagesRelations = relations(messages, ({ one }) => ({
 export const assetsRelations = relations(assets, ({ many }) => ({
   maintenanceEvents: many(maintenanceEvents),
   failureModes: many(failureModes),
+  failureHistory: many(failureHistory),
 }));
 
 export const maintenanceEventsRelations = relations(maintenanceEvents, ({ one }) => ({
@@ -190,9 +279,21 @@ export const maintenanceEventsRelations = relations(maintenanceEvents, ({ one })
   }),
 }));
 
-export const failureModesRelations = relations(failureModes, ({ one }) => ({
+export const failureModesRelations = relations(failureModes, ({ one, many }) => ({
   asset: one(assets, {
     fields: [failureModes.assetId],
     references: [assets.id],
+  }),
+  failureHistory: many(failureHistory),
+}));
+
+export const failureHistoryRelations = relations(failureHistory, ({ one }) => ({
+  asset: one(assets, {
+    fields: [failureHistory.assetId],
+    references: [assets.id],
+  }),
+  failureMode: one(failureModes, {
+    fields: [failureHistory.failureModeId],
+    references: [failureModes.id],
   }),
 }));

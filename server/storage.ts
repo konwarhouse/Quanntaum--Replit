@@ -3,7 +3,8 @@ import {
   messages, type Message, type InsertMessage,
   assets, type Asset, type InsertAsset,
   maintenanceEvents, type MaintenanceEvent, type InsertMaintenanceEvent,
-  failureModes, type FailureMode, type InsertFailureMode
+  failureModes, type FailureMode, type InsertFailureMode,
+  failureHistory, type FailureHistory, type InsertFailureHistory
 } from "@shared/schema";
 
 // modify the interface with any CRUD methods
@@ -37,6 +38,14 @@ export interface IStorage {
   createFailureMode(failureMode: InsertFailureMode): Promise<FailureMode>;
   updateFailureMode(id: number, failureMode: Partial<InsertFailureMode>): Promise<FailureMode | undefined>;
   deleteFailureMode(id: number): Promise<boolean>;
+  
+  // Failure History operations
+  getFailureHistory(id: number): Promise<FailureHistory | undefined>;
+  getFailureHistoryByAssetId(assetId: number): Promise<FailureHistory[]>;
+  getFailureHistoryByFailureModeId(failureModeId: number): Promise<FailureHistory[]>;
+  createFailureHistory(failureHistory: InsertFailureHistory): Promise<FailureHistory>;
+  updateFailureHistory(id: number, failureHistory: Partial<InsertFailureHistory>): Promise<FailureHistory | undefined>;
+  deleteFailureHistory(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
