@@ -10,6 +10,7 @@ export interface ChatMessage {
 
 export interface Asset {
   id: number;
+  assetNumber: string;
   name: string;
   description: string | null;
   criticality: string;

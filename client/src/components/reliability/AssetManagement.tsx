@@ -195,6 +195,7 @@ const AssetManagement = () => {
       <CardHeader className="pb-3">
         <CardTitle className="text-xl">{asset.name}</CardTitle>
         <CardDescription>
+          ID: {asset.assetNumber}<br />
           Installed: {asset.installationDate ? format(new Date(asset.installationDate), 'MMM d, yyyy') : 'Unknown'}
         </CardDescription>
       </CardHeader>
