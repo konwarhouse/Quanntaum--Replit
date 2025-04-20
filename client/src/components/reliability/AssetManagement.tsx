@@ -150,15 +150,27 @@ const AssetManagement = () => {
 
   const handleAddAsset = (e: React.FormEvent) => {
     e.preventDefault();
-    addAssetMutation.mutate(newAsset);
+    // Create a copy of the asset data
+    const assetData = {...newAsset};
+    
+    // If installation date is empty, make sure it's handled properly on the server
+    // We'll keep an empty string which signals to the server this is a null/undefined date
+    
+    addAssetMutation.mutate(assetData);
   };
 
   const handleEditAsset = (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedAsset) {
+      // Create a copy of the asset data
+      const assetData = {...newAsset};
+      
+      // If installation date is empty, we'll keep it as empty string
+      // The server will handle this properly
+      
       updateAssetMutation.mutate({ 
         id: selectedAsset.id, 
-        data: newAsset 
+        data: assetData 
       });
     }
   };

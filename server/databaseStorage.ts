@@ -49,14 +49,26 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createAsset(insertAsset: InsertAsset): Promise<Asset> {
-    const [asset] = await db.insert(assets).values(insertAsset).returning();
+    // Handle empty installation date
+    const processedAsset = {...insertAsset};
+    if (processedAsset.installationDate === '') {
+      processedAsset.installationDate = null;
+    }
+    
+    const [asset] = await db.insert(assets).values(processedAsset).returning();
     return asset;
   }
 
   async updateAsset(id: number, assetUpdate: Partial<InsertAsset>): Promise<Asset | undefined> {
+    // Handle empty installation date
+    const processedUpdate = {...assetUpdate};
+    if (processedUpdate.installationDate === '') {
+      processedUpdate.installationDate = null;
+    }
+    
     const [updatedAsset] = await db
       .update(assets)
-      .set(assetUpdate)
+      .set(processedUpdate)
       .where(eq(assets.id, id))
       .returning();
     return updatedAsset;
