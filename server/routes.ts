@@ -473,33 +473,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const equipmentClass = req.params.equipmentClass;
       
-      // First get all assets of this equipment class
-      const assets = await storage.getAssets();
-      const matchingAssets = assets.filter(asset => 
-        asset.equipmentClass === equipmentClass
-      );
-      
-      if (matchingAssets.length === 0) {
-        return res.json([]);
-      }
-      
-      // Get all failure modes for these assets
-      const allFailureModes = await Promise.all(
-        matchingAssets.map(async (asset) => {
-          const modes = await storage.getFailureModesByAssetId(asset.id);
-          // Ensure equipment class is set
-          return modes.map(mode => ({
-            ...mode,
-            equipmentClass: mode.equipmentClass || asset.equipmentClass
-          }));
-        })
-      );
-      
-      // Flatten and deduplicate
-      const failureModes = allFailureModes.flat().filter(
-        (mode, index, self) => 
-          index === self.findIndex(m => m.id === mode.id)
-      );
+      // Use the dedicated method to fetch failure modes by equipment class
+      const failureModes = await storage.getFailureModesByEquipmentClass(equipmentClass);
       
       res.json(failureModes);
     } catch (error) {
