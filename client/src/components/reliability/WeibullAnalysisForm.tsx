@@ -28,9 +28,17 @@ const WeibullAnalysisForm = () => {
   });
   
   // Weibull analysis mutation
-  const weibullMutation = useMutation<WeibullAnalysisResponse, Error, WeibullParameters>({
-    mutationFn: (params: WeibullParameters) => 
-      apiRequest<WeibullAnalysisResponse>("POST", "/api/weibull-analysis", params),
+  const weibullMutation = useMutation({
+    mutationFn: async (params: WeibullParameters): Promise<WeibullAnalysisResponse> => {
+      const res = await apiRequest("POST", "/api/weibull-analysis", params);
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to perform Weibull analysis");
+      }
+      
+      return res.json();
+    },
     onSuccess: (data) => {
       setResults(data);
       toast({ 

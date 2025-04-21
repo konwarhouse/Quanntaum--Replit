@@ -36,7 +36,7 @@ interface UpdateUserData {
 
 // Auth context type definition
 type AuthContextType = {
-  user: User | null | undefined;
+  user: User | null;
   isLoading: boolean;
   error: Error | null;
   loginMutation: UseMutationResult<User, Error, LoginCredentials>;
@@ -58,14 +58,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     data: user,
     error,
     isLoading,
-  } = useQuery<User | undefined, Error>({
+  } = useQuery<User | null, Error>({
     queryKey: ["/api/auth/user"],
     queryFn: async ({ signal }) => {
       try {
         const res = await apiRequest("GET", "/api/auth/user", undefined, { signal });
         
         if (res.status === 401) {
-          return undefined;
+          return null; // Return null instead of undefined
         }
         
         if (!res.ok) {
@@ -76,7 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return await res.json();
       } catch (err) {
         if (err instanceof Error && err.name === "AbortError") {
-          return undefined;
+          return null; // Return null instead of undefined
         }
         throw err;
       }
@@ -153,7 +153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     },
     onSuccess: () => {
-      queryClient.setQueryData(["/api/auth/user"], undefined);
+      queryClient.setQueryData(["/api/auth/user"], null);
       toast({
         title: "Logged out",
         description: "You have been logged out successfully",
@@ -226,7 +226,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider
       value={{
-        user,
+        user: user || null,
         isLoading,
         error,
         loginMutation,
