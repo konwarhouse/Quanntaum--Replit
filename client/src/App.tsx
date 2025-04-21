@@ -7,6 +7,7 @@ import NotFound from "@/pages/not-found";
 import ChatPage from "@/pages/ChatPage";
 import ReliabilityPage from "@/pages/ReliabilityPage";
 import AuthPage from "@/pages/auth-page";
+import UserManagementPage from "@/pages/UserManagementPage";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { AuthProvider } from "@/hooks/use-auth";
 import Layout from "@/components/layout";
@@ -28,6 +29,14 @@ function Router() {
         <Layout>
           <ProtectedRoute>
             <ReliabilityPage />
+          </ProtectedRoute>
+        </Layout>
+      </Route>
+      
+      <Route path="/users">
+        <Layout>
+          <ProtectedRoute>
+            <UserManagementPage />
           </ProtectedRoute>
         </Layout>
       </Route>

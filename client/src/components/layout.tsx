@@ -32,9 +32,9 @@ export default function Layout({ children }: LayoutProps) {
     },
     {
       name: 'User Management',
-      href: '/auth',
+      href: '/users',
       icon: Users,
-      current: location === '/auth',
+      current: location === '/users',
       roles: [UserRole.ADMIN], // Only admin can access this
     },
   ];
