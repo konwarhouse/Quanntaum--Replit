@@ -35,7 +35,7 @@ interface UpdateUserData {
 }
 
 // Auth context type definition
-interface AuthContextType {
+type AuthContextType = {
   user: User | null | undefined;
   isLoading: boolean;
   error: Error | null;
@@ -83,6 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     retry: false,
     refetchOnWindowFocus: true,
+    refetchInterval: false,
   });
 
   // Login mutation

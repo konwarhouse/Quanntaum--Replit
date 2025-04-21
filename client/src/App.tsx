@@ -6,14 +6,38 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import ChatPage from "@/pages/ChatPage";
 import ReliabilityPage from "@/pages/ReliabilityPage";
+import AuthPage from "@/pages/auth-page";
+import { ProtectedRoute } from "@/components/auth/protected-route";
+import { AuthProvider } from "@/hooks/use-auth";
+import Layout from "@/components/layout";
 
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={ChatPage} />
-      <Route path="/reliability" component={ReliabilityPage} />
+      <Route path="/auth" component={AuthPage} />
+
+      <Route path="/">
+        <Layout>
+          <ProtectedRoute>
+            <ChatPage />
+          </ProtectedRoute>
+        </Layout>
+      </Route>
+
+      <Route path="/reliability">
+        <Layout>
+          <ProtectedRoute>
+            <ReliabilityPage />
+          </ProtectedRoute>
+        </Layout>
+      </Route>
+
       {/* Fallback to 404 */}
-      <Route component={NotFound} />
+      <Route>
+        <Layout>
+          <NotFound />
+        </Layout>
+      </Route>
     </Switch>
   );
 }
@@ -21,10 +45,12 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Router />
-      </TooltipProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Router />
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

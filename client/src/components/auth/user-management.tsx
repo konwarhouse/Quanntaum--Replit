@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { User } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
-import { getRoleDisplayName } from "@shared/auth";
+import { getRoleDisplayName, UserRole } from "@shared/auth";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -43,7 +43,8 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, UserPlus, Pencil, Trash2 } from "lucide-react";
 import { RegisterForm } from "./register-form";
 import { useState } from "react";
-import { UserEditForm } from "./user-edit-form";
+// Temporarily comment out until we update this component
+// import { UserEditForm } from "./user-edit-form";
 
 export function UserManagement() {
   const { user: currentUser, deleteUserMutation } = useAuth();
@@ -138,7 +139,7 @@ export function UserManagement() {
                 <TableCell>{user.fullName || "-"}</TableCell>
                 <TableCell>{user.email || "-"}</TableCell>
                 <TableCell>
-                  <Badge variant="outline">{getRoleDisplayName(user.role)}</Badge>
+                  <Badge variant="outline">{getRoleDisplayName(user.role as UserRole)}</Badge>
                 </TableCell>
                 <TableCell>
                   {user.isActive ? (
@@ -204,7 +205,7 @@ export function UserManagement() {
         </Table>
       </CardContent>
 
-      {/* Edit User Dialog */}
+      {/* Edit User Dialog - Temporarily commented out until we implement the UserEditForm component */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -213,7 +214,12 @@ export function UserManagement() {
               Update user details and permissions
             </DialogDescription>
           </DialogHeader>
-          {selectedUser && <UserEditForm user={selectedUser} onComplete={() => setIsEditDialogOpen(false)} />}
+          {selectedUser && (
+            <div className="p-4 text-center">
+              <p className="text-muted-foreground mb-4">Edit functionality coming soon</p>
+              <Button onClick={() => setIsEditDialogOpen(false)}>Close</Button>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </Card>
