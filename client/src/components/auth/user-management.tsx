@@ -52,17 +52,37 @@ export function UserManagement() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
-  // Fetch all users
+  // Fetch all users with better error handling
   const { data: users, isLoading, error } = useQuery<User[], Error>({
     queryKey: ["/api/auth/users"],
     queryFn: async ({ signal }) => {
-      const res = await apiRequest("GET", "/api/auth/users", undefined, { signal });
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Failed to fetch users");
+      try {
+        console.log("Fetching users...");
+        const res = await apiRequest("GET", "/api/auth/users", undefined, { signal });
+        console.log("User fetch response status:", res.status);
+        
+        if (res.status === 401) {
+          throw new Error("Not authenticated. Please log in as an administrator.");
+        }
+        
+        if (res.status === 403) {
+          throw new Error("You don't have admin privileges required to manage users.");
+        }
+        
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.error || "Failed to fetch users");
+        }
+        
+        const data = await res.json();
+        console.log("Users fetched successfully:", data.length);
+        return data;
+      } catch (error) {
+        console.error("Error in user fetch:", error);
+        throw error;
       }
-      return res.json();
     },
+    retry: false,
   });
 
   const handleEditUser = (user: User) => {

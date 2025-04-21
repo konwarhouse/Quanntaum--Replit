@@ -168,7 +168,24 @@ export function setupAuth(app: express.Express) {
     };
   };
 
-  const requireAdmin = requireRole(UserRole.ADMIN);
+  // Admin role middleware with detailed logging
+  const requireAdmin = (req: Request, res: Response, next: NextFunction) => {
+    console.log("Admin check - Auth status:", req.isAuthenticated());
+    console.log("Admin check - User:", req.user);
+    
+    if (!req.isAuthenticated()) {
+      console.log("Admin check failed: Not authenticated");
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    
+    if (req.user.role !== UserRole.ADMIN) {
+      console.log(`Admin check failed: User role is ${req.user.role}, not ${UserRole.ADMIN}`);
+      return res.status(403).json({ error: "Admin privileges required" });
+    }
+    
+    console.log("Admin check passed");
+    next();
+  };
 
   // Auth routes
   app.post("/api/auth/register", requireAdmin, async (req, res) => {

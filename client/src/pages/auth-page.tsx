@@ -26,13 +26,17 @@ export default function AuthPage() {
         setIsAdmin(true);
         setActiveTab("users");
       } else {
-        // Regular users are redirected to the home page when already logged in
+        // Regular users shouldn't access user management
         setIsAdmin(false);
       }
+    } else {
+      // If not logged in, ensure admin state is false
+      setIsAdmin(false);
     }
   }, [user]);
 
   // If user is logged in but not an admin, redirect to home
+  // This ensures only admins can access user management
   if (user && !isAdmin) {
     return <Redirect to="/" />;
   }
