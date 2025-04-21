@@ -43,7 +43,7 @@ export default function AuthPage() {
       <div className="w-full md:w-1/2 bg-gradient-to-b from-primary/5 to-primary/10 p-8 flex flex-col justify-center">
         <div className="max-w-md mx-auto text-center md:text-left">
           <h1 className="text-4xl font-bold tracking-tight mb-4">
-            Quantum Predict
+            Quanntaum Predict
           </h1>
           <p className="text-lg text-muted-foreground mb-6">
             Smarter reliability starts here. An AI-powered reliability engineering platform for predictive maintenance, failure analysis, and asset performance optimization.
@@ -93,7 +93,7 @@ export default function AuthPage() {
             <CardDescription>
               {isAdmin 
                 ? "Manage users and access permissions" 
-                : "Sign in to access Quantum Predict"}
+                : "Sign in to access Quanntaum Predict"}
             </CardDescription>
           </CardHeader>
           <CardContent>

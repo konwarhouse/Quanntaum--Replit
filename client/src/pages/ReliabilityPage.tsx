@@ -29,7 +29,7 @@ const ReliabilityPage = () => {
   return (
     <div className="container py-8 space-y-6">
       <div className="flex flex-col">
-        <h1 className="text-4xl font-bold tracking-tight">Quantum Predict</h1>
+        <h1 className="text-4xl font-bold tracking-tight">Quanntaum Predict</h1>
         <p className="text-muted-foreground mt-2">
           Smarter reliability engineering with AI-powered predictive maintenance, failure analysis, and asset performance optimization
         </p>
