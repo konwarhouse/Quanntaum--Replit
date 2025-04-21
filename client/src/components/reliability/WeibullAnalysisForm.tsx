@@ -234,6 +234,78 @@ const WeibullAnalysisForm = () => {
                 <h3 className="text-lg font-medium mb-2">MTBF (Mean Time Between Failures)</h3>
                 <p className="text-3xl font-bold">{results.mtbf.toFixed(2)} {formData.timeUnits}</p>
               </div>
+              
+              {/* Analysis Interpretation */}
+              <div className="p-4 border rounded-md bg-card">
+                <h3 className="text-lg font-medium mb-3">Analysis Interpretation</h3>
+                <div className="space-y-4 text-sm">
+                  <div>
+                    <h4 className="font-semibold">MTBF Interpretation:</h4>
+                    <p>Your calculated Mean Time Between Failures is <strong>{results.mtbf.toFixed(2)} {formData.timeUnits}</strong>. 
+                    This represents the average time between failures for this equipment. 
+                    {results.mtbf > 5000 
+                      ? " This is a relatively high MTBF, indicating good reliability." 
+                      : results.mtbf > 2000 
+                        ? " This MTBF indicates moderate reliability." 
+                        : " This MTBF suggests potential reliability concerns that may need to be addressed."}
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-semibold">Weibull Shape Parameter (β) Analysis:</h4>
+                    <p>
+                      {formData.beta < 1 
+                        ? "Your β value is less than 1, indicating decreasing failure rate over time (often seen with early failures or 'infant mortality')." 
+                        : formData.beta === 1 
+                          ? "Your β value is approximately 1, indicating a constant failure rate (random failures independent of age)." 
+                          : formData.beta > 1 && formData.beta < 2 
+                            ? "Your β value is between 1 and 2, indicating increasing failure rate (beginning of wear-out)." 
+                            : formData.beta >= 2 && formData.beta < 4 
+                              ? "Your β value is between 2 and 4, indicating accelerated wear-out phase." 
+                              : "Your β value is greater than 4, indicating rapid wear-out or fatigue failures."}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Recommendations */}
+              <div className="p-4 border rounded-md bg-card">
+                <h3 className="text-lg font-medium mb-3">Recommendations</h3>
+                <ul className="list-disc list-inside space-y-2 text-sm pl-2">
+                  {formData.beta < 1 && (
+                    <>
+                      <li>Consider investigating early life failures and manufacturing processes</li>
+                      <li>Implement burn-in testing to eliminate weak components before installation</li>
+                      <li>Focus on quality control during production and installation</li>
+                    </>
+                  )}
+                  
+                  {formData.beta >= 0.95 && formData.beta <= 1.05 && (
+                    <>
+                      <li>Implement condition-based monitoring to detect random failures</li>
+                      <li>Ensure adequate spare parts inventory for rapid replacement</li>
+                      <li>Review environmental factors that might be causing random failures</li>
+                    </>
+                  )}
+                  
+                  {formData.beta > 1 && (
+                    <>
+                      <li>Schedule preventive maintenance at approximately {(results.mtbf * 0.63).toFixed(0)} {formData.timeUnits}</li>
+                      <li>Consider reliability centered maintenance (RCM) approaches</li>
+                      <li>Analyze wear patterns to extend equipment life</li>
+                    </>
+                  )}
+                  
+                  {formData.beta > 3 && (
+                    <>
+                      <li>Urgent action required: accelerated wear-out indicates potential design issues</li>
+                      <li>Consider equipment redesign or material upgrades</li>
+                    </>
+                  )}
+                  
+                  <li>Optimal maintenance interval should be scheduled before {(results.mtbf * 0.75).toFixed(0)} {formData.timeUnits} for best reliability/cost ratio</li>
+                </ul>
+              </div>
 
               {/* Reliability Curve */}
               <div>
