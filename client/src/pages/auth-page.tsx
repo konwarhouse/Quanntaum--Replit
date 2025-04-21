@@ -43,10 +43,10 @@ export default function AuthPage() {
       <div className="w-full md:w-1/2 bg-gradient-to-b from-primary/5 to-primary/10 p-8 flex flex-col justify-center">
         <div className="max-w-md mx-auto text-center md:text-left">
           <h1 className="text-4xl font-bold tracking-tight mb-4">
-            Reliability Engineering Platform
+            Quantum Predict
           </h1>
           <p className="text-lg text-muted-foreground mb-6">
-            A comprehensive solution for asset management, failure analysis, and reliability-centered maintenance planning.
+            Smarter reliability starts here. An AI-powered reliability engineering platform for predictive maintenance, failure analysis, and asset performance optimization.
           </p>
           
           <div className="grid gap-4 mb-8">
@@ -55,8 +55,8 @@ export default function AuthPage() {
                 <span className="text-primary font-bold">1</span>
               </div>
               <div className="flex-1">
-                <h3 className="font-medium">ISO 14224 Compliant</h3>
-                <p className="text-muted-foreground">Organize assets according to industry standard equipment classes</p>
+                <h3 className="font-medium">🔍 Built on Industry Standards</h3>
+                <p className="text-muted-foreground">Organize and manage assets with ISO 14224-compliant equipment classification for structured, reliable data management</p>
               </div>
             </div>
             
@@ -65,8 +65,8 @@ export default function AuthPage() {
                 <span className="text-primary font-bold">2</span>
               </div>
               <div className="flex-1">
-                <h3 className="font-medium">Predictive Analytics</h3>
-                <p className="text-muted-foreground">Apply Weibull analysis and reliability modeling to optimize maintenance</p>
+                <h3 className="font-medium">📊 Predictive Analytics & Reliability Modeling</h3>
+                <p className="text-muted-foreground">Leverage Weibull analysis, reliability modeling, and historical failure data to forecast issues before they happen — and plan maintenance that makes an impact</p>
               </div>
             </div>
             
@@ -75,8 +75,8 @@ export default function AuthPage() {
                 <span className="text-primary font-bold">3</span>
               </div>
               <div className="flex-1">
-                <h3 className="font-medium">AI-Driven Insights</h3>
-                <p className="text-muted-foreground">Leverage integrated AI to gain deeper understanding of reliability patterns</p>
+                <h3 className="font-medium">🤖 AI-Driven Insights</h3>
+                <p className="text-muted-foreground">Uncover hidden patterns in asset behavior and failure trends using integrated AI. Reduce downtime, extend asset life, and improve operational efficiency</p>
               </div>
             </div>
           </div>
@@ -93,7 +93,7 @@ export default function AuthPage() {
             <CardDescription>
               {isAdmin 
                 ? "Manage users and access permissions" 
-                : "Sign in to access the reliability platform"}
+                : "Sign in to access Quantum Predict"}
             </CardDescription>
           </CardHeader>
           <CardContent>
