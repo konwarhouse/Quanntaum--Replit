@@ -500,8 +500,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all failure modes
+  app.get("/api/failure-modes", async (req, res) => {
+    try {
+      // Get all failure modes from all assets
+      const allAssets = await storage.getAssets();
+      const allFailureModes = [];
+      
+      for (const asset of allAssets) {
+        if (asset.id) {
+          const failureModes = await storage.getFailureModesByAssetId(asset.id);
+          allFailureModes.push(...failureModes);
+        }
+      }
+      
+      // Also include failure modes that may not be associated with a specific asset
+      // but are associated with an equipment class
+      const eqClasses = new Set(allAssets.map(a => a.equipmentClass).filter(Boolean));
+      for (const eqClass of eqClasses) {
+        if (eqClass) {
+          const classFailureModes = await storage.getFailureModesByEquipmentClass(eqClass);
+          // Only add those that aren't already in the list
+          for (const fm of classFailureModes) {
+            if (!allFailureModes.some(existing => existing.id === fm.id)) {
+              allFailureModes.push(fm);
+            }
+          }
+        }
+      }
+      
+      res.json(allFailureModes);
+    } catch (error) {
+      console.error("Error fetching all failure modes:", error);
+      res.status(500).json({ message: "Failed to fetch failure modes" });
+    }
+  });
+
   // Get failure modes for a specific asset
-  app.get("/api/failure-modes/:assetId", async (req, res) => {
+  app.get("/api/failure-modes/:assetId([0-9]+)", async (req, res) => {
     try {
       const assetId = parseInt(req.params.assetId);
       const failureModes = await storage.getFailureModesByAssetId(assetId);

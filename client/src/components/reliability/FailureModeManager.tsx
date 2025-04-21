@@ -121,11 +121,9 @@ const FailureModeManager = ({ currentUserRole }: FailureModeManagerProps) => {
     },
   });
 
-  // Filter failure modes by equipment class if one is selected
-  const filteredFailureModes = useMemo(() => {
-    if (!selectedEquipmentClass) return failureModes;
-    return failureModes.filter(mode => mode.equipmentClass === selectedEquipmentClass);
-  }, [failureModes, selectedEquipmentClass]);
+  // The failureModes will already be filtered server-side based on the selected equipment class,
+  // so we don't need to filter them again here. Just use them directly.
+  const filteredFailureModes = failureModes;
 
   // Mutations for CRUD operations
   const createFailureModeMutation = useMutation({
