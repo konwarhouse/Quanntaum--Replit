@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { testDatabaseConnection } from "./db";
+import { setupAuth, ensureAdminExists } from "./auth";
 
 const app = express();
 app.use(express.json());
@@ -49,6 +50,12 @@ app.use((req, res, next) => {
   } catch (error) {
     log(`Database connection error: ${error}`);
   }
+  
+  // Setup authentication
+  setupAuth(app);
+  
+  // Create default admin user if none exists
+  await ensureAdminExists();
   
   const server = await registerRoutes(app);
 

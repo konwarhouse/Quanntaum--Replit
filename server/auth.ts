@@ -21,7 +21,19 @@ declare module "express-session" {
 // Augment Express.Request type
 declare global {
   namespace Express {
-    interface User extends User {}
+    // Extend Express User interface with our application-specific User type
+    interface User {
+      id: number;
+      username: string;
+      password: string;
+      fullName: string | null;
+      email: string | null;
+      role: string;
+      createdAt: Date | null;
+      createdBy: number | null;
+      lastLoginAt: Date | null;
+      isActive: boolean;
+    }
   }
 }
 
@@ -187,7 +199,7 @@ export function setupAuth(app: express.Express) {
           email: email || null,
           role: role || UserRole.VIEWER,
           isActive: isActive !== undefined ? isActive : true,
-          createdBy: req.user.id,
+          createdBy: req.user?.id || null,
           createdAt: new Date(),
         })
         .returning();
@@ -203,7 +215,7 @@ export function setupAuth(app: express.Express) {
   });
 
   app.post("/api/auth/login", (req, res, next) => {
-    passport.authenticate("local", (err, user, info) => {
+    passport.authenticate("local", (err: any, user: Express.User | false, info: { message?: string } | undefined) => {
       if (err) {
         return next(err);
       }
@@ -367,7 +379,7 @@ export function setupAuth(app: express.Express) {
       const id = parseInt(req.params.id);
       
       // Prevent deleting oneself
-      if (id === req.user.id) {
+      if (req.user && id === req.user.id) {
         return res.status(400).json({ error: "Cannot delete yourself" });
       }
       
