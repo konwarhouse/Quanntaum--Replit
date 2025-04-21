@@ -438,23 +438,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all failure modes
   app.get("/api/failure-modes", async (req, res) => {
     try {
-      // Get all assets to have access to equipment classes
+      // Get all equipment classes from assets
       const assets = await storage.getAssets();
+      const equipmentClasses = [...new Set(assets.map(asset => asset.equipmentClass).filter(Boolean))];
       
-      // Get all failure modes
-      const allFailureModes = await Promise.all(
-        assets.map(async (asset) => {
-          const modes = await storage.getFailureModesByAssetId(asset.id);
-          // Enrich each mode with the equipment class from its parent asset if not already set
-          return modes.map(mode => ({
-            ...mode,
-            equipmentClass: mode.equipmentClass || asset.equipmentClass
-          }));
-        })
+      // Get failure modes for all equipment classes
+      const allPromises = [];
+      
+      // Add direct fetch for asset-specific failure modes
+      allPromises.push(
+        Promise.all(
+          assets.map(async (asset) => {
+            const modes = await storage.getFailureModesByAssetId(asset.id);
+            // Enrich each mode with the equipment class from its parent asset if not already set
+            return modes.map(mode => ({
+              ...mode,
+              equipmentClass: mode.equipmentClass || asset.equipmentClass
+            }));
+          })
+        )
       );
       
+      // Add fetches for equipment class based failure modes
+      for (const eqClass of equipmentClasses) {
+        if (eqClass) {
+          allPromises.push(storage.getFailureModesByEquipmentClass(eqClass));
+        }
+      }
+      
+      // Wait for all fetches to complete
+      const results = await Promise.all(allPromises);
+      
       // Flatten the array of arrays
-      const failureModes = allFailureModes.flat();
+      const failureModes = results.flat();
       
       // Remove duplicates (in case some failure modes are shared)
       const uniqueFailureModes = failureModes.filter(
