@@ -2,6 +2,7 @@ import { pgTable, text, serial, integer, boolean, timestamp, real, date, foreign
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
+import { UserRole } from "./auth";
 
 // Equipment Classes table for ISO 14224 categories
 export const equipmentClasses = pgTable("equipment_classes", {
@@ -15,15 +16,29 @@ export const insertEquipmentClassSchema = createInsertSchema(equipmentClasses).p
   description: true,
 });
 
+// Using UserRole enum from shared/auth.ts
+
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
+  fullName: text("full_name"),
+  email: text("email"),
+  role: text("role").notNull().default(UserRole.VIEWER),
+  createdAt: timestamp("created_at").defaultNow(),
+  createdBy: integer("created_by"),
+  lastLoginAt: timestamp("last_login_at"),
+  isActive: boolean("is_active").notNull().default(true),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
+  fullName: true,
+  email: true,
+  role: true,
+  createdBy: true,
+  isActive: true,
 });
 
 export const messages = pgTable("messages", {
