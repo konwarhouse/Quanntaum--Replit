@@ -934,20 +934,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
         failureRecords = results.flat();
       }
       
-      // Import the new data fitting module
+      // Import the data fitting module
       const { 
         fitWeibullToFailureData, 
         calculateBLife, 
         classifyFailurePattern,
-        analyzeFailureMechanisms
+        analyzeFailureMechanisms,
+        calculateMTBF
       } = await import('./reliability/weibullDataFitting');
       
-      // Fit Weibull distribution to the data
+      // Try to fit Weibull distribution to the data
       const fitResult = fitWeibullToFailureData(failureRecords, params.useOperatingHours);
       
+      // If Weibull fit fails, fall back to basic MTBF calculation
       if (!fitResult) {
-        return res.status(400).json({
-          message: "Insufficient failure data for Weibull analysis. Need at least 3 failure records."
+        console.log('[DEBUG] Weibull fit failed, trying fallback MTBF calculation');
+        // Calculate MTBF directly from the failure data
+        const mtbf = calculateMTBF(failureRecords, params.useOperatingHours);
+        
+        if (mtbf === null) {
+          return res.status(400).json({
+            message: "Insufficient failure data for analysis. No valid TTF/TBF values found."
+          });
+        }
+        
+        // Create a simple analysis using only MTBF
+        const timeValues = Array.from({ length: 100 }, (_, i) => (i / 99) * params.timeHorizon);
+        
+        // Default to exponential distribution (beta=1) for reliability curves when we only have MTBF
+        const reliabilityCurve = timeValues.map(time => ({
+          time,
+          reliability: Math.exp(-time / mtbf)
+        }));
+        
+        const failureRateCurve = timeValues.map(time => ({
+          time,
+          failureRate: 1 / mtbf  // Constant failure rate for exponential distribution
+        }));
+        
+        const cumulativeFailureProbability = timeValues.map(time => ({
+          time,
+          probability: 1 - Math.exp(-time / mtbf)
+        }));
+        
+        // Determine asset details for the response
+        let assetDetails = null;
+        if (params.assetId) {
+          const asset = await storage.getAsset(params.assetId);
+          assetDetails = {
+            assetType: 'specific',
+            id: params.assetId,
+            label: asset?.name || `Asset ID: ${params.assetId}`
+          };
+        } else if (params.equipmentClass) {
+          assetDetails = {
+            assetType: 'class',
+            id: null,
+            label: params.equipmentClass
+          };
+        } else {
+          assetDetails = {
+            assetType: 'all',
+            id: null,
+            label: 'All Assets'
+          };
+        }
+        
+        // Return the simplified MTBF-based analysis
+        return res.json({
+          mtbf,
+          reliabilityCurve,
+          failureRateCurve,
+          cumulativeFailureProbability,
+          failureCount: failureRecords.length,
+          assetDetails,
+          // Include simplified fallback flag to indicate to client this is fallback calculation
+          fallbackCalculation: true
         });
       }
       
