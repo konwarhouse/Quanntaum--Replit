@@ -64,6 +64,8 @@ export const assets = pgTable("assets", {
   description: text("description").notNull(), // Text fields can hold long descriptions by default
   criticality: text("criticality").notNull(), // High, Medium, Low
   installationDate: date("installation_date"),
+  lastReplacementDate: date("last_replacement_date"), // Date of last major replacement
+  isReplacement: boolean("is_replacement").default(false), // Flag indicating if the asset has been replaced
   weibullBeta: real("weibull_beta").notNull(), // Shape parameter
   weibullEta: real("weibull_eta").notNull(), // Scale parameter
   timeUnit: text("time_unit").notNull(), // hours, days, months, years
@@ -76,6 +78,8 @@ export const insertAssetSchema = createInsertSchema(assets).pick({
   description: true,
   criticality: true,
   installationDate: true,
+  lastReplacementDate: true,
+  isReplacement: true,
   weibullBeta: true,
   weibullEta: true,
   timeUnit: true,
