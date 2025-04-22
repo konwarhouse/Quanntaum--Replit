@@ -200,27 +200,42 @@ export function calculateMTBF(
     return null;
   }
   
-  // Filter records to only include those with valid time values
-  const validRecords = failureHistoryRecords.filter(record => useOperatingHours 
-    ? record.operatingHoursAtFailure != null && record.operatingHoursAtFailure > 0
-    : record.tbfDays != null && record.tbfDays > 0);
+  // First try with operating hours if that's what was requested
+  if (useOperatingHours) {
+    // Filter records to only include those with valid operating hours values
+    const validOperatingHoursRecords = failureHistoryRecords.filter(record => 
+      record.operatingHoursAtFailure != null && record.operatingHoursAtFailure > 0);
+    
+    // If we have enough operating hours data, use it
+    if (validOperatingHoursRecords.length >= 3) {
+      const timeValues = validOperatingHoursRecords.map(record => record.operatingHoursAtFailure as number);
+      const sumTime = timeValues.reduce((sum, time) => sum + time, 0);
+      const mtbf = sumTime / timeValues.length;
+      console.log(`[DEBUG] MTBF calculation using operating hours: sum=${sumTime}, count=${timeValues.length}, mtbf=${mtbf}`);
+      return mtbf;
+    } else {
+      console.log(`[DEBUG] Not enough valid operating hours records (${validOperatingHoursRecords.length}). Falling back to calendar days.`);
+    }
+  }
   
-  if (validRecords.length === 0) {
+  // If operating hours wasn't requested or there weren't enough valid records, fall back to tbfDays
+  const validTbfRecords = failureHistoryRecords.filter(record => 
+    record.tbfDays != null && record.tbfDays > 0);
+  
+  if (validTbfRecords.length === 0) {
     console.log('[DEBUG] No valid records for MTBF calculation after filtering');
     return null;
   }
   
-  // Extract time values
-  const timeValues = validRecords.map(record => useOperatingHours 
-    ? record.operatingHoursAtFailure as number 
-    : record.tbfDays as number);
+  // Extract tbfDays values
+  const timeValues = validTbfRecords.map(record => record.tbfDays as number);
   
   // Calculate sum of all time values
   const sumTime = timeValues.reduce((sum, time) => sum + time, 0);
   
   // MTBF = Sum of all time values / number of failures
   const mtbf = sumTime / timeValues.length;
-  console.log(`[DEBUG] MTBF calculation: sum=${sumTime}, count=${timeValues.length}, mtbf=${mtbf}`);
+  console.log(`[DEBUG] MTBF calculation using tbfDays: sum=${sumTime}, count=${timeValues.length}, mtbf=${mtbf}`);
   
   return mtbf;
 }

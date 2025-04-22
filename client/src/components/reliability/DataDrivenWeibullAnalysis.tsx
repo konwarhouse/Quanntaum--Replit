@@ -537,6 +537,11 @@ const DataDrivenWeibullAnalysis = ({
                           ? results.mtbf.toFixed(2)
                           : 'N/A'} {formatTimeLabel()}</strong>. 
                         This represents the average time between failures for this equipment.
+                        {results.fallbackCalculation && (
+                          <span className="block mt-1 text-xs bg-muted p-1 rounded">
+                            Note: Due to limited operating hours data, this MTBF was calculated using calendar days ({results.failureCount || 0} records).
+                          </span>
+                        )}
                       </p>
                     </div>
                   </div>

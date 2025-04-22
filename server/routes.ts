@@ -958,6 +958,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
         
+        // Add indicator to show which method was used for calculating MTBF
+        const calculationMethod = params.useOperatingHours && 
+          failureRecords.filter(r => r.operatingHoursAtFailure != null && r.operatingHoursAtFailure > 0).length >= 3
+          ? "Operating Hours"
+          : "Calendar Days";
+        
+        console.log(`[DEBUG] MTBF calculated using ${calculationMethod}: ${mtbf}`);
+        
+        
         // Create a simple analysis using only MTBF
         const timeValues = Array.from({ length: 100 }, (_, i) => (i / 99) * params.timeHorizon);
         
