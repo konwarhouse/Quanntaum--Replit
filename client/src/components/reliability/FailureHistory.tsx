@@ -91,13 +91,13 @@ import {
 // Define the form schema for creating/editing failure records
 const failureRecordFormSchema = z.object({
   // References
-  assetId: z.coerce.number().min(1, "Please select an asset"),
-  failureModeId: z.coerce.number().min(1, "Please select a failure mode"),
+  assetId: z.coerce.string().min(1, "Please select an asset"),
+  failureModeId: z.coerce.string().min(1, "Please select a failure mode"),
   workOrderNumber: z.string().optional(),
   
   // Timing and dates
-  installationDate: z.date().optional(),
-  lastFailureDate: z.date().optional(),
+  installationDate: z.date().nullable().optional(),
+  lastFailureDate: z.date().nullable().optional(),
   failureDate: z.date({
     required_error: "Please select the failure date",
   }),
@@ -611,29 +611,44 @@ const FailureHistory = () => {
 
   // Handle form submission for adding a new record
   const onAddSubmit = (data: FailureRecordFormValues) => {
-    // Don't format dates - send Date objects directly to the server
-    // This ensures proper handling by Zod schema validation
-
     // Convert form values to numbers where needed
     const assetId = parseInt(data.assetId);
-    // Failure mode is now required by the schema
     const failureModeId = parseInt(data.failureModeId);
     
+    // Auto-calculate TBF if we have the dates and it's not manually set
+    let tbfDays = data.tbfDays;
+    const isTbfEmpty = tbfDays === undefined || tbfDays === null || tbfDays === "" || Number(tbfDays) === 0;
+    if (data.lastFailureDate && data.failureDate && isTbfEmpty) {
+      const differenceInMs = data.failureDate.getTime() - data.lastFailureDate.getTime();
+      const differenceInDays = differenceInMs / (1000 * 60 * 60 * 24);
+      tbfDays = parseFloat(differenceInDays.toFixed(2));
+    }
+    
+    // Auto-calculate downtime hours if we have both dates
+    let downtimeHours = data.downtimeHours;
+    const isDowntimeEmpty = downtimeHours === undefined || downtimeHours === null || Number(downtimeHours) === 0;
+    if (data.failureDate && data.repairCompleteDate && isDowntimeEmpty) {
+      const differenceInMs = data.repairCompleteDate.getTime() - data.failureDate.getTime();
+      const differenceInHours = differenceInMs / (1000 * 60 * 60);
+      downtimeHours = parseFloat(differenceInHours.toFixed(2));
+    }
+    
+    // Prepare dates in ISO string format to avoid type issues at the server
     createFailureRecordMutation.mutate({
       // References
       assetId: assetId,
       failureModeId: failureModeId,
       workOrderNumber: data.workOrderNumber,
       
-      // Timing and dates - send Date objects directly
-      installationDate: data.installationDate,
-      lastFailureDate: data.lastFailureDate,
-      failureDate: data.failureDate,
-      repairCompleteDate: data.repairCompleteDate,
-      tbfDays: data.tbfDays,
+      // Timing and dates - convert to ISO strings
+      installationDate: data.installationDate ? data.installationDate.toISOString() : null,
+      lastFailureDate: data.lastFailureDate ? data.lastFailureDate.toISOString() : null,
+      failureDate: data.failureDate.toISOString(),
+      repairCompleteDate: data.repairCompleteDate ? data.repairCompleteDate.toISOString() : null,
+      tbfDays: tbfDays,
       
       // Duration metrics
-      downtimeHours: data.downtimeHours,
+      downtimeHours: downtimeHours,
       repairTimeHours: data.repairTimeHours,
       operatingHoursAtFailure: data.operatingHoursAtFailure,
       
@@ -682,14 +697,29 @@ const FailureHistory = () => {
   const onEditSubmit = (data: FailureRecordFormValues) => {
     if (!selectedRecordId) return;
     
-    // No need to format dates - send Date objects directly to the server
-    // This ensures proper handling by Zod schema validation
-    
     // Convert form values to numbers where needed
     const assetId = parseInt(data.assetId);
-    // Failure mode is now required by the schema
     const failureModeId = parseInt(data.failureModeId);
     
+    // Auto-calculate TBF if we have the dates and it's not manually set
+    let tbfDays = data.tbfDays;
+    const isTbfEmpty = tbfDays === undefined || tbfDays === null || tbfDays === "" || Number(tbfDays) === 0;
+    if (data.lastFailureDate && data.failureDate && isTbfEmpty) {
+      const differenceInMs = data.failureDate.getTime() - data.lastFailureDate.getTime();
+      const differenceInDays = differenceInMs / (1000 * 60 * 60 * 24);
+      tbfDays = parseFloat(differenceInDays.toFixed(2));
+    }
+    
+    // Auto-calculate downtime hours if we have both dates
+    let downtimeHours = data.downtimeHours;
+    const isDowntimeEmpty = downtimeHours === undefined || downtimeHours === null || Number(downtimeHours) === 0;
+    if (data.failureDate && data.repairCompleteDate && isDowntimeEmpty) {
+      const differenceInMs = data.repairCompleteDate.getTime() - data.failureDate.getTime();
+      const differenceInHours = differenceInMs / (1000 * 60 * 60);
+      downtimeHours = parseFloat(differenceInHours.toFixed(2));
+    }
+    
+    // Prepare payload with properly formatted dates
     updateFailureRecordMutation.mutate({
       id: selectedRecordId,
       data: {
@@ -698,15 +728,15 @@ const FailureHistory = () => {
         failureModeId: failureModeId,
         workOrderNumber: data.workOrderNumber,
         
-        // Timing and dates - send Date objects directly
-        installationDate: data.installationDate,
-        lastFailureDate: data.lastFailureDate,
-        failureDate: data.failureDate,
-        repairCompleteDate: data.repairCompleteDate,
-        tbfDays: data.tbfDays,
+        // Timing and dates - convert to ISO strings
+        installationDate: data.installationDate ? data.installationDate.toISOString() : null,
+        lastFailureDate: data.lastFailureDate ? data.lastFailureDate.toISOString() : null,
+        failureDate: data.failureDate.toISOString(),
+        repairCompleteDate: data.repairCompleteDate ? data.repairCompleteDate.toISOString() : null,
+        tbfDays: tbfDays,
         
         // Duration metrics
-        downtimeHours: data.downtimeHours,
+        downtimeHours: downtimeHours,
         repairTimeHours: data.repairTimeHours,
         operatingHoursAtFailure: data.operatingHoursAtFailure,
         
