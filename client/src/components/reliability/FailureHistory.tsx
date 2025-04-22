@@ -1069,6 +1069,13 @@ const FailureHistory = () => {
                       <Separator />
                       {renderFormField(
                         addForm,
+                        "failedPart",
+                        "Failed Part",
+                        "Specific component that failed",
+                        "text"
+                      )}
+                      {renderFormField(
+                        addForm,
                         "failureDescription",
                         "Failure Description",
                         "Describe what happened in detail",
@@ -1085,7 +1092,14 @@ const FailureHistory = () => {
                         addForm,
                         "failureCause",
                         "Failure Cause",
-                        "Root cause of the failure",
+                        "Immediate cause of the failure",
+                        "textarea"
+                      )}
+                      {renderFormField(
+                        addForm,
+                        "potentialRootCause",
+                        "Potential Root Cause",
+                        "Underlying system issue that led to the failure",
                         "textarea"
                       )}
                       {renderFormField(
@@ -1256,6 +1270,13 @@ const FailureHistory = () => {
                         "recordedBy",
                         "Recorded By",
                         "Who recorded this failure",
+                        "text"
+                      )}
+                      {renderFormField(
+                        addForm,
+                        "verifiedBy",
+                        "Verified By",
+                        "Who verified this record (if applicable)",
                         "text"
                       )}
                     </div>
@@ -1630,6 +1651,13 @@ const FailureHistory = () => {
                   />
                   {renderFormField(
                     editForm,
+                    "workOrderNumber",
+                    "Work Order Number",
+                    "Reference WO number for this failure",
+                    "text"
+                  )}
+                  {renderFormField(
+                    editForm,
                     "failureModeId",
                     "Failure Mode",
                     "Select the failure mode that occurred (required)",
@@ -1638,6 +1666,22 @@ const FailureHistory = () => {
                       value: mode.id.toString(),
                       label: mode.description,
                     }))
+                  )}
+                  <h3 className="text-lg font-medium">Timing Information</h3>
+                  <Separator />
+                  {renderFormField(
+                    editForm,
+                    "installationDate",
+                    "Equipment Installation Date",
+                    "When was the equipment installed?",
+                    "date"
+                  )}
+                  {renderFormField(
+                    editForm,
+                    "lastFailureDate",
+                    "Last Failure Date",
+                    "When did this equipment last fail? (if applicable)",
+                    "date"
                   )}
                   {renderFormField(
                     editForm,
@@ -1652,6 +1696,13 @@ const FailureHistory = () => {
                     "Repair Complete Date",
                     "When was the repair completed?",
                     "date"
+                  )}
+                  {renderFormField(
+                    editForm,
+                    "tbfDays",
+                    "Time Between Failures (days)",
+                    "Days since last failure (if known)",
+                    "number"
                   )}
                   {renderFormField(
                     editForm,
@@ -1673,6 +1724,27 @@ const FailureHistory = () => {
                     "Operating Hours at Failure",
                     "Machine hours/cycles at failure (if applicable)",
                     "number"
+                  )}
+                  <h3 className="text-lg font-medium">Equipment Status</h3>
+                  <Separator />
+                  {renderFormField(
+                    editForm,
+                    "equipmentStatus",
+                    "Equipment Status",
+                    "Current status (running, failed, censored)",
+                    "select",
+                    [
+                      { value: "running", label: "Running" },
+                      { value: "failed", label: "Failed" },
+                      { value: "censored", label: "Censored" }
+                    ]
+                  )}
+                  {renderFormField(
+                    editForm,
+                    "equipmentLocation",
+                    "Equipment Location",
+                    "Physical location when failure occurred",
+                    "text"
                   )}
                 </div>
                 <div className="space-y-4">
