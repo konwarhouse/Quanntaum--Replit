@@ -164,18 +164,22 @@ const DataDrivenWeibullAnalysis = () => {
               <div className="space-y-2">
                 <Label htmlFor="asset">Select Specific Asset (Optional)</Label>
                 <Select
-                  value={selectedAssetId?.toString() || ""}
+                  value={selectedAssetId?.toString() || "_all_"}
                   onValueChange={(value) => {
-                    const id = parseInt(value);
-                    setSelectedAssetId(id);
-                    setSelectedEquipmentClass(null); // Clear equipment class when asset is selected
+                    if (value === "_all_") {
+                      setSelectedAssetId(null);
+                    } else {
+                      const id = parseInt(value);
+                      setSelectedAssetId(id);
+                      setSelectedEquipmentClass(null); // Clear equipment class when asset is selected
+                    }
                   }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="All assets" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All assets</SelectItem>
+                    <SelectItem value="_all_">All assets</SelectItem>
                     {assets.map((asset) => (
                       <SelectItem key={asset.id} value={asset.id.toString()}>
                         {asset.assetNumber} - {asset.name}
@@ -191,17 +195,21 @@ const DataDrivenWeibullAnalysis = () => {
               <div className="space-y-2">
                 <Label htmlFor="equipmentClass">Or Filter by Equipment Class</Label>
                 <Select
-                  value={selectedEquipmentClass || ""}
+                  value={selectedEquipmentClass || "_all_classes_"}
                   onValueChange={(value) => {
-                    setSelectedEquipmentClass(value || null);
-                    setSelectedAssetId(null); // Clear asset when equipment class is selected
+                    if (value === "_all_classes_") {
+                      setSelectedEquipmentClass(null);
+                    } else {
+                      setSelectedEquipmentClass(value);
+                      setSelectedAssetId(null); // Clear asset when equipment class is selected
+                    }
                   }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="All equipment classes" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All equipment classes</SelectItem>
+                    <SelectItem value="_all_classes_">All equipment classes</SelectItem>
                     {equipmentClasses.map((eqClass) => (
                       <SelectItem key={eqClass.id} value={eqClass.name}>
                         {eqClass.name}
