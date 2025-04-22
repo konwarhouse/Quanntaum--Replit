@@ -416,9 +416,11 @@ const DataDrivenWeibullAnalysis = ({
                   <div className="p-4 bg-muted rounded-md">
                     <h3 className="text-sm font-medium mb-1">Shape Parameter (β)</h3>
                     <p className="text-3xl font-bold">
-                      {results.fittedParameters && results.fittedParameters.beta !== undefined 
-                        ? results.fittedParameters.beta.toFixed(2) 
-                        : results.mtbf.toFixed(2)}
+                      {results.fittedParameters && typeof results.fittedParameters.beta === 'number'
+                        ? results.fittedParameters.beta.toFixed(2)
+                        : results.mtbf && typeof results.mtbf === 'number'
+                          ? results.mtbf.toFixed(2)
+                          : 'N/A'}
                     </p>
                     <Badge className="mt-2" variant={
                       results.failurePattern === 'early-life' ? 'outline' :
@@ -432,8 +434,8 @@ const DataDrivenWeibullAnalysis = ({
                   <div className="p-4 bg-muted rounded-md">
                     <h3 className="text-sm font-medium mb-1">Scale Parameter (η)</h3>
                     <p className="text-3xl font-bold">
-                      {results.fittedParameters && results.fittedParameters.eta !== undefined 
-                        ? results.fittedParameters.eta.toFixed(2) 
+                      {results.fittedParameters && typeof results.fittedParameters.eta === 'number'
+                        ? results.fittedParameters.eta.toFixed(2)
                         : "N/A"} {formatTimeLabel()}
                     </p>
                   </div>
@@ -479,7 +481,7 @@ const DataDrivenWeibullAnalysis = ({
                       <p>
                         {results.fittedParameters && results.fittedParameters.eta !== undefined ? (
                           <>
-                            The characteristic life of your equipment is {results.fittedParameters.eta.toFixed(2)} {formatTimeLabel()}. 
+                            The characteristic life of your equipment is {typeof results.fittedParameters.eta === 'number' ? results.fittedParameters.eta.toFixed(2) : 'N/A'} {formatTimeLabel()}. 
                             At this point, approximately 63.2% of units are expected to have failed.
                           </>
                         ) : (
@@ -513,9 +515,15 @@ const DataDrivenWeibullAnalysis = ({
                     <div className="space-y-4 text-sm">
                       <div>
                         <h4 className="font-semibold">Recommended Warranty Period:</h4>
-                        <p className="text-2xl font-bold mt-2">{(results.bLifeValues.b10Life * 0.8).toFixed(0)} {formatTimeLabel()}</p>
+                        <p className="text-2xl font-bold mt-2">
+                          {results.bLifeValues && typeof results.bLifeValues.b10Life === 'number' 
+                            ? (results.bLifeValues.b10Life * 0.8).toFixed(0) 
+                            : 'N/A'} {formatTimeLabel()}
+                        </p>
                         <p className="mt-2">
-                          This value is calculated as 80% of the B10 life ({results.bLifeValues.b10Life.toFixed(0)} {formatTimeLabel()}), 
+                          This value is calculated as 80% of the B10 life ({results.bLifeValues && typeof results.bLifeValues.b10Life === 'number' 
+                            ? results.bLifeValues.b10Life.toFixed(0) 
+                            : 'N/A'} {formatTimeLabel()}), 
                           which provides approximately 90% reliability during the warranty period.
                         </p>
                       </div>
@@ -557,10 +565,10 @@ const DataDrivenWeibullAnalysis = ({
                     
                     {results.failurePattern === 'wear-out' && (
                       <>
-                        <li>Schedule preventive maintenance at approximately {(results.bLifeValues?.b10Life || 0).toFixed(0)} {formatTimeLabel()} to catch failures before they impact operations</li>
+                        <li>Schedule preventive maintenance at approximately {(results.bLifeValues && typeof results.bLifeValues.b10Life === 'number') ? results.bLifeValues.b10Life.toFixed(0) : 'N/A'} {formatTimeLabel()} to catch failures before they impact operations</li>
                         <li>Consider reliability centered maintenance (RCM) approaches</li>
                         <li>Analyze wear patterns to extend equipment life</li>
-                        <li>Monitor equipment approaching {(results.bLifeValues?.b50Life || 0).toFixed(0)} {formatTimeLabel()} more frequently</li>
+                        <li>Monitor equipment approaching {(results.bLifeValues && typeof results.bLifeValues.b50Life === 'number') ? results.bLifeValues.b50Life.toFixed(0) : 'N/A'} {formatTimeLabel()} more frequently</li>
                       </>
                     )}
                   </ul>
@@ -749,8 +757,8 @@ const DataDrivenWeibullAnalysis = ({
                             {results.dataPoints.map((point, index) => (
                               <tr key={index} className={index % 2 === 0 ? 'bg-background' : 'bg-muted/50'}>
                                 <td className="px-4 py-2 text-sm">{index + 1}</td>
-                                <td className="px-4 py-2 text-sm">{point.time.toFixed(2)}</td>
-                                <td className="px-4 py-2 text-sm">{(point.rank * 100).toFixed(2)}%</td>
+                                <td className="px-4 py-2 text-sm">{typeof point.time === 'number' ? point.time.toFixed(2) : 'N/A'}</td>
+                                <td className="px-4 py-2 text-sm">{typeof point.rank === 'number' ? (point.rank * 100).toFixed(2) : 'N/A'}%</td>
                               </tr>
                             ))}
                           </tbody>
