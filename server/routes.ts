@@ -972,6 +972,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Analyze common failure mechanisms
       const mechanismAnalysis = analyzeFailureMechanisms(failureRecords);
       
+      // Determine what type of asset/component was analyzed
+      let assetDetails = null;
+      if (params.assetId) {
+        // Specific asset analysis
+        const asset = await storage.getAsset(params.assetId);
+        assetDetails = {
+          assetType: 'specific',
+          id: params.assetId,
+          label: asset?.name || `Asset ID: ${params.assetId}`
+        };
+      } else if (params.equipmentClass) {
+        // Equipment class analysis
+        assetDetails = {
+          assetType: 'class',
+          id: null,
+          label: params.equipmentClass
+        };
+      } else if (req.body.failureModeId) {
+        // Failure mode analysis
+        const failureMode = await storage.getFailureMode(req.body.failureModeId);
+        assetDetails = {
+          assetType: 'failureMode',
+          id: req.body.failureModeId,
+          label: failureMode?.description || `Failure Mode ID: ${req.body.failureModeId}`
+        };
+      } else {
+        // All assets analysis
+        assetDetails = {
+          assetType: 'all',
+          id: null,
+          label: 'All Assets'
+        };
+      }
+
       // Combine all results
       const enhancedResults = {
         ...analysisResults,
@@ -987,7 +1021,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         failurePattern,
         failureCount: failureRecords.length,
         mechanismAnalysis,
-        dataPoints: fitResult.dataPoints
+        dataPoints: fitResult.dataPoints,
+        assetDetails
       };
       
       res.json(enhancedResults);

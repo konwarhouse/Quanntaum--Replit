@@ -331,10 +331,25 @@ const DataDrivenWeibullAnalysis = () => {
       <Card className="md:col-span-2">
         <CardHeader>
           <CardTitle>Weibull Analysis Results</CardTitle>
-          {results && results.fittedParameters && (
-            <CardDescription>
-              Based on {results.failureCount} failure records. 
-              Fit Quality (R²): {results.fittedParameters.r2.toFixed(4)}
+          {results && (
+            <CardDescription className="space-y-1">
+              {results.assetDetails && (
+                <div className="text-sm font-medium">
+                  {results.assetDetails.assetType === 'specific' ? (
+                    <span className="text-primary">Asset: {results.assetDetails.label}</span>
+                  ) : results.assetDetails.assetType === 'class' ? (
+                    <span className="text-primary">Equipment Class: {results.assetDetails.label}</span>
+                  ) : results.assetDetails.assetType === 'failureMode' ? (
+                    <span className="text-primary">Failure Mode: {results.assetDetails.label}</span>
+                  ) : (
+                    <span className="text-primary">All Assets</span>
+                  )}
+                </div>
+              )}
+              {results.fittedParameters && (
+                <div>Based on {results.failureCount} failure records. 
+                Fit Quality (R²): {results.fittedParameters.r2.toFixed(4)}</div>
+              )}
             </CardDescription>
           )}
         </CardHeader>
