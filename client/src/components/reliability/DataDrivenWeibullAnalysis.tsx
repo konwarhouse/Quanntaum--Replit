@@ -29,6 +29,7 @@ import { Badge } from "@/components/ui/badge";
 interface WeibullFittingParams {
   assetId?: number;
   equipmentClass?: string;
+  failureModeId?: number;
   useOperatingHours: boolean;
   timeHorizon: number;
 }
@@ -37,6 +38,7 @@ const DataDrivenWeibullAnalysis = () => {
   const { toast } = useToast();
   const [selectedAssetId, setSelectedAssetId] = useState<number | null>(null);
   const [selectedEquipmentClass, setSelectedEquipmentClass] = useState<string | null>(null);
+  const [selectedFailureModeId, setSelectedFailureModeId] = useState<number | null>(null);
   const [useOperatingHours, setUseOperatingHours] = useState(false);
   const [timeHorizon, setTimeHorizon] = useState(5000);
   const [activeTab, setActiveTab] = useState("results");
@@ -51,6 +53,23 @@ const DataDrivenWeibullAnalysis = () => {
   const { data: equipmentClasses = [], isLoading: isLoadingClasses } = useQuery<{id: number, name: string}[]>({
     queryKey: ['/api/equipment-classes'],
     staleTime: 5000,
+  });
+  
+  // Fetch failure modes based on current selection
+  const { data: failureModes = [], isLoading: isLoadingFailureModes } = useQuery({
+    queryKey: ['/api/failure-modes', selectedAssetId, selectedEquipmentClass],
+    queryFn: async () => {
+      let url = '/api/failure-modes';
+      if (selectedAssetId) {
+        url += `/asset/${selectedAssetId}`;
+      } else if (selectedEquipmentClass) {
+        url += `/class/${selectedEquipmentClass}`;
+      }
+      const res = await fetch(url);
+      return res.json();
+    },
+    staleTime: 5000,
+    enabled: !!selectedAssetId || !!selectedEquipmentClass,
   });
   
   // Weibull analysis mutation
@@ -101,6 +120,10 @@ const DataDrivenWeibullAnalysis = () => {
       params.assetId = selectedAssetId;
     } else if (selectedEquipmentClass) {
       params.equipmentClass = selectedEquipmentClass;
+    }
+    
+    if (selectedFailureModeId) {
+      params.failureModeId = selectedFailureModeId;
     }
     
     weibullMutation.mutate(params);
@@ -158,6 +181,18 @@ const DataDrivenWeibullAnalysis = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="bg-muted p-3 rounded-md mb-4 text-sm">
+            <h3 className="font-medium text-sm mb-2">How This Analysis Works</h3>
+            <p className="text-muted-foreground mb-2">
+              This analysis uses your actual failure history data to calculate:
+            </p>
+            <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+              <li>Time Between Failures (TBF) or Time To Failure (TTF)</li>
+              <li>Failure patterns and trends over time</li>
+              <li>Weibull distribution parameters (β, η) through regression</li>
+              <li>Optimal maintenance intervals and warranty periods</li>
+            </ul>
+          </div>
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Asset Selection */}
             {!isLoadingAssets && assets && assets.length > 0 && (
@@ -217,6 +252,38 @@ const DataDrivenWeibullAnalysis = () => {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+            )}
+
+            {/* Failure Mode Selection */}
+            {!isLoadingFailureModes && failureModes && failureModes.length > 0 && (
+              <div className="space-y-2 pt-4">
+                <Label htmlFor="failureMode">Analyze by Failure Mode (Optional)</Label>
+                <Select
+                  value={selectedFailureModeId?.toString() || "_all_modes_"}
+                  onValueChange={(value) => {
+                    if (value === "_all_modes_") {
+                      setSelectedFailureModeId(null);
+                    } else {
+                      setSelectedFailureModeId(parseInt(value));
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="All failure modes" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="_all_modes_">All failure modes</SelectItem>
+                    {failureModes.map((mode: {id: number, description: string}) => (
+                      <SelectItem key={mode.id} value={mode.id.toString()}>
+                        {mode.description}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Filter by specific failure mechanisms (e.g., bearings, seals)
+                </p>
               </div>
             )}
 
@@ -370,8 +437,35 @@ const DataDrivenWeibullAnalysis = () => {
                   {renderMechanismAnalysis()}
                 </div>
                 
+                {/* Warranty Calculation */}
+                {results.bLifeValues && (
+                  <div className="p-4 border rounded-md bg-card mt-4">
+                    <h3 className="text-lg font-medium mb-3">Warranty Planning</h3>
+                    <div className="space-y-4 text-sm">
+                      <div>
+                        <h4 className="font-semibold">Recommended Warranty Period:</h4>
+                        <p className="text-2xl font-bold mt-2">{(results.bLifeValues.b10Life * 0.8).toFixed(0)} {formatTimeLabel()}</p>
+                        <p className="mt-2">
+                          This value is calculated as 80% of the B10 life ({results.bLifeValues.b10Life.toFixed(0)} {formatTimeLabel()}), 
+                          which provides approximately 90% reliability during the warranty period.
+                        </p>
+                      </div>
+                      
+                      <div className="bg-muted p-3 rounded-md">
+                        <h4 className="font-semibold mb-1">Data Used in Calculation:</h4>
+                        <ul className="list-disc list-inside space-y-1">
+                          <li>Failure times between repairs (TBF) from maintenance records</li>
+                          <li>Time to first failure (TTF) from installation date</li>
+                          <li>Total operating hours or calendar days of service</li>
+                          <li>Specific failure mechanisms when filtering by mode</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Recommendations */}
-                <div className="p-4 border rounded-md bg-card">
+                <div className="p-4 border rounded-md bg-card mt-4">
                   <h3 className="text-lg font-medium mb-3">Recommendations</h3>
                   <ul className="list-disc list-inside space-y-2 text-sm pl-2">
                     {results.failurePattern === 'early-life' && (
@@ -399,10 +493,6 @@ const DataDrivenWeibullAnalysis = () => {
                         <li>Analyze wear patterns to extend equipment life</li>
                         <li>Monitor equipment approaching {(results.bLifeValues?.b50Life || 0).toFixed(0)} {formatTimeLabel()} more frequently</li>
                       </>
-                    )}
-                    
-                    {results.bLifeValues && (
-                      <li>For warranty planning, consider a warranty period of {(results.bLifeValues.b10Life * 0.8).toFixed(0)} {formatTimeLabel()} for 90% reliability</li>
                     )}
                   </ul>
                 </div>
