@@ -65,7 +65,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { CalendarIcon, HelpCircle, MoreHorizontal, Plus, Search, Download, Pencil, Trash2 } from 'lucide-react';
+import { CalendarIcon, HelpCircle, MoreHorizontal, Plus, RefreshCw, Search, Download, Pencil, Trash2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
@@ -404,6 +404,8 @@ const AssetMaster = () => {
       'Description': asset.description || '',
       'Criticality': asset.criticality,
       'Installation Date': asset.installationDate || '',
+      'Major Replacement': asset.isReplacement ? 'Yes' : 'No',
+      'Replacement Date': asset.lastReplacementDate || '',
       'Beta Value': asset.weibullBeta,
       'Eta Value': asset.weibullEta,
       'Time Unit': asset.timeUnit
@@ -434,6 +436,15 @@ const AssetMaster = () => {
           ID: {asset.assetNumber}<br />
           {asset.equipmentClass && <span>Class: {asset.equipmentClass}<br /></span>}
           Installed: {asset.installationDate ? format(new Date(asset.installationDate), 'MMM d, yyyy') : 'Unknown'}
+          {asset.isReplacement && asset.lastReplacementDate && (
+            <>
+              <br />
+              <span className="flex items-center gap-1 text-blue-600">
+                <RefreshCw className="h-3 w-3" /> 
+                Replaced: {format(new Date(asset.lastReplacementDate), 'MMM d, yyyy')}
+              </span>
+            </>
+          )}
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4">
@@ -642,6 +653,7 @@ const AssetMaster = () => {
                             "w-full justify-start text-left font-normal",
                             !date && "text-muted-foreground"
                           )}
+                          disabled={isEditAssetOpen} // Make read-only for edits
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
                           {date ? format(date, "PPP") : "Select date"}
@@ -656,7 +668,97 @@ const AssetMaster = () => {
                         />
                       </PopoverContent>
                     </Popover>
+                    {isEditAssetOpen && (
+                      <p className="text-xs text-muted-foreground">
+                        Installation date can't be changed after initial entry.
+                      </p>
+                    )}
                   </div>
+
+                  {isEditAssetOpen && (
+                    <div className="space-y-4 border rounded-lg p-4 bg-slate-50">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="isReplacement" 
+                          checked={newAsset.isReplacement}
+                          onCheckedChange={(checked) => {
+                            setNewAsset({...newAsset, isReplacement: !!checked});
+                          }}
+                        />
+                        <div className="grid gap-1.5">
+                          <Label 
+                            htmlFor="isReplacement"
+                            className="flex items-center gap-1.5 text-base font-medium"
+                          >
+                            <RefreshCw className="h-4 w-4 text-blue-600" />
+                            Major Replacement
+                          </Label>
+                          <p className="text-sm text-muted-foreground">
+                            Check this if the entire asset has been replaced while keeping the same asset number.
+                          </p>
+                        </div>
+                      </div>
+
+                      {newAsset.isReplacement && (
+                        <div className="grid gap-2 pt-2">
+                          <div className="flex justify-between items-center">
+                            <Label>Replacement Date</Label>
+                            <div className="flex items-center">
+                              <HelpCircle className="h-4 w-4 mr-1 text-muted-foreground" />
+                              <span className="text-xs text-muted-foreground">
+                                Must be after installation date
+                              </span>
+                            </div>
+                          </div>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "w-full justify-start text-left font-normal",
+                                  !newAsset.lastReplacementDate && "text-muted-foreground"
+                                )}
+                              >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {newAsset.lastReplacementDate ? 
+                                  format(new Date(newAsset.lastReplacementDate), "PPP") : 
+                                  "Select replacement date"
+                                }
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                              <Calendar
+                                mode="single"
+                                selected={newAsset.lastReplacementDate ? new Date(newAsset.lastReplacementDate) : undefined}
+                                onSelect={(date) => {
+                                  if (date) {
+                                    // Validate that replacement date is after installation date
+                                    if (newAsset.installationDate && date < new Date(newAsset.installationDate)) {
+                                      toast({
+                                        title: "Invalid date",
+                                        description: "Replacement date must be after installation date",
+                                        variant: "destructive"
+                                      });
+                                      return;
+                                    }
+                                    setNewAsset({...newAsset, lastReplacementDate: format(date, 'yyyy-MM-dd')});
+                                  }
+                                }}
+                                initialFocus
+                                disabled={(date) => {
+                                  // Disable dates before installation date
+                                  if (newAsset.installationDate) {
+                                    return date < new Date(newAsset.installationDate);
+                                  }
+                                  return false;
+                                }}
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                      )}
+                    </div>
+                  )}
                   
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
