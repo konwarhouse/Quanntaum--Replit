@@ -658,13 +658,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const requestData = {
         ...req.body,
         // Parse date strings into actual Date objects if they're strings
+        installationDate: typeof req.body.installationDate === 'string' && req.body.installationDate
+          ? new Date(req.body.installationDate) 
+          : req.body.installationDate,
+        lastFailureDate: typeof req.body.lastFailureDate === 'string' && req.body.lastFailureDate
+          ? new Date(req.body.lastFailureDate) 
+          : req.body.lastFailureDate,
         failureDate: typeof req.body.failureDate === 'string' 
           ? new Date(req.body.failureDate) 
           : req.body.failureDate,
-        repairCompleteDate: typeof req.body.repairCompleteDate === 'string'
+        repairCompleteDate: typeof req.body.repairCompleteDate === 'string' && req.body.repairCompleteDate
           ? new Date(req.body.repairCompleteDate) 
           : req.body.repairCompleteDate
       };
+      
+      // Auto-calculate TBF (in days) if lastFailureDate and failureDate are provided but tbfDays is not
+      if (requestData.lastFailureDate && requestData.failureDate && requestData.tbfDays === undefined) {
+        const lastFailureDate = new Date(requestData.lastFailureDate);
+        const failureDate = new Date(requestData.failureDate);
+        const diffTime = Math.abs(failureDate.getTime() - lastFailureDate.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        requestData.tbfDays = diffDays;
+      }
+      
+      // Auto-calculate downtime hours if failureDate and repairCompleteDate are provided but downtimeHours is not
+      if (requestData.failureDate && requestData.repairCompleteDate && requestData.downtimeHours === undefined) {
+        const failureDate = new Date(requestData.failureDate);
+        const repairCompleteDate = new Date(requestData.repairCompleteDate);
+        const diffTime = Math.abs(repairCompleteDate.getTime() - failureDate.getTime());
+        const diffHours = Math.ceil(diffTime / (1000 * 60 * 60));
+        requestData.downtimeHours = diffHours;
+      }
       
       // Now parse with the schema
       const failureHistoryData = insertFailureHistorySchema.parse(requestData);
@@ -702,13 +726,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const requestData = {
         ...req.body,
         // Parse date strings into actual Date objects if they're strings
+        installationDate: typeof req.body.installationDate === 'string' && req.body.installationDate
+          ? new Date(req.body.installationDate) 
+          : req.body.installationDate,
+        lastFailureDate: typeof req.body.lastFailureDate === 'string' && req.body.lastFailureDate
+          ? new Date(req.body.lastFailureDate) 
+          : req.body.lastFailureDate,
         failureDate: typeof req.body.failureDate === 'string' 
           ? new Date(req.body.failureDate) 
           : req.body.failureDate,
-        repairCompleteDate: typeof req.body.repairCompleteDate === 'string'
+        repairCompleteDate: typeof req.body.repairCompleteDate === 'string' && req.body.repairCompleteDate
           ? new Date(req.body.repairCompleteDate) 
           : req.body.repairCompleteDate
       };
+      
+      // Auto-calculate TBF (in days) if lastFailureDate and failureDate are provided but tbfDays is not
+      if (requestData.lastFailureDate && requestData.failureDate && requestData.tbfDays === undefined) {
+        const lastFailureDate = new Date(requestData.lastFailureDate);
+        const failureDate = new Date(requestData.failureDate);
+        const diffTime = Math.abs(failureDate.getTime() - lastFailureDate.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        requestData.tbfDays = diffDays;
+      }
+      
+      // Auto-calculate downtime hours if failureDate and repairCompleteDate are provided but downtimeHours is not
+      if (requestData.failureDate && requestData.repairCompleteDate && requestData.downtimeHours === undefined) {
+        const failureDate = new Date(requestData.failureDate);
+        const repairCompleteDate = new Date(requestData.repairCompleteDate);
+        const diffTime = Math.abs(repairCompleteDate.getTime() - failureDate.getTime());
+        const diffHours = Math.ceil(diffTime / (1000 * 60 * 60));
+        requestData.downtimeHours = diffHours;
+      }
       
       const failureRecord = await storage.updateFailureHistory(id, requestData);
       
