@@ -374,7 +374,7 @@ const DataDrivenWeibullAnalysis = ({
                   )}
                 </div>
               )}
-              {results.fittedParameters && (
+              {results.fittedParameters && results.fittedParameters.r2 !== undefined && (
                 <div>Based on {results.failureCount} failure records. 
                 Fit Quality (R²): {results.fittedParameters.r2.toFixed(4)}</div>
               )}
@@ -416,7 +416,9 @@ const DataDrivenWeibullAnalysis = ({
                   <div className="p-4 bg-muted rounded-md">
                     <h3 className="text-sm font-medium mb-1">Shape Parameter (β)</h3>
                     <p className="text-3xl font-bold">
-                      {results.fittedParameters ? results.fittedParameters.beta.toFixed(2) : results.mtbf.toFixed(2)}
+                      {results.fittedParameters && results.fittedParameters.beta !== undefined 
+                        ? results.fittedParameters.beta.toFixed(2) 
+                        : results.mtbf.toFixed(2)}
                     </p>
                     <Badge className="mt-2" variant={
                       results.failurePattern === 'early-life' ? 'outline' :
@@ -430,7 +432,9 @@ const DataDrivenWeibullAnalysis = ({
                   <div className="p-4 bg-muted rounded-md">
                     <h3 className="text-sm font-medium mb-1">Scale Parameter (η)</h3>
                     <p className="text-3xl font-bold">
-                      {results.fittedParameters ? results.fittedParameters.eta.toFixed(2) : "N/A"} {formatTimeLabel()}
+                      {results.fittedParameters && results.fittedParameters.eta !== undefined 
+                        ? results.fittedParameters.eta.toFixed(2) 
+                        : "N/A"} {formatTimeLabel()}
                     </p>
                   </div>
                   
@@ -473,8 +477,16 @@ const DataDrivenWeibullAnalysis = ({
                     <div>
                       <h4 className="font-semibold">Characteristic Life (η):</h4>
                       <p>
-                        The characteristic life of your equipment is {results.fittedParameters?.eta.toFixed(2)} {formatTimeLabel()}. 
-                        At this point, approximately 63.2% of units are expected to have failed.
+                        {results.fittedParameters && results.fittedParameters.eta !== undefined ? (
+                          <>
+                            The characteristic life of your equipment is {results.fittedParameters.eta.toFixed(2)} {formatTimeLabel()}. 
+                            At this point, approximately 63.2% of units are expected to have failed.
+                          </>
+                        ) : (
+                          <>
+                            Characteristic life could not be determined from the available data.
+                          </>
+                        )}
                       </p>
                     </div>
                     
