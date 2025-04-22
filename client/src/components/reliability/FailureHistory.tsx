@@ -1091,8 +1091,8 @@ const FailureHistory = () => {
                       {renderFormField(
                         addForm,
                         "tbfDays",
-                        "Time Between Failures (Days)",
-                        "Time Between Failures (TBF) - calculated automatically if last failure date is provided, or Time To Failure (TTF) if installation date is used. Can be manually entered.",
+                        "TTF/TBF (Days)",
+                        "Time To First Failure (TTF) when installation date is provided but no last failure date. Time Between Failures (TBF) when last failure date is provided. Can be manually entered.",
                         "number"
                       )}
                       
@@ -1474,7 +1474,9 @@ const FailureHistory = () => {
                       const failureMode = allFailureModes.find(m => m.id === record.failureModeId);
                       
                       // Determine if this is TTF or TBF based on data
-                      const timeLabel = record.lastFailureDate ? "TBF" : "TTF";
+                      // TTF when we have installation date but no last failure date
+                      // TBF when we have a previous failure date
+                      const timeLabel = record.lastFailureDate ? "TBF" : (record.installationDate ? "TTF" : "TBF");
                       
                       return (
                         <TableRow key={record.id}>
@@ -1503,14 +1505,17 @@ const FailureHistory = () => {
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <span className="font-medium">
-                                  {timeLabel}: {record.tbfDays?.toFixed(1) || "—"}
+                                  <Badge variant={timeLabel === "TTF" ? "secondary" : "outline"}>
+                                    {timeLabel}
+                                  </Badge>
+                                  &nbsp;{record.tbfDays?.toFixed(1) || "—"}
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent className="max-w-sm">
                                 <p>
                                   {timeLabel === "TTF" ? 
-                                    "Time To Failure: Days from installation to first failure" : 
-                                    "Time Between Failures: Days since last failure"}
+                                    "Time To Failure: Days from installation date to first failure" : 
+                                    "Time Between Failures: Days since previous failure date"}
                                 </p>
                               </TooltipContent>
                             </Tooltip>
@@ -1674,8 +1679,8 @@ const FailureHistory = () => {
                   {renderFormField(
                     editForm,
                     "tbfDays",
-                    "Time Between Failures (Days)",
-                    "Time Between Failures (TBF) - calculated automatically if last failure date is provided, or Time To Failure (TTF) if installation date is used. Can be manually entered.",
+                    "TTF/TBF (Days)",
+                    "Time To First Failure (TTF) when installation date is provided but no last failure date. Time Between Failures (TBF) when last failure date is provided. Can be manually entered.",
                     "number"
                   )}
                   
