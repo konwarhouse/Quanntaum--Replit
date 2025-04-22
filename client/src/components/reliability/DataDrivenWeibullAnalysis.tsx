@@ -564,17 +564,17 @@ const DataDrivenWeibullAnalysis = ({
                           </h5>
                           <p className="text-xs">
                             {results.calculationMethodDisplay === 'Operating Hours' ? (
-                              <>The MTBF was calculated using operating hours data from {results.dataPoints?.length || 0} records 
-                              with values: {results.dataPoints?.map(v => Math.round(v)).join(', ')}.</>
+                              <>The MTBF was calculated using operating hours data from {results.mtbfDataPoints?.length || 0} records 
+                              with values: {results.mtbfDataPoints?.map(v => Math.round(v)).join(', ')}.</>
                             ) : (
-                              <>The MTBF was calculated using calendar days (TBF) from {results.dataPoints?.length || 0} records 
-                              with values: {results.dataPoints?.map(v => Math.round(v)).join(', ')}.</>
+                              <>The MTBF was calculated using calendar days (TBF) from {results.mtbfDataPoints?.length || 0} records 
+                              with values: {results.mtbfDataPoints?.map(v => Math.round(v)).join(', ')}.</>
                             )}
                           </p>
                           <p className="text-xs mt-1">
                             <strong>Formula used:</strong> MTBF = Sum of all time values / number of values = 
-                            {results.dataPoints && results.dataPoints.length > 0 ? 
-                              ` ${results.dataPoints.reduce((sum, val) => sum + val, 0).toFixed(1)} / ${results.dataPoints.length} = ${results.mtbf?.toFixed(2)}` : 
+                            {results.mtbfDataPoints && results.mtbfDataPoints.length > 0 ? 
+                              ` ${results.mtbfDataPoints.reduce((sum, val) => sum + val, 0).toFixed(1)} / ${results.mtbfDataPoints.length} = ${results.mtbf?.toFixed(2)}` : 
                               ' N/A'}
                           </p>
                         </div>

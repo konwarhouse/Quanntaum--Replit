@@ -1023,7 +1023,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           fallbackCalculation: true,
           calculationMethod: mtbfResult.calculationMethod,
           calculationMethodDisplay: calculationMethodDisplay,
-          dataPoints: mtbfResult.dataPoints
+          mtbfDataPoints: mtbfResult.dataPoints  // Use mtbfDataPoints for the numeric array
         });
       }
       
