@@ -179,21 +179,21 @@ export class DatabaseStorage implements IStorage {
   
   async createFailureHistory(insertFailureHistory: InsertFailureHistory): Promise<FailureHistory> {
     // Process empty date fields
-    const processedData = {...insertFailureHistory};
+    const processedData = {...insertFailureHistory} as any;
     
     // Set the record date to current date
     processedData.recordDate = new Date();
     
     // Process date fields that might be empty strings
-    if (processedData.installationDate === '') {
+    if (typeof processedData.installationDate === 'string' && processedData.installationDate === '') {
       processedData.installationDate = null;
     }
     
-    if (processedData.lastFailureDate === '') {
+    if (typeof processedData.lastFailureDate === 'string' && processedData.lastFailureDate === '') {
       processedData.lastFailureDate = null;
     }
     
-    if (processedData.repairCompleteDate === '') {
+    if (typeof processedData.repairCompleteDate === 'string' && processedData.repairCompleteDate === '') {
       processedData.repairCompleteDate = null;
     }
     
@@ -203,18 +203,18 @@ export class DatabaseStorage implements IStorage {
   
   async updateFailureHistory(id: number, failureHistoryUpdate: Partial<InsertFailureHistory>): Promise<FailureHistory | undefined> {
     // Process empty date fields
-    const processedUpdate = {...failureHistoryUpdate};
+    const processedUpdate = {...failureHistoryUpdate} as any;
     
     // Process date fields that might be empty strings
-    if (processedUpdate.installationDate === '') {
+    if (typeof processedUpdate.installationDate === 'string' && processedUpdate.installationDate === '') {
       processedUpdate.installationDate = null;
     }
     
-    if (processedUpdate.lastFailureDate === '') {
+    if (typeof processedUpdate.lastFailureDate === 'string' && processedUpdate.lastFailureDate === '') {
       processedUpdate.lastFailureDate = null;
     }
     
-    if (processedUpdate.repairCompleteDate === '') {
+    if (typeof processedUpdate.repairCompleteDate === 'string' && processedUpdate.repairCompleteDate === '') {
       processedUpdate.repairCompleteDate = null;
     }
     

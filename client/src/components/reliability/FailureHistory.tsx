@@ -770,7 +770,8 @@ const FailureHistory = () => {
     label: string,
     description: string | null = null,
     type: string = "text",
-    options: { value: string; label: string }[] = []
+    options: { value: string; label: string }[] = [],
+    isReadOnly: boolean = false
   ) => (
     <FormField
       control={form.control}
@@ -783,6 +784,7 @@ const FailureHistory = () => {
               <Select
                 onValueChange={field.onChange}
                 value={field.value || "_empty_"}
+                disabled={isReadOnly}
               >
                 <SelectTrigger>
                   <SelectValue placeholder={`Select ${label.toLowerCase()}`} />
@@ -804,40 +806,50 @@ const FailureHistory = () => {
                 placeholder={`Enter ${label.toLowerCase()}`}
                 {...field}
                 value={field.value || ""}
+                disabled={isReadOnly}
               />
             ) : type === "date" ? (
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={!field.value ? "text-muted-foreground" : ""}
-                  >
-                    {field.value ? (
-                      format(field.value, "PPP")
-                    ) : (
-                      <span>Pick a date</span>
-                    )}
-                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={field.value}
-                    onSelect={field.onChange}
-                    disabled={(date) =>
-                      date > new Date() || date < new Date("1900-01-01")
-                    }
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              isReadOnly ? (
+                // Read-only date display
+                <div className="border rounded p-2 bg-muted/20">
+                  {field.value ? format(field.value, "PPP") : "Not set"}
+                </div>
+              ) : (
+                // Editable date picker
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={!field.value ? "text-muted-foreground" : ""}
+                    >
+                      {field.value ? (
+                        format(field.value, "PPP")
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
+                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={field.value}
+                      onSelect={field.onChange}
+                      disabled={(date) =>
+                        date > new Date() || date < new Date("1900-01-01")
+                      }
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              )
             ) : (
               <Input
                 type={type}
                 placeholder={`Enter ${label.toLowerCase()}`}
                 {...field}
                 value={field.value || ""}
+                disabled={isReadOnly}
               />
             )}
           </FormControl>
@@ -1013,6 +1025,15 @@ const FailureHistory = () => {
                                   if (selectedAsset && selectedAsset.equipmentClass) {
                                     console.log("Setting equipment class to:", selectedAsset.equipmentClass);
                                     setCurrentEquipmentClass(selectedAsset.equipmentClass);
+                                    
+                                    // Set installation date from Asset Master data
+                                    if (selectedAsset.installationDate) {
+                                      console.log("Setting installation date from Asset Master:", selectedAsset.installationDate);
+                                      addForm.setValue("installationDate", new Date(selectedAsset.installationDate));
+                                    } else {
+                                      console.log("No installation date in Asset Master");
+                                      addForm.setValue("installationDate", undefined);
+                                    }
                                   } else {
                                     console.log("No equipment class found for this asset");
                                     setCurrentEquipmentClass(null);
@@ -1065,8 +1086,10 @@ const FailureHistory = () => {
                         addForm,
                         "installationDate",
                         "Installation Date",
-                        "When the equipment was installed or last overhauled",
-                        "date"
+                        "When the equipment was installed or last overhauled (auto-filled from Asset Master)",
+                        "date",
+                        [],
+                        true
                       )}
                       {renderFormField(
                         addForm,
