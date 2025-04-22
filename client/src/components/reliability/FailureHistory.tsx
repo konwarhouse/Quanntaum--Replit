@@ -567,6 +567,7 @@ const FailureHistory = () => {
       tbfValue = parseFloat(differenceInDays.toFixed(2));
       console.log("TTF calculated from installation date:", tbfValue);
     }
+    // For first failures without installation date, users can still manually enter TBF/TTF
     
     // Auto-calculate downtime hours if we have both dates
     // First convert downtimeHours to a number regardless of its current type

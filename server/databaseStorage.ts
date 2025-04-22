@@ -178,20 +178,49 @@ export class DatabaseStorage implements IStorage {
   }
   
   async createFailureHistory(insertFailureHistory: InsertFailureHistory): Promise<FailureHistory> {
-    // Set the record date to current date if not provided
-    const data = {
-      ...insertFailureHistory,
-      recordDate: new Date(),
-    };
+    // Process empty date fields
+    const processedData = {...insertFailureHistory};
     
-    const [record] = await db.insert(failureHistory).values(data).returning();
+    // Set the record date to current date
+    processedData.recordDate = new Date();
+    
+    // Process date fields that might be empty strings
+    if (processedData.installationDate === '') {
+      processedData.installationDate = null;
+    }
+    
+    if (processedData.lastFailureDate === '') {
+      processedData.lastFailureDate = null;
+    }
+    
+    if (processedData.repairCompleteDate === '') {
+      processedData.repairCompleteDate = null;
+    }
+    
+    const [record] = await db.insert(failureHistory).values(processedData).returning();
     return record;
   }
   
   async updateFailureHistory(id: number, failureHistoryUpdate: Partial<InsertFailureHistory>): Promise<FailureHistory | undefined> {
+    // Process empty date fields
+    const processedUpdate = {...failureHistoryUpdate};
+    
+    // Process date fields that might be empty strings
+    if (processedUpdate.installationDate === '') {
+      processedUpdate.installationDate = null;
+    }
+    
+    if (processedUpdate.lastFailureDate === '') {
+      processedUpdate.lastFailureDate = null;
+    }
+    
+    if (processedUpdate.repairCompleteDate === '') {
+      processedUpdate.repairCompleteDate = null;
+    }
+    
     const [updatedRecord] = await db
       .update(failureHistory)
-      .set(failureHistoryUpdate)
+      .set(processedUpdate)
       .where(eq(failureHistory.id, id))
       .returning();
     return updatedRecord;
