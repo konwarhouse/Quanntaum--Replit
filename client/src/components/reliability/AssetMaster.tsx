@@ -65,7 +65,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { CalendarIcon, MoreHorizontal, Plus, Search, Download, Pencil, Trash2 } from 'lucide-react';
+import { CalendarIcon, HelpCircle, MoreHorizontal, Plus, Search, Download, Pencil, Trash2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -91,6 +92,8 @@ const AssetMaster = () => {
     description: '',
     criticality: 'Medium',
     installationDate: '',
+    lastReplacementDate: '',
+    isReplacement: false,
     weibullBeta: 2.0,
     weibullEta: 5000,
     timeUnit: 'hours'
@@ -241,6 +244,8 @@ const AssetMaster = () => {
       description: '',
       criticality: 'Medium',
       installationDate: '',
+      lastReplacementDate: '',
+      isReplacement: false,
       weibullBeta: 2.0,
       weibullEta: 5000,
       timeUnit: 'hours'
@@ -312,6 +317,16 @@ const AssetMaster = () => {
       return;
     }
     
+    // If major replacement is checked but no date is selected, show validation error
+    if (newAsset.isReplacement && !newAsset.lastReplacementDate) {
+      toast({
+        title: 'Validation error',
+        description: 'Replacement date is required when marking as a major replacement',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
     // Create updated asset object
     const updatedAsset = {
       ...selectedAsset,
@@ -320,7 +335,10 @@ const AssetMaster = () => {
       assetNumber,
       equipmentClass,
       description,
-      installationDate
+      installationDate,
+      // Make sure replacement data is included
+      isReplacement: newAsset.isReplacement,
+      lastReplacementDate: newAsset.lastReplacementDate
     };
     
     updateAssetMutation.mutate(updatedAsset);
@@ -347,6 +365,8 @@ const AssetMaster = () => {
       description: asset.description || '',
       criticality: asset.criticality,
       installationDate: asset.installationDate || '',
+      lastReplacementDate: asset.lastReplacementDate || '',
+      isReplacement: asset.isReplacement || false,
       weibullBeta: asset.weibullBeta,
       weibullEta: asset.weibullEta,
       timeUnit: asset.timeUnit
@@ -896,28 +916,93 @@ const AssetMaster = () => {
             
             <div className="grid gap-2">
               <Label>Installation Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !date && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {date ? format(date, "PPP") : "Select date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={setDate}
-                    initialFocus
+              {selectedAsset?.installationDate ? (
+                // Read-only display for existing installation date
+                <div className="flex items-center">
+                  <Input
+                    value={date ? format(date, "PPP") : "Not set"}
+                    readOnly
+                    disabled
+                    className="bg-muted"
                   />
-                </PopoverContent>
-              </Popover>
+                  <HelpCircle className="ml-2 h-4 w-4 text-muted-foreground cursor-help" />
+                  <span className="sr-only">Installation date cannot be changed after initially set</span>
+                </div>
+              ) : (
+                // Editable for new assets
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !date && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {date ? format(date, "PPP") : "Select date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={date}
+                      onSelect={setDate}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              )}
+            </div>
+            
+            {/* New Replacement Date and Replacement Flag fields */}
+            <div className="grid gap-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="is-replacement"
+                  checked={newAsset.isReplacement}
+                  onCheckedChange={(checked) => {
+                    setNewAsset({...newAsset, isReplacement: checked === true});
+                  }}
+                />
+                <Label htmlFor="is-replacement" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  This is a major replacement
+                </Label>
+              </div>
+              
+              {newAsset.isReplacement && (
+                <div className="grid gap-2">
+                  <Label>Replacement Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !newAsset.lastReplacementDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {newAsset.lastReplacementDate 
+                          ? format(new Date(newAsset.lastReplacementDate), "PPP") 
+                          : "Select replacement date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={newAsset.lastReplacementDate ? new Date(newAsset.lastReplacementDate) : undefined}
+                        onSelect={(date) => {
+                          if (date) {
+                            setNewAsset({...newAsset, lastReplacementDate: format(date, "yyyy-MM-dd")});
+                          }
+                        }}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              )}
             </div>
             
             <div className="grid grid-cols-2 gap-4">
