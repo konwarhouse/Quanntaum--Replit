@@ -895,6 +895,108 @@ export async function registerRoutes(app: Express): Promise<Server> {
         error: error instanceof Error ? error.message : "Unknown error"
       });
     }
+  })
+  
+  // Data-driven Weibull Analysis endpoint
+  app.post("/api/weibull-analysis/fit", async (req, res) => {
+    try {
+      // Validate request body
+      const schema = z.object({
+        assetId: z.number().positive().optional(),
+        equipmentClass: z.string().optional(),
+        useOperatingHours: z.boolean().default(false),
+        timeHorizon: z.number().positive(),
+      });
+      
+      const params = schema.parse(req.body);
+      let failureRecords: FailureHistory[] = [];
+      
+      // Fetch failure history data based on criteria
+      if (params.assetId) {
+        failureRecords = await storage.getFailureHistoryByAssetId(params.assetId);
+      } else if (params.equipmentClass) {
+        // Get all assets of this equipment class
+        const assets = await storage.getAssets();
+        const filteredAssets = assets.filter(asset => asset.equipmentClass === params.equipmentClass);
+        
+        // Get failure records for all matching assets
+        const promises = filteredAssets.map(asset => storage.getFailureHistoryByAssetId(asset.id));
+        const results = await Promise.all(promises);
+        
+        // Flatten the array of arrays
+        failureRecords = results.flat();
+      } else {
+        // If no specific criteria, get all failure records
+        const assets = await storage.getAssets();
+        const promises = assets.map(asset => storage.getFailureHistoryByAssetId(asset.id));
+        const results = await Promise.all(promises);
+        failureRecords = results.flat();
+      }
+      
+      // Import the new data fitting module
+      const { 
+        fitWeibullToFailureData, 
+        calculateBLife, 
+        classifyFailurePattern,
+        analyzeFailureMechanisms
+      } = await import('./reliability/weibullDataFitting');
+      
+      // Fit Weibull distribution to the data
+      const fitResult = fitWeibullToFailureData(failureRecords, params.useOperatingHours);
+      
+      if (!fitResult) {
+        return res.status(400).json({
+          message: "Insufficient failure data for Weibull analysis. Need at least 3 failure records."
+        });
+      }
+      
+      // Calculate additional metrics
+      const { beta, eta, r2 } = fitResult;
+      
+      // Generate full analysis using the fitted parameters
+      const analysisResults = generateWeibullAnalysis({
+        beta,
+        eta,
+        timeHorizon: params.timeHorizon,
+        timeUnits: params.useOperatingHours ? 'hours' : 'days'
+      });
+      
+      // Calculate B10, B50 life values (when 10% and 50% of components fail)
+      const b10Life = calculateBLife(beta, eta, 10);
+      const b50Life = calculateBLife(beta, eta, 50);
+      
+      // Classify the failure pattern
+      const failurePattern = classifyFailurePattern(beta);
+      
+      // Analyze common failure mechanisms
+      const mechanismAnalysis = analyzeFailureMechanisms(failureRecords);
+      
+      // Combine all results
+      const enhancedResults = {
+        ...analysisResults,
+        fittedParameters: {
+          beta,
+          eta,
+          r2
+        },
+        bLifeValues: {
+          b10Life,
+          b50Life
+        },
+        failurePattern,
+        failureCount: failureRecords.length,
+        mechanismAnalysis,
+        dataPoints: fitResult.dataPoints
+      };
+      
+      res.json(enhancedResults);
+    } catch (error) {
+      console.error("Error in data-driven Weibull analysis:", error);
+      res.status(500).json({ 
+        message: "Failed to perform data-driven Weibull analysis",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
   });
 
   // Maintenance Optimization endpoint

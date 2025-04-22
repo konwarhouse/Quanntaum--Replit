@@ -348,6 +348,24 @@ export interface WeibullAnalysisResponse {
   failureRateCurve: { time: number; failureRate: number }[];
   mtbf: number;
   cumulativeFailureProbability: { time: number; probability: number }[];
+  // Optional fields for data-driven analysis
+  fittedParameters?: {
+    beta: number;
+    eta: number;
+    r2: number;  // R-squared (goodness of fit)
+  };
+  bLifeValues?: {
+    b10Life: number;  // Time at which 10% of components fail
+    b50Life: number;  // Time at which 50% of components fail
+  };
+  failurePattern?: 'early-life' | 'random' | 'wear-out';  // Classification based on beta
+  failureCount?: number;  // Number of failure records used
+  mechanismAnalysis?: Record<string, number>;  // Counts of each failure mechanism
+  dataPoints?: {
+    time: number;
+    rank: number;
+    adjusted: boolean;
+  }[];  // Data points used in fitting
 }
 
 // Relations
