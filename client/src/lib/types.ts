@@ -2,6 +2,7 @@ import { WeibullAnalysisResponse as BaseWeibullAnalysisResponse, FailureHistory 
 
 // Extended Weibull Analysis Response with data-driven analysis fields
 export interface ExtendedWeibullAnalysisResponse extends BaseWeibullAnalysisResponse {
+  fallbackCalculation?: boolean;  // Flag to indicate fallback MTBF calculation was used
   fittedParameters?: {
     beta: number;
     eta: number;

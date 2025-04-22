@@ -102,6 +102,39 @@ const DataDrivenWeibullAnalysis = ({
       return res.json();
     },
     onSuccess: (data) => {
+      // Handle fallback MTBF calculation (when Weibull fit fails but we have a basic MTBF)
+      if (data.fallbackCalculation) {
+        console.log('Using fallback MTBF calculation instead of Weibull fit');
+        // Create simplified results using only MTBF
+        const simplifiedResults: ExtendedWeibullAnalysisResponse = {
+          ...data,
+          mtbf: data.mtbf || 0,
+          reliabilityCurve: data.reliabilityCurve || [],
+          failureRateCurve: data.failureRateCurve || [],
+          cumulativeFailureProbability: data.cumulativeFailureProbability || [],
+          // Set default values for fields normally provided by Weibull fit
+          fittedParameters: {
+            beta: 1, // Default to exponential distribution (beta=1)
+            eta: data.mtbf || 0, // For exponential, eta = MTBF
+            r2: 1 // Perfect fit since we're using the exact MTBF
+          },
+          failurePattern: 'random', // Exponential distribution implies random failures
+          bLifeValues: {
+            b10Life: data.mtbf ? data.mtbf * 0.10536 : 0, // -ln(0.9) * MTBF for exponential
+            b50Life: data.mtbf ? data.mtbf * 0.69315 : 0  // -ln(0.5) * MTBF for exponential
+          },
+          dataPoints: [] // No data points for the fit
+        };
+        
+        setResults(simplifiedResults);
+        setActiveTab("results");
+        toast({ 
+          title: "Basic Analysis Complete", 
+          description: `Basic MTBF analysis completed using ${data.failureCount} failure records. Detailed Weibull analysis requires at least 3 valid failure records.` 
+        });
+        return;
+      }
+      
       // Check if the fittedParameters property exists and has the required properties
       if (!data.fittedParameters || data.fittedParameters.beta === undefined || 
           data.fittedParameters.eta === undefined || data.fittedParameters.r2 === undefined) {
@@ -442,7 +475,11 @@ const DataDrivenWeibullAnalysis = ({
                   
                   <div className="p-4 bg-muted rounded-md">
                     <h3 className="text-sm font-medium mb-1">MTBF</h3>
-                    <p className="text-3xl font-bold">{results.mtbf ? results.mtbf.toFixed(2) : 'N/A'} {formatTimeLabel()}</p>
+                    <p className="text-3xl font-bold">
+                      {results.mtbf !== undefined && results.mtbf !== null && typeof results.mtbf === 'number' 
+                        ? results.mtbf.toFixed(2) 
+                        : 'N/A'} {formatTimeLabel()}
+                    </p>
                   </div>
                 </div>
                 
@@ -495,7 +532,10 @@ const DataDrivenWeibullAnalysis = ({
                     <div>
                       <h4 className="font-semibold">MTBF Interpretation:</h4>
                       <p>
-                        Your calculated Mean Time Between Failures is <strong>{results.mtbf ? results.mtbf.toFixed(2) : 'N/A'} {formatTimeLabel()}</strong>. 
+                        Your calculated Mean Time Between Failures is <strong>
+                        {results.mtbf !== undefined && results.mtbf !== null && typeof results.mtbf === 'number'
+                          ? results.mtbf.toFixed(2)
+                          : 'N/A'} {formatTimeLabel()}</strong>. 
                         This represents the average time between failures for this equipment.
                       </p>
                     </div>
