@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Asset } from "@shared/schema";
 import { ExtendedWeibullAnalysisResponse, WeibullDataPoint } from "@/lib/types";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Info } from "lucide-react";
 import { 
   LineChart, 
   Line, 
@@ -407,9 +407,26 @@ const DataDrivenWeibullAnalysis = ({
                   )}
                 </div>
               )}
-              {results && results.fittedParameters && typeof results.fittedParameters.r2 === 'number' && (
-                <div>Based on {results.failureCount || 0} failure records. 
-                Fit Quality (R²): {results.fittedParameters.r2.toFixed(4)}</div>
+              {results && (
+                <div>
+                  {/* Basic information about records used */}
+                  <div>Based on {results.failureCount || 0} failure records.</div>
+                  
+                  {/* Show calculation method for fallback MTBF */}
+                  {results.fallbackCalculation && results.calculationMethodDisplay && (
+                    <div className="flex items-center gap-1 mt-1">
+                      <Badge variant="outline" className="text-xs bg-blue-50">
+                        {results.calculationMethodDisplay}
+                      </Badge>
+                      <span className="text-xs">calculation used due to limited data</span>
+                    </div>
+                  )}
+                  
+                  {/* Show fit quality for full Weibull analysis */}
+                  {results.fittedParameters && typeof results.fittedParameters.r2 === 'number' && !results.fallbackCalculation && (
+                    <div className="mt-1">Fit Quality (R²): {results.fittedParameters.r2.toFixed(4)}</div>
+                  )}
+                </div>
               )}
             </CardDescription>
           )}
@@ -537,12 +554,31 @@ const DataDrivenWeibullAnalysis = ({
                           ? results.mtbf.toFixed(2)
                           : 'N/A'} {formatTimeLabel()}</strong>. 
                         This represents the average time between failures for this equipment.
-                        {results.fallbackCalculation && (
-                          <span className="block mt-1 text-xs bg-muted p-1 rounded">
-                            Note: Due to limited operating hours data, this MTBF was calculated using calendar days ({results.failureCount || 0} records).
-                          </span>
-                        )}
                       </p>
+                      
+                      {results.fallbackCalculation && (
+                        <div className="mt-3 text-sm border p-3 rounded bg-muted/50">
+                          <h5 className="font-medium mb-1 flex items-center gap-2">
+                            <Info className="h-4 w-4" />
+                            Calculation Method Details
+                          </h5>
+                          <p className="text-xs">
+                            {results.calculationMethodDisplay === 'Operating Hours' ? (
+                              <>The MTBF was calculated using operating hours data from {results.dataPoints?.length || 0} records 
+                              with values: {results.dataPoints?.map(v => Math.round(v)).join(', ')}.</>
+                            ) : (
+                              <>The MTBF was calculated using calendar days (TBF) from {results.dataPoints?.length || 0} records 
+                              with values: {results.dataPoints?.map(v => Math.round(v)).join(', ')}.</>
+                            )}
+                          </p>
+                          <p className="text-xs mt-1">
+                            <strong>Formula used:</strong> MTBF = Sum of all time values / number of values = 
+                            {results.dataPoints && results.dataPoints.length > 0 ? 
+                              ` ${results.dataPoints.reduce((sum, val) => sum + val, 0).toFixed(1)} / ${results.dataPoints.length} = ${results.mtbf?.toFixed(2)}` : 
+                              ' N/A'}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
