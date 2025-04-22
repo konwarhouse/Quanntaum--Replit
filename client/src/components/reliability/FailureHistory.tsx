@@ -1267,14 +1267,14 @@ const FailureHistory = () => {
               </div>
               <div>
                 <Select
-                  value={selectedAssetId || ""}
-                  onValueChange={(value) => setSelectedAssetId(value || null)}
+                  value={selectedAssetId || "_all_"}
+                  onValueChange={(value) => setSelectedAssetId(value === "_all_" ? null : value)}
                 >
                   <SelectTrigger className="w-[200px]">
                     <SelectValue placeholder="Filter by asset" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Assets</SelectItem>
+                    <SelectItem value="_all_">All Assets</SelectItem>
                     {assets.map((asset) => (
                       <SelectItem key={asset.id} value={asset.id.toString()}>
                         {asset.assetNumber} - {asset.name}
