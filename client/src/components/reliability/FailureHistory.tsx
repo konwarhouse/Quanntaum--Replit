@@ -862,7 +862,7 @@ const FailureHistory = () => {
                                   }
                                   
                                   // Reset failure mode when asset changes
-                                  addForm.setValue("failureModeId", "");
+                                  addForm.setValue("failureModeId", "_empty_");
                                 }}
                                 value={field.value}
                               >
@@ -936,7 +936,7 @@ const FailureHistory = () => {
                         addForm,
                         "tbfDays",
                         "Time Between Failures (Days)",
-                        "Days since last failure (calculated automatically if last failure date is provided, but can be manually entered)",
+                        "Time Between Failures (TBF) - calculated automatically if last failure date is provided, or Time To Failure (TTF) if installation date is used. Can be manually entered.",
                         "number"
                       )}
                       
