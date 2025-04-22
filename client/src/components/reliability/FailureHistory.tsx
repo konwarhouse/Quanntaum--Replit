@@ -866,36 +866,81 @@ const FailureHistory = () => {
                   'Asset Number', 
                   'Asset Name', 
                   'Work Order', 
+                  'Installation Date',
+                  'Last Failure Date',
                   'Failure Date', 
                   'Repair Date',
-                  'TBF (Days)',
+                  'TTF/TBF (Days)',
                   'Downtime (Hours)',
+                  'Repair Time (Hours)',
+                  'Operating Hours at Failure',
                   'Failure Mode',
                   'Failure Classification',
                   'Failure Mechanism',
+                  'Failure Detection Method',
                   'Failed Part',
-                  'Operating Hours',
-                  'Failure Description'
+                  'Equipment Status',
+                  'Equipment Location',
+                  'Failure Description',
+                  'Failure Cause',
+                  'Potential Root Cause',
+                  'Safety Impact',
+                  'Environmental Impact',
+                  'Production Impact',
+                  'Repair Cost',
+                  'Consequential Cost',
+                  'Parts Replaced',
+                  'Repair Actions',
+                  'Repair Technician',
+                  'Operating Conditions',
+                  'Preventability',
+                  'Recommended Preventive Action',
+                  'Needs RCA',
+                  'Recorded By',
+                  'Verified By'
                 ],
                 // Data rows
                 ...filteredRecords.map(record => {
                   const asset = assets.find(a => a.id === record.assetId);
                   const failureMode = allFailureModes.find(m => m.id === record.failureModeId);
+                  const timeLabel = record.lastFailureDate ? "TBF" : "TTF";
                   
                   return [
                     asset?.assetNumber || '',
                     asset?.name || '',
                     record.workOrderNumber || '',
+                    record.installationDate ? format(new Date(record.installationDate), "yyyy-MM-dd") : '',
+                    record.lastFailureDate ? format(new Date(record.lastFailureDate), "yyyy-MM-dd") : '',
                     record.failureDate ? format(new Date(record.failureDate), "yyyy-MM-dd") : '',
                     record.repairCompleteDate ? format(new Date(record.repairCompleteDate), "yyyy-MM-dd") : '',
-                    record.tbfDays?.toString() || '',
+                    `${timeLabel}: ${record.tbfDays?.toString() || ''}`,
                     record.downtimeHours?.toString() || '',
+                    record.repairTimeHours?.toString() || '',
+                    record.operatingHoursAtFailure?.toString() || '',
                     failureMode?.description || '',
                     record.failureClassification || '',
                     record.failureMechanism || '',
+                    record.failureDetectionMethod || '',
                     record.failedPart || '',
-                    record.operatingHoursAtFailure?.toString() || '',
-                    record.failureDescription?.replace(/"/g, '""') || '' // Escape quotes for CSV
+                    record.equipmentStatus || '',
+                    record.equipmentLocation || '',
+                    record.failureDescription?.replace(/"/g, '""') || '',
+                    record.failureCause?.replace(/"/g, '""') || '',
+                    record.potentialRootCause?.replace(/"/g, '""') || '',
+                    record.safetyImpact?.replace(/"/g, '""') || '',
+                    record.environmentalImpact?.replace(/"/g, '""') || '',
+                    record.productionImpact?.replace(/"/g, '""') || '',
+                    record.repairCost?.toString() || '',
+                    record.consequentialCost?.toString() || '',
+                    record.partsReplaced?.replace(/"/g, '""') || '',
+                    record.repairActions?.replace(/"/g, '""') || '',
+                    record.repairTechnician || '',
+                    record.operatingConditions?.replace(/"/g, '""') || '',
+                    record.preventability || '',
+                    record.recommendedPreventiveAction?.replace(/"/g, '""') || '',
+                    record.needsRCA || '',
+                    record.recordedBy || '',
+                    record.verifiedBy || ''
                   ];
                 })
               ];
@@ -1410,12 +1455,15 @@ const FailureHistory = () => {
                     <TableRow>
                       <TableHead>Asset</TableHead>
                       <TableHead>Work Order</TableHead>
+                      <TableHead>Install Date</TableHead>
                       <TableHead>Failure Date</TableHead>
                       <TableHead>Repair Date</TableHead>
                       <TableHead>Failure Mode</TableHead>
                       <TableHead>Failed Part</TableHead>
-                      <TableHead>TBF (days)</TableHead>
+                      <TableHead>TTF/TBF (days)</TableHead>
+                      <TableHead>Oper. Hours</TableHead>
                       <TableHead>Downtime (hrs)</TableHead>
+                      <TableHead>Fail Mechanism</TableHead>
                       <TableHead>Classification</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
@@ -1425,6 +1473,9 @@ const FailureHistory = () => {
                       const asset = assets.find(a => a.id === record.assetId);
                       const failureMode = allFailureModes.find(m => m.id === record.failureModeId);
                       
+                      // Determine if this is TTF or TBF based on data
+                      const timeLabel = record.lastFailureDate ? "TBF" : "TTF";
+                      
                       return (
                         <TableRow key={record.id}>
                           <TableCell>
@@ -1432,6 +1483,9 @@ const FailureHistory = () => {
                           </TableCell>
                           <TableCell>
                             {record.workOrderNumber || "—"}
+                          </TableCell>
+                          <TableCell>
+                            {record.installationDate ? format(new Date(record.installationDate), "MMM d, yyyy") : "—"}
                           </TableCell>
                           <TableCell>
                             {record.failureDate ? format(new Date(record.failureDate), "MMM d, yyyy") : "N/A"}
@@ -1446,9 +1500,30 @@ const FailureHistory = () => {
                             {record.failedPart || "—"}
                           </TableCell>
                           <TableCell>
-                            <span className="font-medium">{record.tbfDays?.toFixed(1) || "—"}</span>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="font-medium">
+                                  {timeLabel}: {record.tbfDays?.toFixed(1) || "—"}
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-sm">
+                                <p>
+                                  {timeLabel === "TTF" ? 
+                                    "Time To Failure: Days from installation to first failure" : 
+                                    "Time Between Failures: Days since last failure"}
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
                           </TableCell>
-                          <TableCell>{record.downtimeHours?.toFixed(1) || "—"}</TableCell>
+                          <TableCell>
+                            {record.operatingHoursAtFailure?.toFixed(1) || "—"}
+                          </TableCell>
+                          <TableCell>
+                            {record.downtimeHours?.toFixed(1) || "—"}
+                          </TableCell>
+                          <TableCell>
+                            {record.failureMechanism || "—"}
+                          </TableCell>
                           <TableCell>
                             <Badge variant={
                               record.failureClassification === "Catastrophic" ? "destructive" :
