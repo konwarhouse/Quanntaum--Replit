@@ -747,7 +747,7 @@ const FailureHistory = () => {
             {type === "select" ? (
               <Select
                 onValueChange={field.onChange}
-                value={field.value || ""}
+                value={field.value || "_empty_"}
               >
                 <SelectTrigger>
                   <SelectValue placeholder={`Select ${label.toLowerCase()}`} />
@@ -880,7 +880,7 @@ const FailureHistory = () => {
                                   // Reset failure mode when asset changes
                                   addForm.setValue("failureModeId", "_empty_");
                                 }}
-                                value={field.value}
+                                value={field.value || "_empty_"}
                               >
                                 <SelectTrigger>
                                   <SelectValue placeholder="Select asset" />
@@ -1409,9 +1409,9 @@ const FailureHistory = () => {
                               }
                               
                               // Reset failure mode when asset changes
-                              editForm.setValue("failureModeId", "");
+                              editForm.setValue("failureModeId", "_empty_");
                             }}
-                            value={field.value}
+                            value={field.value || "_empty_"}
                           >
                             <SelectTrigger>
                               <SelectValue placeholder="Select asset" />
