@@ -19,6 +19,11 @@ export interface ExtendedWeibullAnalysisResponse extends BaseWeibullAnalysisResp
     rank: number;
     adjusted: boolean;
   }[];  // Data points used in fitting
+  assetDetails?: {
+    assetType: 'specific' | 'class' | 'failureMode' | 'all';
+    id: number | null;
+    label: string;
+  };  // Information about what asset/component is being analyzed
 }
 
 // Re-export types from schema
