@@ -374,8 +374,8 @@ const DataDrivenWeibullAnalysis = ({
                   )}
                 </div>
               )}
-              {results.fittedParameters && results.fittedParameters.r2 !== undefined && (
-                <div>Based on {results.failureCount} failure records. 
+              {results && results.fittedParameters && typeof results.fittedParameters.r2 === 'number' && (
+                <div>Based on {results.failureCount || 0} failure records. 
                 Fit Quality (R²): {results.fittedParameters.r2.toFixed(4)}</div>
               )}
             </CardDescription>
@@ -440,7 +440,7 @@ const DataDrivenWeibullAnalysis = ({
                   
                   <div className="p-4 bg-muted rounded-md">
                     <h3 className="text-sm font-medium mb-1">MTBF</h3>
-                    <p className="text-3xl font-bold">{results.mtbf.toFixed(2)} {formatTimeLabel()}</p>
+                    <p className="text-3xl font-bold">{results.mtbf ? results.mtbf.toFixed(2) : 'N/A'} {formatTimeLabel()}</p>
                   </div>
                 </div>
                 
@@ -449,7 +449,7 @@ const DataDrivenWeibullAnalysis = ({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <div className="p-4 border rounded-md">
                       <h3 className="text-sm font-medium mb-1">B10 Life (10% Failure)</h3>
-                      <p className="text-2xl font-bold">{results.bLifeValues.b10Life.toFixed(2)} {formatTimeLabel()}</p>
+                      <p className="text-2xl font-bold">{results.bLifeValues && typeof results.bLifeValues.b10Life === 'number' ? results.bLifeValues.b10Life.toFixed(2) : 'N/A'} {formatTimeLabel()}</p>
                       <p className="text-xs text-muted-foreground mt-1">
                         Time at which 10% of units are expected to fail
                       </p>
@@ -457,7 +457,7 @@ const DataDrivenWeibullAnalysis = ({
                     
                     <div className="p-4 border rounded-md">
                       <h3 className="text-sm font-medium mb-1">B50 Life (50% Failure)</h3>
-                      <p className="text-2xl font-bold">{results.bLifeValues.b50Life.toFixed(2)} {formatTimeLabel()}</p>
+                      <p className="text-2xl font-bold">{results.bLifeValues && typeof results.bLifeValues.b50Life === 'number' ? results.bLifeValues.b50Life.toFixed(2) : 'N/A'} {formatTimeLabel()}</p>
                       <p className="text-xs text-muted-foreground mt-1">
                         Time at which 50% of units are expected to fail
                       </p>
@@ -493,7 +493,7 @@ const DataDrivenWeibullAnalysis = ({
                     <div>
                       <h4 className="font-semibold">MTBF Interpretation:</h4>
                       <p>
-                        Your calculated Mean Time Between Failures is <strong>{results.mtbf.toFixed(2)} {formatTimeLabel()}</strong>. 
+                        Your calculated Mean Time Between Failures is <strong>{results.mtbf ? results.mtbf.toFixed(2) : 'N/A'} {formatTimeLabel()}</strong>. 
                         This represents the average time between failures for this equipment.
                       </p>
                     </div>
