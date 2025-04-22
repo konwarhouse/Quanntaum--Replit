@@ -259,7 +259,7 @@ const AssetMaster = () => {
   };
   
   const handleCreateAsset = () => {
-    const installationDate = date ? format(date, 'yyyy-MM-dd') : '';
+    const installationDate = date ? format(date, 'yyyy-MM-dd') : null;
     
     // Validate
     if (!name.trim()) {
@@ -275,6 +275,15 @@ const AssetMaster = () => {
       toast({
         title: 'Validation error',
         description: 'Asset number is required',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    if (!installationDate) {
+      toast({
+        title: 'Validation error',
+        description: 'Installation date is required',
         variant: 'destructive'
       });
       return;
@@ -287,7 +296,9 @@ const AssetMaster = () => {
       assetNumber,
       equipmentClass,
       description,
-      installationDate
+      installationDate,
+      // Use null for lastReplacementDate to prevent database errors
+      lastReplacementDate: null
     };
     
     createAssetMutation.mutate(asset);
@@ -296,7 +307,9 @@ const AssetMaster = () => {
   const handleUpdateAsset = () => {
     if (!selectedAsset) return;
     
-    const installationDate = date ? format(date, 'yyyy-MM-dd') : '';
+    // Keep the original installation date if present, otherwise use the date picker value
+    // We should always have a valid installation date at this point since the field is disabled during edit
+    const installationDate = selectedAsset.installationDate || (date ? format(date, 'yyyy-MM-dd') : null);
     
     // Validate
     if (!name.trim()) {
@@ -312,6 +325,15 @@ const AssetMaster = () => {
       toast({
         title: 'Validation error',
         description: 'Asset number is required',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    if (!installationDate) {
+      toast({
+        title: 'Validation error',
+        description: 'Installation date is required',
         variant: 'destructive'
       });
       return;
@@ -336,9 +358,9 @@ const AssetMaster = () => {
       equipmentClass,
       description,
       installationDate,
-      // Make sure replacement data is included
+      // Make sure replacement data is included with proper null handling for database
       isReplacement: newAsset.isReplacement,
-      lastReplacementDate: newAsset.lastReplacementDate
+      lastReplacementDate: newAsset.isReplacement ? newAsset.lastReplacementDate : null
     };
     
     updateAssetMutation.mutate(updatedAsset);

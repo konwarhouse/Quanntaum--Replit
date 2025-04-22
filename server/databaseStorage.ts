@@ -70,10 +70,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createAsset(insertAsset: InsertAsset): Promise<Asset> {
-    // Handle empty installation date
+    // Handle empty date fields
     const processedAsset = {...insertAsset};
+    
     if (processedAsset.installationDate === '') {
       processedAsset.installationDate = null;
+    }
+    
+    if (processedAsset.lastReplacementDate === '') {
+      processedAsset.lastReplacementDate = null;
     }
     
     const [asset] = await db.insert(assets).values(processedAsset).returning();
@@ -81,10 +86,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateAsset(id: number, assetUpdate: Partial<InsertAsset>): Promise<Asset | undefined> {
-    // Handle empty installation date
+    // Handle empty date fields
     const processedUpdate = {...assetUpdate};
+    
     if (processedUpdate.installationDate === '') {
       processedUpdate.installationDate = null;
+    }
+    
+    if (processedUpdate.lastReplacementDate === '') {
+      processedUpdate.lastReplacementDate = null;
     }
     
     const [updatedAsset] = await db
