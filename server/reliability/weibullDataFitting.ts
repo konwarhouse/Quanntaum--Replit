@@ -44,14 +44,20 @@ export function fitWeibullToFailureData(
   }
   
   // Extract time data based on setting (TBF in days or operating hours)
-  const timeData: number[] = failureHistoryRecords
-    .filter(record => useOperatingHours 
-      ? record.operatingHoursAtFailure != null && record.operatingHoursAtFailure > 0
-      : record.tbfDays != null && record.tbfDays > 0)
+  const filteredRecords = failureHistoryRecords.filter(record => useOperatingHours 
+    ? record.operatingHoursAtFailure != null && record.operatingHoursAtFailure > 0
+    : record.tbfDays != null && record.tbfDays > 0);
+  
+  console.log('Filtered time data records:', filteredRecords.length, 'out of', failureHistoryRecords.length);
+  console.log('Filtered records:', JSON.stringify(filteredRecords, null, 2));
+  
+  const timeData: number[] = filteredRecords
     .map(record => useOperatingHours 
       ? record.operatingHoursAtFailure as number 
       : record.tbfDays as number)
     .sort((a, b) => a - b); // Sort in ascending order
+    
+  console.log('Time data values:', timeData);
   
   // Create ranking of data points
   const dataPoints: WeibullDataPoint[] = timeData.map((time, index) => ({
@@ -71,12 +77,29 @@ export function fitWeibullToFailureData(
   const sumXY = xValues.reduce((sum, x, i) => sum + x * yValues[i], 0);
   const sumX2 = xValues.reduce((sum, x) => sum + x * x, 0);
   
+  console.log('Regression inputs:', { n, sumX, sumY, sumXY, sumX2 });
+  console.log('X values:', xValues);
+  console.log('Y values:', yValues);
+  
   // Slope is beta (shape parameter)
-  const beta = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+  const denominator = (n * sumX2 - sumX * sumX);
+  if (denominator === 0) {
+    console.log('ERROR: Division by zero in beta calculation');
+    return null;
+  }
+  
+  const beta = (n * sumXY - sumX * sumY) / denominator;
+  console.log('Beta calculated:', beta);
   
   // Calculate eta (scale parameter) from the intercept
+  if (beta === 0) {
+    console.log('ERROR: Division by zero in eta calculation (beta is zero)');
+    return null;
+  }
+  
   const intercept = (sumY - beta * sumX) / n;
   const eta = Math.exp(-intercept / beta);
+  console.log('Intercept:', intercept, 'Eta calculated:', eta);
   
   // Calculate R-squared value to measure goodness of fit
   const yMean = sumY / n;
@@ -85,7 +108,14 @@ export function fitWeibullToFailureData(
     const yPredicted = beta * xValues[i] + intercept;
     return sum + Math.pow(y - yPredicted, 2);
   }, 0);
+  
+  if (ssTotal === 0) {
+    console.log('ERROR: Division by zero in R² calculation (ssTotal is zero)');
+    return null;
+  }
+  
   const r2 = 1 - (ssResidual / ssTotal);
+  console.log('R² calculated:', r2);
   
   return {
     beta,
