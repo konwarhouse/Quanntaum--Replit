@@ -133,9 +133,17 @@ export const failureHistory = pgTable("failure_history", {
   assetId: integer("asset_id").notNull().references(() => assets.id, { onDelete: 'cascade' }),
   failureModeId: integer("failure_mode_id").references(() => failureModes.id),
   
+  // Reference information
+  workOrderNumber: text("work_order_number"), // Reference WO Number
+  
   // Essential timing fields
-  failureDate: timestamp("failure_date").notNull(),
-  repairCompleteDate: timestamp("repair_complete_date").notNull(),
+  installationDate: timestamp("installation_date"), // Equipment Installation date
+  lastFailureDate: timestamp("last_failure_date"), // Last Failure Date before this occurrence
+  failureDate: timestamp("failure_date").notNull(), // Current Failure Date
+  repairCompleteDate: timestamp("repair_complete_date").notNull(), // When repair was completed
+  
+  // Time Between Failures
+  tbfDays: real("tbf_days"), // Time Between Failures in Days
   
   // Duration metrics
   downtimeHours: real("downtime_hours").notNull(), // Total unavailable time
@@ -143,9 +151,15 @@ export const failureHistory = pgTable("failure_history", {
   operatingHoursAtFailure: real("operating_hours_at_failure"), // Operating time since installation or last overhaul
   
   // Failure details
+  failedPart: text("failed_part"), // Specific part that failed
   failureDescription: text("failure_description").notNull(), // What happened
   failureMechanism: text("failure_mechanism"), // How it failed physically/chemically
   failureCause: text("failure_cause").notNull(), // Root cause
+  potentialRootCause: text("potential_root_cause"), // Potential root cause if not fully determined
+  
+  // Equipment status
+  equipmentStatus: text("equipment_status"), // Status: running, failed, censored
+  equipmentLocation: text("equipment_location"), // Location information
   
   // Classification fields for analysis
   failureClassification: text("failure_classification"), // Per ISO 14224 (mechanical, electrical, etc.)
@@ -185,32 +199,61 @@ export const failureHistory = pgTable("failure_history", {
 
 export const insertFailureHistorySchema = createInsertSchema(failureHistory)
 .pick({
+  // References
   assetId: true,
   failureModeId: true,
+  workOrderNumber: true,
+  
+  // Timing and dates
+  installationDate: true,
+  lastFailureDate: true,
   failureDate: true,
   repairCompleteDate: true,
+  tbfDays: true,
+  
+  // Duration metrics
   downtimeHours: true,
   repairTimeHours: true,
   operatingHoursAtFailure: true,
+  
+  // Failure details
+  failedPart: true,
   failureDescription: true,
   failureMechanism: true,
   failureCause: true,
+  potentialRootCause: true,
+  
+  // Equipment status
+  equipmentStatus: true,
+  equipmentLocation: true,
+  
+  // Classification and impact
   failureClassification: true,
   failureDetectionMethod: true,
   safetyImpact: true,
   environmentalImpact: true,
   productionImpact: true,
+  
+  // Financial data
   repairCost: true,
   consequentialCost: true,
+  
+  // Repair details
   partsReplaced: true,
   repairActions: true,
   repairTechnician: true,
   operatingConditions: true,
+  
+  // RCM and prevention
   preventability: true,
   recommendedPreventiveAction: true,
   needsRCA: true,
+  
+  // Statistical analysis
   weibullBeta: true,
   weibullEta: true,
+  
+  // Metadata
   recordedBy: true,
   verifiedBy: true,
 })
@@ -222,6 +265,12 @@ export const insertFailureHistorySchema = createInsertSchema(failureHistory)
     repairCompleteDate: data.repairCompleteDate && typeof data.repairCompleteDate === 'string' 
       ? new Date(data.repairCompleteDate) 
       : data.repairCompleteDate,
+    installationDate: data.installationDate && typeof data.installationDate === 'string' 
+      ? new Date(data.installationDate) 
+      : data.installationDate,
+    lastFailureDate: data.lastFailureDate && typeof data.lastFailureDate === 'string' 
+      ? new Date(data.lastFailureDate) 
+      : data.lastFailureDate,
   };
 });
 
