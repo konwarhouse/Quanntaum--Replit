@@ -131,7 +131,7 @@ const WeibullAnalysisForm = ({ selectedAssetId }: WeibullAnalysisFormProps) => {
                   <SelectContent>
                     {assets.map((asset: Asset) => (
                       <SelectItem key={asset.id} value={asset.id.toString()}>
-                        {asset.name}
+                        {asset.assetNumber} - {asset.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
