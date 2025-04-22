@@ -510,7 +510,7 @@ const FailureHistory = () => {
     const assetId = parseInt(data.assetId);
     const failureModeId = parseInt(data.failureModeId);
     
-    // Auto-calculate TBF if we have the dates and it's not manually set
+    // Auto-calculate TBF/TTF if we have the dates and it's not manually set
     // First convert tbfDays to a number regardless of its current type
     let tbfValue = 0;
     if (typeof data.tbfDays === 'number') {
@@ -519,11 +519,19 @@ const FailureHistory = () => {
       tbfValue = parseFloat(data.tbfDays);
     }
     
-    // Calculate TBF if it's not set and we have both dates
+    // Calculate TBF if it's not set and we have lastFailureDate
     if (data.lastFailureDate && data.failureDate && tbfValue === 0) {
       const differenceInMs = data.failureDate.getTime() - data.lastFailureDate.getTime();
       const differenceInDays = differenceInMs / (1000 * 60 * 60 * 24);
       tbfValue = parseFloat(differenceInDays.toFixed(2));
+      console.log("TBF calculated from last failure:", tbfValue);
+    } 
+    // If no lastFailureDate but we have installation date, calculate TTF (Time To Failure)
+    else if (data.installationDate && data.failureDate && tbfValue === 0) {
+      const differenceInMs = data.failureDate.getTime() - data.installationDate.getTime();
+      const differenceInDays = differenceInMs / (1000 * 60 * 60 * 24);
+      tbfValue = parseFloat(differenceInDays.toFixed(2));
+      console.log("TTF calculated from installation date:", tbfValue);
     }
     
     // Auto-calculate downtime hours if we have both dates
@@ -610,7 +618,7 @@ const FailureHistory = () => {
     const assetId = parseInt(data.assetId);
     const failureModeId = parseInt(data.failureModeId);
     
-    // Auto-calculate TBF if we have the dates and it's not manually set
+    // Auto-calculate TBF/TTF if we have the dates and it's not manually set
     // First convert tbfDays to a number regardless of its current type
     let tbfValue = 0;
     if (typeof data.tbfDays === 'number') {
@@ -619,11 +627,19 @@ const FailureHistory = () => {
       tbfValue = parseFloat(data.tbfDays);
     }
     
-    // Calculate TBF if it's not set and we have both dates
+    // Calculate TBF if it's not set and we have lastFailureDate
     if (data.lastFailureDate && data.failureDate && tbfValue === 0) {
       const differenceInMs = data.failureDate.getTime() - data.lastFailureDate.getTime();
       const differenceInDays = differenceInMs / (1000 * 60 * 60 * 24);
       tbfValue = parseFloat(differenceInDays.toFixed(2));
+      console.log("TBF calculated from last failure:", tbfValue);
+    } 
+    // If no lastFailureDate but we have installation date, calculate TTF (Time To Failure)
+    else if (data.installationDate && data.failureDate && tbfValue === 0) {
+      const differenceInMs = data.failureDate.getTime() - data.installationDate.getTime();
+      const differenceInDays = differenceInMs / (1000 * 60 * 60 * 24);
+      tbfValue = parseFloat(differenceInDays.toFixed(2));
+      console.log("TTF calculated from installation date:", tbfValue);
     }
     
     // Auto-calculate downtime hours if we have both dates
