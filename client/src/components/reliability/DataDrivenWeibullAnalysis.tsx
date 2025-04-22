@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Asset } from "@shared/schema";
 import { ExtendedWeibullAnalysisResponse, WeibullDataPoint } from "@/lib/types";
+import { AlertCircle } from "lucide-react";
 import { 
   LineChart, 
   Line, 
@@ -101,6 +102,17 @@ const DataDrivenWeibullAnalysis = ({
       return res.json();
     },
     onSuccess: (data) => {
+      // Check if the fittedParameters property exists and has the required properties
+      if (!data.fittedParameters || data.fittedParameters.beta === undefined || 
+          data.fittedParameters.eta === undefined || data.fittedParameters.r2 === undefined) {
+        toast({ 
+          title: "Analysis Error", 
+          description: "Unable to calculate reliable Weibull parameters from the available data.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
       setResults(data);
       setActiveTab("results");
       toast({ 
@@ -374,6 +386,20 @@ const DataDrivenWeibullAnalysis = ({
             <div className="flex flex-col items-center justify-center h-96">
               <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary"></div>
               <p className="mt-4 text-muted-foreground">Analyzing failure data and fitting Weibull distribution...</p>
+            </div>
+          ) : weibullMutation.isError ? (
+            <div className="flex flex-col items-center justify-center h-96 p-6 text-center">
+              <AlertCircle className="h-12 w-12 text-destructive mb-4" />
+              <h3 className="text-xl font-medium mb-2">Analysis Error</h3>
+              <p className="text-muted-foreground mb-4">
+                {weibullMutation.error instanceof Error 
+                  ? weibullMutation.error.message 
+                  : "There was an error analyzing the failure data."}
+              </p>
+              <p className="text-sm bg-muted p-4 rounded-md max-w-md">
+                For data-driven analysis to work, you need at least 3 failure records for the selected asset or equipment class. 
+                If you have insufficient data, try using the Manual Parameters tab instead.
+              </p>
             </div>
           ) : results ? (
             <Tabs value={activeTab} onValueChange={setActiveTab}>
