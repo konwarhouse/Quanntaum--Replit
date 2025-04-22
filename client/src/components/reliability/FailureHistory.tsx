@@ -611,28 +611,13 @@ const FailureHistory = () => {
 
   // Handle form submission for adding a new record
   const onAddSubmit = (data: FailureRecordFormValues) => {
-    // Format dates properly for PostgreSQL timestamp format
-    const formattedFailureDate = data.failureDate instanceof Date 
-      ? format(data.failureDate, 'yyyy-MM-dd HH:mm:ss')
-      : data.failureDate;
-    
-    const formattedRepairDate = data.repairCompleteDate instanceof Date
-      ? format(data.repairCompleteDate, 'yyyy-MM-dd HH:mm:ss')
-      : data.repairCompleteDate;
+    // Don't format dates - send Date objects directly to the server
+    // This ensures proper handling by Zod schema validation
 
     // Convert form values to numbers where needed
     const assetId = parseInt(data.assetId);
     // Failure mode is now required by the schema
     const failureModeId = parseInt(data.failureModeId);
-    
-    // Format additional date fields if they exist
-    const formattedInstallationDate = data.installationDate instanceof Date 
-      ? format(data.installationDate, 'yyyy-MM-dd HH:mm:ss')
-      : data.installationDate;
-      
-    const formattedLastFailureDate = data.lastFailureDate instanceof Date 
-      ? format(data.lastFailureDate, 'yyyy-MM-dd HH:mm:ss')
-      : data.lastFailureDate;
     
     createFailureRecordMutation.mutate({
       // References
@@ -640,11 +625,11 @@ const FailureHistory = () => {
       failureModeId: failureModeId,
       workOrderNumber: data.workOrderNumber,
       
-      // Timing and dates
-      installationDate: formattedInstallationDate,
-      lastFailureDate: formattedLastFailureDate,
-      failureDate: formattedFailureDate,
-      repairCompleteDate: formattedRepairDate,
+      // Timing and dates - send Date objects directly
+      installationDate: data.installationDate,
+      lastFailureDate: data.lastFailureDate,
+      failureDate: data.failureDate,
+      repairCompleteDate: data.repairCompleteDate,
       tbfDays: data.tbfDays,
       
       // Duration metrics
@@ -697,28 +682,13 @@ const FailureHistory = () => {
   const onEditSubmit = (data: FailureRecordFormValues) => {
     if (!selectedRecordId) return;
     
-    // Format dates properly for PostgreSQL timestamp format
-    const formattedFailureDate = data.failureDate instanceof Date 
-      ? format(data.failureDate, 'yyyy-MM-dd HH:mm:ss')
-      : data.failureDate;
+    // No need to format dates - send Date objects directly to the server
+    // This ensures proper handling by Zod schema validation
     
-    const formattedRepairDate = data.repairCompleteDate instanceof Date
-      ? format(data.repairCompleteDate, 'yyyy-MM-dd HH:mm:ss')
-      : data.repairCompleteDate;
-
     // Convert form values to numbers where needed
     const assetId = parseInt(data.assetId);
     // Failure mode is now required by the schema
     const failureModeId = parseInt(data.failureModeId);
-    
-    // Format additional date fields if they exist
-    const formattedInstallationDate = data.installationDate instanceof Date 
-      ? format(data.installationDate, 'yyyy-MM-dd HH:mm:ss')
-      : data.installationDate;
-      
-    const formattedLastFailureDate = data.lastFailureDate instanceof Date 
-      ? format(data.lastFailureDate, 'yyyy-MM-dd HH:mm:ss')
-      : data.lastFailureDate;
     
     updateFailureRecordMutation.mutate({
       id: selectedRecordId,
@@ -728,11 +698,11 @@ const FailureHistory = () => {
         failureModeId: failureModeId,
         workOrderNumber: data.workOrderNumber,
         
-        // Timing and dates
-        installationDate: formattedInstallationDate,
-        lastFailureDate: formattedLastFailureDate,
-        failureDate: formattedFailureDate,
-        repairCompleteDate: formattedRepairDate,
+        // Timing and dates - send Date objects directly
+        installationDate: data.installationDate,
+        lastFailureDate: data.lastFailureDate,
+        failureDate: data.failureDate,
+        repairCompleteDate: data.repairCompleteDate,
         tbfDays: data.tbfDays,
         
         // Duration metrics
