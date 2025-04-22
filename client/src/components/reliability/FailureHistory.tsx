@@ -456,7 +456,40 @@ const FailureHistory = () => {
   const editForm = useForm<any>({
     resolver: zodResolver(failureRecordFormSchema),
     defaultValues: {
-      // Will be populated when a record is selected for editing
+      assetId: "",
+      failureModeId: "_empty_",
+      workOrderNumber: "",
+      installationDate: undefined,
+      lastFailureDate: undefined,
+      failureDate: new Date(),
+      repairCompleteDate: undefined,
+      tbfDays: "",
+      downtimeHours: "",
+      repairTimeHours: "",
+      operatingHoursAtFailure: "",
+      failureClassification: "",
+      failureDetectionMethod: "",
+      failedPart: "",
+      failureDescription: "",
+      failureMechanism: "",
+      failureCause: "",
+      potentialRootCause: "",
+      equipmentStatus: "",
+      equipmentLocation: "",
+      operatingConditions: "",
+      safetyImpact: "",
+      environmentalImpact: "",
+      productionImpact: "",
+      repairCost: "",
+      consequentialCost: "",
+      partsReplaced: "",
+      repairActions: "",
+      repairTechnician: "",
+      preventability: "",
+      recommendedPreventiveAction: "",
+      needsRCA: "",
+      recordedBy: "",
+      verifiedBy: "",
     },
   });
 
@@ -611,7 +644,7 @@ const FailureHistory = () => {
   };
 
   // Handle form submission for editing an existing record
-  const onEditSubmit = (data: FailureRecordFormValues) => {
+  const onEditSubmit = (data: any) => {
     if (!selectedRecordId) return;
     
     // Convert form values to numbers where needed
@@ -823,6 +856,67 @@ const FailureHistory = () => {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              const csvData = [
+                // CSV Header
+                [
+                  'Asset Number', 
+                  'Asset Name', 
+                  'Work Order', 
+                  'Failure Date', 
+                  'Repair Date',
+                  'TBF (Days)',
+                  'Downtime (Hours)',
+                  'Failure Mode',
+                  'Failure Classification',
+                  'Failure Mechanism',
+                  'Failed Part',
+                  'Operating Hours',
+                  'Failure Description'
+                ],
+                // Data rows
+                ...filteredRecords.map(record => {
+                  const asset = assets.find(a => a.id === record.assetId);
+                  const failureMode = allFailureModes.find(m => m.id === record.failureModeId);
+                  
+                  return [
+                    asset?.assetNumber || '',
+                    asset?.name || '',
+                    record.workOrderNumber || '',
+                    record.failureDate ? format(new Date(record.failureDate), "yyyy-MM-dd") : '',
+                    record.repairCompleteDate ? format(new Date(record.repairCompleteDate), "yyyy-MM-dd") : '',
+                    record.tbfDays?.toString() || '',
+                    record.downtimeHours?.toString() || '',
+                    failureMode?.description || '',
+                    record.failureClassification || '',
+                    record.failureMechanism || '',
+                    record.failedPart || '',
+                    record.operatingHoursAtFailure?.toString() || '',
+                    record.failureDescription?.replace(/"/g, '""') || '' // Escape quotes for CSV
+                  ];
+                })
+              ];
+              
+              // Convert to CSV string
+              const csvContent = csvData.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+              
+              // Create download link
+              const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+              const url = URL.createObjectURL(blob);
+              const link = document.createElement('a');
+              link.setAttribute('href', url);
+              link.setAttribute('download', `failure_history_${format(new Date(), 'yyyy-MM-dd')}.csv`);
+              link.style.visibility = 'hidden';
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            }}
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Export CSV
+          </Button>
           <Button variant="outline" onClick={() => refetchFailureRecords()}>
             <RefreshCw className="mr-2 h-4 w-4" />
             Refresh
@@ -1314,10 +1408,13 @@ const FailureHistory = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Asset</TableHead>
+                      <TableHead>Work Order</TableHead>
                       <TableHead>Failure Date</TableHead>
+                      <TableHead>Repair Date</TableHead>
                       <TableHead>Failure Mode</TableHead>
-                      <TableHead>Downtime (hrs)</TableHead>
+                      <TableHead>Failed Part</TableHead>
                       <TableHead>TBF (days)</TableHead>
+                      <TableHead>Downtime (hrs)</TableHead>
                       <TableHead>Classification</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
@@ -1333,15 +1430,34 @@ const FailureHistory = () => {
                             {asset ? `${asset.assetNumber} - ${asset.name}` : `Asset ID ${record.assetId}`}
                           </TableCell>
                           <TableCell>
+                            {record.workOrderNumber || "—"}
+                          </TableCell>
+                          <TableCell>
                             {record.failureDate ? format(new Date(record.failureDate), "MMM d, yyyy") : "N/A"}
+                          </TableCell>
+                          <TableCell>
+                            {record.repairCompleteDate ? format(new Date(record.repairCompleteDate), "MMM d, yyyy") : "—"}
                           </TableCell>
                           <TableCell>
                             {failureMode ? failureMode.description : (record.failureModeId ? `Mode ID ${record.failureModeId}` : "N/A")}
                           </TableCell>
-                          <TableCell>{record.downtimeHours?.toFixed(1) || "N/A"}</TableCell>
-                          <TableCell>{record.tbfDays?.toFixed(1) || "N/A"}</TableCell>
                           <TableCell>
-                            {record.failureClassification || "Not classified"}
+                            {record.failedPart || "—"}
+                          </TableCell>
+                          <TableCell>
+                            <span className="font-medium">{record.tbfDays?.toFixed(1) || "—"}</span>
+                          </TableCell>
+                          <TableCell>{record.downtimeHours?.toFixed(1) || "—"}</TableCell>
+                          <TableCell>
+                            <Badge variant={
+                              record.failureClassification === "Catastrophic" ? "destructive" :
+                              record.failureClassification === "Major" ? "destructive" :
+                              record.failureClassification === "Minor" ? "outline" :
+                              record.failureClassification === "Incipient" ? "secondary" :
+                              "outline"
+                            }>
+                              {record.failureClassification || "Not classified"}
+                            </Badge>
                           </TableCell>
                           <TableCell>
                             <div className="flex space-x-2">
@@ -1430,10 +1546,188 @@ const FailureHistory = () => {
                       </FormItem>
                     )}
                   />
-                  {/* Other form fields are the same as in add dialog, using renderFormField */}
-                  {/* ... */}
+                  {renderFormField(
+                    editForm,
+                    "workOrderNumber",
+                    "Work Order Number",
+                    "Reference WO number for this failure",
+                    "text"
+                  )}
+                  {renderFormField(
+                    editForm,
+                    "failureModeId",
+                    "Failure Mode",
+                    "Select the failure mode that occurred (required)",
+                    "select",
+                    assetFailureModes.map((mode) => ({
+                      value: mode.id.toString(),
+                      label: mode.description,
+                    }))
+                  )}
+                  
+                  <h3 className="text-lg font-medium pt-4">Dates and Timing</h3>
+                  <Separator />
+                  {renderFormField(
+                    editForm,
+                    "installationDate",
+                    "Installation Date",
+                    "When the equipment was installed or last overhauled",
+                    "date"
+                  )}
+                  {renderFormField(
+                    editForm,
+                    "lastFailureDate",
+                    "Last Failure Date",
+                    "When this equipment last failed (if applicable)",
+                    "date"
+                  )}
+                  {renderFormField(
+                    editForm,
+                    "failureDate",
+                    "Failure Date",
+                    "When the current failure occurred",
+                    "date"
+                  )}
+                  {renderFormField(
+                    editForm,
+                    "repairCompleteDate",
+                    "Repair Complete Date",
+                    "When repairs were completed",
+                    "date"
+                  )}
+                  {renderFormField(
+                    editForm,
+                    "tbfDays",
+                    "Time Between Failures (Days)",
+                    "Time Between Failures (TBF) - calculated automatically if last failure date is provided, or Time To Failure (TTF) if installation date is used. Can be manually entered.",
+                    "number"
+                  )}
+                  
+                  <h3 className="text-lg font-medium pt-4">Duration Metrics</h3>
+                  <Separator />
+                  {renderFormField(
+                    editForm,
+                    "downtimeHours",
+                    "Downtime Hours",
+                    "Total hours the equipment was unavailable (calculated automatically from dates if not provided)",
+                    "number"
+                  )}
+                  {renderFormField(
+                    editForm,
+                    "repairTimeHours",
+                    "Repair Time Hours",
+                    "Actual hands-on repair time",
+                    "number"
+                  )}
+                  {renderFormField(
+                    editForm,
+                    "operatingHoursAtFailure",
+                    "Operating Hours at Failure",
+                    "Running hours since installation or last overhaul",
+                    "number"
+                  )}
                 </div>
-                {/* ... */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Classification</h3>
+                  <Separator />
+                  {renderFormField(
+                    editForm,
+                    "failureClassification",
+                    "Failure Classification",
+                    "Category of failure",
+                    "select",
+                    [
+                      { value: "Catastrophic", label: "Catastrophic" },
+                      { value: "Major", label: "Major" },
+                      { value: "Minor", label: "Minor" },
+                      { value: "Incipient", label: "Incipient" },
+                    ]
+                  )}
+                  {renderFormField(
+                    editForm,
+                    "failureDetectionMethod",
+                    "Failure Detection Method",
+                    "How the failure was identified",
+                    "select",
+                    [
+                      { value: "Alarm", label: "Alarm" },
+                      { value: "Operator Observation", label: "Operator Observation" },
+                      { value: "Condition Monitoring", label: "Condition Monitoring" },
+                      { value: "Routine Inspection", label: "Routine Inspection" },
+                      { value: "Performance Degradation", label: "Performance Degradation" },
+                      { value: "Maintenance Check", label: "Maintenance Check" },
+                      { value: "Functional Failure", label: "Functional Failure" },
+                    ]
+                  )}
+                  
+                  <h3 className="text-lg font-medium pt-4">Failure Details</h3>
+                  <Separator />
+                  {renderFormField(
+                    editForm,
+                    "failureDescription",
+                    "Failure Description",
+                    "What happened? Describe the failure symptoms and effects.",
+                    "textarea"
+                  )}
+                  {renderFormField(
+                    editForm,
+                    "failureCause",
+                    "Failure Cause",
+                    "What caused the failure? Immediate technical reason",
+                    "textarea"
+                  )}
+                  {renderFormField(
+                    editForm,
+                    "potentialRootCause",
+                    "Potential Root Cause",
+                    "Why did the failure occur? Underlying system or process issues.",
+                    "textarea"
+                  )}
+                  {renderFormField(
+                    editForm,
+                    "failureMechanism",
+                    "Failure Mechanism",
+                    "How did it fail? Physical/chemical process",
+                    "select",
+                    [
+                      { value: "Mechanical Wear", label: "Mechanical Wear" },
+                      { value: "Fatigue", label: "Fatigue" },
+                      { value: "Corrosion", label: "Corrosion" },
+                      { value: "Erosion", label: "Erosion" },
+                      { value: "Overload", label: "Overload" },
+                      { value: "Electrical Failure", label: "Electrical Failure" },
+                      { value: "Contamination", label: "Contamination" },
+                      { value: "Human Error", label: "Human Error" },
+                      { value: "Software/Control Fault", label: "Software/Control Fault" },
+                      { value: "Unknown", label: "Unknown" },
+                    ]
+                  )}
+                  {renderFormField(
+                    editForm,
+                    "failedPart",
+                    "Failed Part",
+                    "Specific component or part that failed",
+                    "text"
+                  )}
+                  
+                  <h3 className="text-lg font-medium pt-4">Equipment Status</h3>
+                  <Separator />
+                  {renderFormField(
+                    editForm,
+                    "equipmentStatus",
+                    "Equipment Status",
+                    "Condition or operating mode at time of failure",
+                    "select",
+                    [
+                      { value: "Normal Operation", label: "Normal Operation" },
+                      { value: "Startup", label: "Startup" },
+                      { value: "Shutdown", label: "Shutdown" },
+                      { value: "Standby", label: "Standby" },
+                      { value: "Abnormal Operation", label: "Abnormal Operation" },
+                      { value: "Overload", label: "Overload" },
+                    ]
+                  )}
+                </div>
               </div>
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
