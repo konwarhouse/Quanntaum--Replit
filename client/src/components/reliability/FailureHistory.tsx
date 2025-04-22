@@ -90,35 +90,65 @@ import {
 
 // Define the form schema for creating/editing failure records
 const failureRecordFormSchema = z.object({
+  // References
   assetId: z.coerce.number().min(1, "Please select an asset"),
   failureModeId: z.coerce.number().min(1, "Please select a failure mode"),
+  workOrderNumber: z.string().optional(),
+  
+  // Timing and dates
+  installationDate: z.date().optional(),
+  lastFailureDate: z.date().optional(),
   failureDate: z.date({
     required_error: "Please select the failure date",
   }),
   repairCompleteDate: z.date({
     required_error: "Please select the repair completion date",
   }).nullable(),
+  tbfDays: z.union([z.coerce.number().min(0), z.literal("")]).optional().transform(val => val === "" ? undefined : val),
+  
+  // Duration metrics
   downtimeHours: z.coerce.number().min(0, "Downtime hours must be a positive number"),
   repairTimeHours: z.coerce.number().min(0, "Repair time hours must be a positive number"),
-  needsRCA: z.string().min(1, "Please select whether RCA is required"),
   operatingHoursAtFailure: z.union([z.coerce.number().min(0), z.literal("")]).optional().transform(val => val === "" ? undefined : val),
+  
+  // Failure details
+  failedPart: z.string().optional(),
   failureDescription: z.string().min(5, "Please provide a failure description"),
   failureMechanism: z.string().optional(),
   failureCause: z.string().min(3, "Please provide the failure cause"),
+  potentialRootCause: z.string().optional(),
+  
+  // Equipment status
+  equipmentStatus: z.string().optional(),
+  equipmentLocation: z.string().optional(),
+  
+  // Classification fields
   failureClassification: z.string().optional(),
   failureDetectionMethod: z.string().min(1, "Please select how the failure was detected"),
+  
+  // Impact assessment
   safetyImpact: z.string().optional(),
   environmentalImpact: z.string().optional(),
   productionImpact: z.string().optional(),
+  
+  // Financial data
   repairCost: z.union([z.coerce.number().min(0), z.literal("")]).optional().transform(val => val === "" ? undefined : val),
   consequentialCost: z.union([z.coerce.number().min(0), z.literal("")]).optional().transform(val => val === "" ? undefined : val),
+  
+  // Repair details
   partsReplaced: z.string().optional(),
   repairActions: z.string().min(3, "Please describe the repair actions taken"),
   repairTechnician: z.string().optional(),
   operatingConditions: z.string().optional(),
+  
+  // RCM and prevention
   preventability: z.string().optional(),
   recommendedPreventiveAction: z.string().optional(),
+  needsRCA: z.string().min(1, "Please select whether RCA is required"),
+  
+  // Metadata
   recordedBy: z.string().optional(),
+  verifiedBy: z.string().optional(),
 });
 
 type FailureRecordFormValues = z.infer<typeof failureRecordFormSchema>;
@@ -351,31 +381,61 @@ const FailureHistory = () => {
   const addForm = useForm<any>({
     resolver: zodResolver(failureRecordFormSchema),
     defaultValues: {
+      // References
       assetId: selectedAssetId || "",
       failureModeId: "",
+      workOrderNumber: "",
+      
+      // Timing and dates
+      installationDate: undefined,
+      lastFailureDate: undefined,
       failureDate: new Date(),
       repairCompleteDate: new Date(),
+      tbfDays: "",
+      
+      // Duration metrics
       downtimeHours: "",
       repairTimeHours: "",
-      needsRCA: "",
       operatingHoursAtFailure: "",
+      
+      // Failure details
+      failedPart: "",
       failureDescription: "",
       failureMechanism: "",
       failureCause: "",
+      potentialRootCause: "",
+      
+      // Equipment status
+      equipmentStatus: "",
+      equipmentLocation: "",
+      
+      // Classification
       failureClassification: "",
       failureDetectionMethod: "",
+      
+      // Impact assessment
       safetyImpact: "",
       environmentalImpact: "",
       productionImpact: "",
+      
+      // Financial data
       repairCost: "",
       consequentialCost: "",
+      
+      // Repair details
       partsReplaced: "",
       repairActions: "",
       repairTechnician: "",
       operatingConditions: "",
+      
+      // RCM and prevention
       preventability: "",
       recommendedPreventiveAction: "",
+      needsRCA: "",
+      
+      // Metadata
       recordedBy: "",
+      verifiedBy: "",
     },
   });
 
@@ -383,8 +443,14 @@ const FailureHistory = () => {
   const editForm = useForm<any>({
     resolver: zodResolver(failureRecordFormSchema),
     defaultValues: {
+      // References
       assetId: "",
       failureModeId: "",
+      workOrderNumber: "",
+      
+      // Timing and dates
+      installationDate: undefined,
+      lastFailureDate: undefined,
       failureDate: new Date(),
       repairCompleteDate: new Date(),
       downtimeHours: "",
@@ -415,31 +481,61 @@ const FailureHistory = () => {
   useEffect(() => {
     if (isAddDialogOpen) {
       addForm.reset({
+        // References
         assetId: selectedAssetId || "",
         failureModeId: "",
+        workOrderNumber: "",
+        
+        // Timing and dates
+        installationDate: undefined,
+        lastFailureDate: undefined,
         failureDate: new Date(),
         repairCompleteDate: new Date(),
+        tbfDays: "",
+        
+        // Duration metrics
         downtimeHours: "",
         repairTimeHours: "",
-        needsRCA: "",
         operatingHoursAtFailure: "",
+        
+        // Failure details
+        failedPart: "",
         failureDescription: "",
         failureMechanism: "",
         failureCause: "",
+        potentialRootCause: "",
+        
+        // Equipment status
+        equipmentStatus: "",
+        equipmentLocation: "",
+        
+        // Classification
         failureClassification: "",
         failureDetectionMethod: "",
+        
+        // Impact assessment
         safetyImpact: "",
         environmentalImpact: "",
         productionImpact: "",
+        
+        // Financial data
         repairCost: "",
         consequentialCost: "",
+        
+        // Repair details
         partsReplaced: "",
         repairActions: "",
         repairTechnician: "",
         operatingConditions: "",
+        
+        // RCM and prevention
         preventability: "",
         recommendedPreventiveAction: "",
+        needsRCA: "",
+        
+        // Metadata
         recordedBy: "",
+        verifiedBy: "",
       });
     }
   }, [isAddDialogOpen, selectedAssetId, addForm]);
@@ -453,31 +549,61 @@ const FailureHistory = () => {
         setCurrentAssetId(record.assetId);
         
         editForm.reset({
+          // References
           assetId: record.assetId.toString(),
           failureModeId: record.failureModeId?.toString() || "",
+          workOrderNumber: record.workOrderNumber || "",
+          
+          // Timing and dates
+          installationDate: record.installationDate ? new Date(record.installationDate) : undefined,
+          lastFailureDate: record.lastFailureDate ? new Date(record.lastFailureDate) : undefined,
           failureDate: new Date(record.failureDate),
           repairCompleteDate: new Date(record.repairCompleteDate),
+          tbfDays: record.tbfDays?.toString() || "",
+          
+          // Duration metrics
           downtimeHours: record.downtimeHours.toString(),
           repairTimeHours: record.repairTimeHours.toString(),
-          needsRCA: record.needsRCA || "", 
           operatingHoursAtFailure: record.operatingHoursAtFailure?.toString() || "",
+          
+          // Failure details
+          failedPart: record.failedPart || "",
           failureDescription: record.failureDescription,
           failureMechanism: record.failureMechanism || "",
           failureCause: record.failureCause,
+          potentialRootCause: record.potentialRootCause || "",
+          
+          // Equipment status
+          equipmentStatus: record.equipmentStatus || "",
+          equipmentLocation: record.equipmentLocation || "",
+          
+          // Classification fields
           failureClassification: record.failureClassification || "",
           failureDetectionMethod: record.failureDetectionMethod,
+          
+          // Impact assessment
           safetyImpact: record.safetyImpact || "",
           environmentalImpact: record.environmentalImpact || "",
           productionImpact: record.productionImpact || "",
+          
+          // Financial data
           repairCost: record.repairCost?.toString() || "",
           consequentialCost: record.consequentialCost?.toString() || "",
+          
+          // Repair details
           partsReplaced: record.partsReplaced || "",
           repairActions: record.repairActions,
           repairTechnician: record.repairTechnician || "",
           operatingConditions: record.operatingConditions || "",
+          
+          // RCM and prevention
           preventability: record.preventability || "",
           recommendedPreventiveAction: record.recommendedPreventiveAction || "",
+          needsRCA: record.needsRCA || "",
+          
+          // Metadata
           recordedBy: record.recordedBy || "",
+          verifiedBy: record.verifiedBy || "",
         });
       }
     }
@@ -502,32 +628,71 @@ const FailureHistory = () => {
     // Failure mode is now required by the schema
     const failureModeId = parseInt(formValues.failureModeId as string);
     
+    // Format additional date fields if they exist
+    const formattedInstallationDate = formValues.installationDate instanceof Date 
+      ? format(formValues.installationDate, 'yyyy-MM-dd HH:mm:ss')
+      : formValues.installationDate;
+      
+    const formattedLastFailureDate = formValues.lastFailureDate instanceof Date 
+      ? format(formValues.lastFailureDate, 'yyyy-MM-dd HH:mm:ss')
+      : formValues.lastFailureDate;
+    
     createFailureRecordMutation.mutate({
+      // References
       assetId: assetId,
       failureModeId: failureModeId,
+      workOrderNumber: formValues.workOrderNumber,
+      
+      // Timing and dates
+      installationDate: formattedInstallationDate,
+      lastFailureDate: formattedLastFailureDate,
       failureDate: formattedFailureDate,
       repairCompleteDate: formattedRepairDate,
+      tbfDays: formValues.tbfDays ? parseFloat(formValues.tbfDays as string) : null,
+      
+      // Duration metrics
       downtimeHours: parseFloat(formValues.downtimeHours as string) || 0,
       repairTimeHours: parseFloat(formValues.repairTimeHours as string) || 0,
-      needsRCA: formValues.needsRCA,
       operatingHoursAtFailure: formValues.operatingHoursAtFailure ? parseFloat(formValues.operatingHoursAtFailure as string) : null,
+      
+      // Failure details
+      failedPart: formValues.failedPart,
       failureDescription: formValues.failureDescription,
       failureMechanism: formValues.failureMechanism,
       failureCause: formValues.failureCause,
+      potentialRootCause: formValues.potentialRootCause,
+      
+      // Equipment status
+      equipmentStatus: formValues.equipmentStatus,
+      equipmentLocation: formValues.equipmentLocation,
+      
+      // Classification fields
       failureClassification: formValues.failureClassification,
       failureDetectionMethod: formValues.failureDetectionMethod,
+      
+      // Impact assessment
       safetyImpact: formValues.safetyImpact,
       environmentalImpact: formValues.environmentalImpact,
       productionImpact: formValues.productionImpact,
+      
+      // Financial data
       repairCost: formValues.repairCost ? parseFloat(formValues.repairCost as string) : null,
       consequentialCost: formValues.consequentialCost ? parseFloat(formValues.consequentialCost as string) : null,
+      
+      // Repair details
       partsReplaced: formValues.partsReplaced,
       repairActions: formValues.repairActions,
       repairTechnician: formValues.repairTechnician,
       operatingConditions: formValues.operatingConditions,
+      
+      // RCM and prevention
       preventability: formValues.preventability,
       recommendedPreventiveAction: formValues.recommendedPreventiveAction,
+      needsRCA: formValues.needsRCA,
+      
+      // Metadata
       recordedBy: formValues.recordedBy,
+      verifiedBy: formValues.verifiedBy,
     });
   };
 
@@ -552,34 +717,73 @@ const FailureHistory = () => {
     // Failure mode is now required by the schema
     const failureModeId = parseInt(formValues.failureModeId as string);
     
+    // Format additional date fields if they exist
+    const formattedInstallationDate = formValues.installationDate instanceof Date 
+      ? format(formValues.installationDate, 'yyyy-MM-dd HH:mm:ss')
+      : formValues.installationDate;
+      
+    const formattedLastFailureDate = formValues.lastFailureDate instanceof Date 
+      ? format(formValues.lastFailureDate, 'yyyy-MM-dd HH:mm:ss')
+      : formValues.lastFailureDate;
+    
     updateFailureRecordMutation.mutate({
       id: selectedRecordId,
       data: {
+        // References
         assetId: assetId,
         failureModeId: failureModeId,
+        workOrderNumber: formValues.workOrderNumber,
+        
+        // Timing and dates
+        installationDate: formattedInstallationDate,
+        lastFailureDate: formattedLastFailureDate,
         failureDate: formattedFailureDate,
         repairCompleteDate: formattedRepairDate,
+        tbfDays: formValues.tbfDays ? parseFloat(formValues.tbfDays as string) : null,
+        
+        // Duration metrics
         downtimeHours: parseFloat(formValues.downtimeHours as string) || 0,
         repairTimeHours: parseFloat(formValues.repairTimeHours as string) || 0,
-        needsRCA: formValues.needsRCA,
         operatingHoursAtFailure: formValues.operatingHoursAtFailure ? parseFloat(formValues.operatingHoursAtFailure as string) : null,
+        
+        // Failure details
+        failedPart: formValues.failedPart,
         failureDescription: formValues.failureDescription,
         failureMechanism: formValues.failureMechanism,
         failureCause: formValues.failureCause,
+        potentialRootCause: formValues.potentialRootCause,
+        
+        // Equipment status
+        equipmentStatus: formValues.equipmentStatus,
+        equipmentLocation: formValues.equipmentLocation,
+        
+        // Classification fields
         failureClassification: formValues.failureClassification,
         failureDetectionMethod: formValues.failureDetectionMethod,
+        
+        // Impact assessment
         safetyImpact: formValues.safetyImpact,
         environmentalImpact: formValues.environmentalImpact,
         productionImpact: formValues.productionImpact,
+        
+        // Financial data
         repairCost: formValues.repairCost ? parseFloat(formValues.repairCost as string) : null,
         consequentialCost: formValues.consequentialCost ? parseFloat(formValues.consequentialCost as string) : null,
+        
+        // Repair details
         partsReplaced: formValues.partsReplaced,
         repairActions: formValues.repairActions,
         repairTechnician: formValues.repairTechnician,
         operatingConditions: formValues.operatingConditions,
+        
+        // RCM and prevention
         preventability: formValues.preventability,
         recommendedPreventiveAction: formValues.recommendedPreventiveAction,
+        needsRCA: formValues.needsRCA,
+        
+        // Metadata
         recordedBy: formValues.recordedBy,
+        verifiedBy: formValues.verifiedBy,
       }
     });
   };
@@ -764,6 +968,13 @@ const FailureHistory = () => {
                       />
                       {renderFormField(
                         addForm,
+                        "workOrderNumber",
+                        "Work Order Number",
+                        "Reference WO number for this failure",
+                        "text"
+                      )}
+                      {renderFormField(
+                        addForm,
                         "failureModeId",
                         "Failure Mode",
                         "Select the failure mode that occurred (required)",
@@ -772,6 +983,22 @@ const FailureHistory = () => {
                           value: mode.id.toString(),
                           label: mode.description,
                         }))
+                      )}
+                      <h3 className="text-lg font-medium">Timing Information</h3>
+                      <Separator />
+                      {renderFormField(
+                        addForm,
+                        "installationDate",
+                        "Equipment Installation Date",
+                        "When was the equipment installed?",
+                        "date"
+                      )}
+                      {renderFormField(
+                        addForm,
+                        "lastFailureDate",
+                        "Last Failure Date",
+                        "When did this equipment last fail? (if applicable)",
+                        "date"
                       )}
                       {renderFormField(
                         addForm,
@@ -786,6 +1013,13 @@ const FailureHistory = () => {
                         "Repair Complete Date",
                         "When was the repair completed?",
                         "date"
+                      )}
+                      {renderFormField(
+                        addForm,
+                        "tbfDays",
+                        "Time Between Failures (days)",
+                        "Days since last failure (if known)",
+                        "number"
                       )}
                       {renderFormField(
                         addForm,
@@ -807,6 +1041,27 @@ const FailureHistory = () => {
                         "Operating Hours at Failure",
                         "Machine hours/cycles at failure (if applicable)",
                         "number"
+                      )}
+                      <h3 className="text-lg font-medium">Equipment Status</h3>
+                      <Separator />
+                      {renderFormField(
+                        addForm,
+                        "equipmentStatus",
+                        "Equipment Status",
+                        "Current status (running, failed, censored)",
+                        "select",
+                        [
+                          { value: "running", label: "Running" },
+                          { value: "failed", label: "Failed" },
+                          { value: "censored", label: "Censored" }
+                        ]
+                      )}
+                      {renderFormField(
+                        addForm,
+                        "equipmentLocation",
+                        "Equipment Location",
+                        "Physical location when failure occurred",
+                        "text"
                       )}
                     </div>
                     <div className="space-y-4">
