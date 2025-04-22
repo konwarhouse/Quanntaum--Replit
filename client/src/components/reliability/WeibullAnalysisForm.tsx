@@ -10,9 +10,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Asset, WeibullParameters, WeibullAnalysisResponse } from "@/lib/types";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
-const WeibullAnalysisForm = () => {
+interface WeibullAnalysisFormProps {
+  selectedAssetId: number | null;
+}
+
+const WeibullAnalysisForm = ({ selectedAssetId }: WeibullAnalysisFormProps) => {
   const { toast } = useToast();
-  const [selectedAssetId, setSelectedAssetId] = useState<number | null>(null);
   const [formData, setFormData] = useState<WeibullParameters>({
     beta: 2,
     eta: 1000,
@@ -74,7 +77,6 @@ const WeibullAnalysisForm = () => {
 
   const handleAssetChange = (assetId: string) => {
     const id = parseInt(assetId);
-    setSelectedAssetId(id);
     
     // Find the selected asset
     const selectedAsset = assets.find((asset: Asset) => asset.id === id);
@@ -82,9 +84,9 @@ const WeibullAnalysisForm = () => {
       // Update form with asset's Weibull parameters
       setFormData(prev => ({
         ...prev,
-        beta: selectedAsset.weibullBeta,
-        eta: selectedAsset.weibullEta,
-        timeUnits: selectedAsset.timeUnit as 'hours' | 'days' | 'months' | 'years'
+        beta: selectedAsset.weibullBeta || 2,
+        eta: selectedAsset.weibullEta || 1000,
+        timeUnits: (selectedAsset.timeUnit as 'hours' | 'days' | 'months' | 'years') || 'hours'
       }));
     }
   };

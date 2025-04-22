@@ -16,6 +16,11 @@ import { UserRole } from "@shared/auth";
 
 const ReliabilityPage = () => {
   const [activeTab, setActiveTab] = useState("assets");
+  // Store selected asset/class/failure mode at this level so it persists between tab switches
+  const [selectedWeibullAssetId, setSelectedWeibullAssetId] = useState<number | null>(null);
+  const [selectedWeibullEquipmentClass, setSelectedWeibullEquipmentClass] = useState<string | null>(null);
+  const [selectedWeibullFailureModeId, setSelectedWeibullFailureModeId] = useState<number | null>(null);
+  const [useOperatingHours, setUseOperatingHours] = useState(true);
   
   // Set default user role to Admin for development purposes
   // In a production app, this would come from an auth context
@@ -95,7 +100,16 @@ const ReliabilityPage = () => {
                     Fit Weibull parameters to your actual failure history data for precise reliability modeling
                   </p>
                 </div>
-                <DataDrivenWeibullAnalysis />
+                <DataDrivenWeibullAnalysis 
+                  selectedAssetId={selectedWeibullAssetId}
+                  setSelectedAssetId={setSelectedWeibullAssetId}
+                  selectedEquipmentClass={selectedWeibullEquipmentClass}
+                  setSelectedEquipmentClass={setSelectedWeibullEquipmentClass}
+                  selectedFailureModeId={selectedWeibullFailureModeId}
+                  setSelectedFailureModeId={setSelectedWeibullFailureModeId}
+                  useOperatingHours={useOperatingHours}
+                  setUseOperatingHours={setUseOperatingHours}
+                />
               </TabsContent>
               <TabsContent value="manual" className="py-4">
                 <div className="mb-4">
@@ -104,7 +118,9 @@ const ReliabilityPage = () => {
                     Input your own Weibull parameters for reliability analysis
                   </p>
                 </div>
-                <WeibullAnalysisForm />
+                <WeibullAnalysisForm 
+                  selectedAssetId={selectedWeibullAssetId}
+                />
               </TabsContent>
             </Tabs>
           </TabsContent>

@@ -34,12 +34,28 @@ interface WeibullFittingParams {
   timeHorizon: number;
 }
 
-const DataDrivenWeibullAnalysis = () => {
+interface DataDrivenWeibullAnalysisProps {
+  selectedAssetId: number | null;
+  setSelectedAssetId: (id: number | null) => void;
+  selectedEquipmentClass: string | null;
+  setSelectedEquipmentClass: (className: string | null) => void;
+  selectedFailureModeId: number | null;
+  setSelectedFailureModeId: (id: number | null) => void;
+  useOperatingHours: boolean;
+  setUseOperatingHours: (value: boolean) => void;
+}
+
+const DataDrivenWeibullAnalysis = ({
+  selectedAssetId,
+  setSelectedAssetId,
+  selectedEquipmentClass,
+  setSelectedEquipmentClass,
+  selectedFailureModeId,
+  setSelectedFailureModeId,
+  useOperatingHours,
+  setUseOperatingHours
+}: DataDrivenWeibullAnalysisProps) => {
   const { toast } = useToast();
-  const [selectedAssetId, setSelectedAssetId] = useState<number | null>(null);
-  const [selectedEquipmentClass, setSelectedEquipmentClass] = useState<string | null>(null);
-  const [selectedFailureModeId, setSelectedFailureModeId] = useState<number | null>(null);
-  const [useOperatingHours, setUseOperatingHours] = useState(false);
   const [timeHorizon, setTimeHorizon] = useState(5000);
   const [activeTab, setActiveTab] = useState("results");
   const [results, setResults] = useState<ExtendedWeibullAnalysisResponse | null>(null);
