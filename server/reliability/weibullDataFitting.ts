@@ -188,31 +188,41 @@ export function analyzeFailureMechanisms(failureHistoryRecords: FailureHistory[]
  * Calculate Mean Time Between Failures (MTBF) from raw failure history data
  * @param failureHistoryRecords - Array of failure history records
  * @param useOperatingHours - Whether to use operating hours instead of calendar days
- * @returns The calculated MTBF value
+ * @returns Object containing the calculated MTBF value and metadata
  */
 export function calculateMTBF(
   failureHistoryRecords: FailureHistory[],
   useOperatingHours: boolean = false
-): number | null {
+): { mtbf: number | null; calculationMethod: 'operatingHours' | 'tbfDays' | null; dataPoints: number[] } {
   // Need at least 1 data point for MTBF
   if (!failureHistoryRecords || failureHistoryRecords.length < 1) {
     console.log('[DEBUG] No records for MTBF calculation');
-    return null;
+    return { mtbf: null, calculationMethod: null, dataPoints: [] };
   }
   
   // First try with operating hours if that's what was requested
   if (useOperatingHours) {
     // Filter records to only include those with valid operating hours values
+    // Note: We now accept zero values for operating hours if they are explicitly set
     const validOperatingHoursRecords = failureHistoryRecords.filter(record => 
-      record.operatingHoursAtFailure != null && record.operatingHoursAtFailure > 0);
+      record.operatingHoursAtFailure !== null && record.operatingHoursAtFailure !== undefined);
+    
+    console.log(`[DEBUG] Valid operating hours records: ${validOperatingHoursRecords.length} out of ${failureHistoryRecords.length}`);
+    validOperatingHoursRecords.forEach((record, i) => {
+      console.log(`[DEBUG] Operating Hours Record ${i+1}: assetId=${record.assetId}, operatingHoursAtFailure=${record.operatingHoursAtFailure}`);
+    });
     
     // If we have enough operating hours data, use it
-    if (validOperatingHoursRecords.length >= 3) {
+    if (validOperatingHoursRecords.length >= 2) {
       const timeValues = validOperatingHoursRecords.map(record => record.operatingHoursAtFailure as number);
       const sumTime = timeValues.reduce((sum, time) => sum + time, 0);
       const mtbf = sumTime / timeValues.length;
       console.log(`[DEBUG] MTBF calculation using operating hours: sum=${sumTime}, count=${timeValues.length}, mtbf=${mtbf}`);
-      return mtbf;
+      return { 
+        mtbf, 
+        calculationMethod: 'operatingHours', 
+        dataPoints: timeValues 
+      };
     } else {
       console.log(`[DEBUG] Not enough valid operating hours records (${validOperatingHoursRecords.length}). Falling back to calendar days.`);
     }
@@ -220,11 +230,16 @@ export function calculateMTBF(
   
   // If operating hours wasn't requested or there weren't enough valid records, fall back to tbfDays
   const validTbfRecords = failureHistoryRecords.filter(record => 
-    record.tbfDays != null && record.tbfDays > 0);
+    record.tbfDays !== null && record.tbfDays !== undefined);
+  
+  console.log(`[DEBUG] Valid TBF days records: ${validTbfRecords.length} out of ${failureHistoryRecords.length}`);
+  validTbfRecords.forEach((record, i) => {
+    console.log(`[DEBUG] TBF Days Record ${i+1}: assetId=${record.assetId}, tbfDays=${record.tbfDays}`);
+  });
   
   if (validTbfRecords.length === 0) {
     console.log('[DEBUG] No valid records for MTBF calculation after filtering');
-    return null;
+    return { mtbf: null, calculationMethod: null, dataPoints: [] };
   }
   
   // Extract tbfDays values
@@ -237,5 +252,9 @@ export function calculateMTBF(
   const mtbf = sumTime / timeValues.length;
   console.log(`[DEBUG] MTBF calculation using tbfDays: sum=${sumTime}, count=${timeValues.length}, mtbf=${mtbf}`);
   
-  return mtbf;
+  return { 
+    mtbf, 
+    calculationMethod: 'tbfDays', 
+    dataPoints: timeValues 
+  };
 }

@@ -950,40 +950,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!fitResult) {
         console.log('[DEBUG] Weibull fit failed, trying fallback MTBF calculation');
         // Calculate MTBF directly from the failure data
-        const mtbf = calculateMTBF(failureRecords, params.useOperatingHours);
+        const mtbfResult = calculateMTBF(failureRecords, params.useOperatingHours);
         
-        if (mtbf === null) {
+        if (mtbfResult.mtbf === null) {
           return res.status(400).json({
             message: "Insufficient failure data for analysis. No valid TTF/TBF values found."
           });
         }
         
-        // Add indicator to show which method was used for calculating MTBF
-        const calculationMethod = params.useOperatingHours && 
-          failureRecords.filter(r => r.operatingHoursAtFailure != null && r.operatingHoursAtFailure > 0).length >= 3
-          ? "Operating Hours"
-          : "Calendar Days";
-        
-        console.log(`[DEBUG] MTBF calculated using ${calculationMethod}: ${mtbf}`);
-        
+        console.log(`[DEBUG] MTBF calculated using ${mtbfResult.calculationMethod}: ${mtbfResult.mtbf}`);
+        console.log(`[DEBUG] Data points used: ${JSON.stringify(mtbfResult.dataPoints)}`);
         
         // Create a simple analysis using only MTBF
         const timeValues = Array.from({ length: 100 }, (_, i) => (i / 99) * params.timeHorizon);
         
         // Default to exponential distribution (beta=1) for reliability curves when we only have MTBF
+        // We already checked mtbfResult.mtbf is not null above
+        const mtbfValue = mtbfResult.mtbf as number;
+        
         const reliabilityCurve = timeValues.map(time => ({
           time,
-          reliability: Math.exp(-time / mtbf)
+          reliability: Math.exp(-time / mtbfValue)
         }));
         
         const failureRateCurve = timeValues.map(time => ({
           time,
-          failureRate: 1 / mtbf  // Constant failure rate for exponential distribution
+          failureRate: 1 / mtbfValue  // Constant failure rate for exponential distribution
         }));
         
         const cumulativeFailureProbability = timeValues.map(time => ({
           time,
-          probability: 1 - Math.exp(-time / mtbf)
+          probability: 1 - Math.exp(-time / mtbfValue)
         }));
         
         // Determine asset details for the response
@@ -1009,16 +1006,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
         }
         
+        // Format calculation method for display
+        const calculationMethodDisplay = mtbfResult.calculationMethod === 'operatingHours' 
+          ? 'Operating Hours' 
+          : 'Calendar Days';
+        
         // Return the simplified MTBF-based analysis
         return res.json({
-          mtbf,
+          mtbf: mtbfResult.mtbf,
           reliabilityCurve,
           failureRateCurve,
           cumulativeFailureProbability,
           failureCount: failureRecords.length,
           assetDetails,
-          // Include simplified fallback flag to indicate to client this is fallback calculation
-          fallbackCalculation: true
+          // Include enhanced metadata about the calculation
+          fallbackCalculation: true,
+          calculationMethod: mtbfResult.calculationMethod,
+          calculationMethodDisplay: calculationMethodDisplay,
+          dataPoints: mtbfResult.dataPoints
         });
       }
       
