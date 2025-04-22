@@ -7,8 +7,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Asset, WeibullParameters, WeibullAnalysisResponse } from "@/lib/types";
+import { WeibullAnalysisResponse } from "@/lib/types";
+import { Asset } from "@shared/schema";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+
+interface WeibullParameters {
+  beta: number;
+  eta: number;
+  timeUnits: 'hours' | 'days' | 'months' | 'years';
+  timeHorizon: number;
+}
 
 interface WeibullAnalysisFormProps {
   selectedAssetId: number | null;
@@ -60,7 +68,7 @@ const WeibullAnalysisForm = ({ selectedAssetId }: WeibullAnalysisFormProps) => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev: WeibullParameters) => ({
       ...prev,
       [name]: name === 'timeHorizon' || name === 'beta' || name === 'eta' 
         ? parseFloat(value) 
@@ -69,7 +77,7 @@ const WeibullAnalysisForm = ({ selectedAssetId }: WeibullAnalysisFormProps) => {
   };
 
   const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({
+    setFormData((prev: WeibullParameters) => ({
       ...prev,
       [name]: value
     }));
@@ -82,7 +90,7 @@ const WeibullAnalysisForm = ({ selectedAssetId }: WeibullAnalysisFormProps) => {
     const selectedAsset = assets.find((asset: Asset) => asset.id === id);
     if (selectedAsset) {
       // Update form with asset's Weibull parameters
-      setFormData(prev => ({
+      setFormData((prev: WeibullParameters) => ({
         ...prev,
         beta: selectedAsset.weibullBeta || 2,
         eta: selectedAsset.weibullEta || 1000,
