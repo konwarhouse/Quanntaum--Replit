@@ -1,107 +1,33 @@
-export type MessageRole = "user" | "assistant";
+import { WeibullAnalysisResponse as BaseWeibullAnalysisResponse, FailureHistory as BaseFailureHistory } from "@shared/schema";
 
-export interface ChatMessage {
-  id: number;
-  content: string;
-  role: MessageRole;
-  username: string;
-  timestamp: Date;
-}
-
-export interface Asset {
-  id: number;
-  assetNumber: string;
-  name: string;
-  description: string | null;
-  criticality: string;
-  installationDate: string | null;
-  weibullBeta: number;
-  weibullEta: number;
-  timeUnit: string;
-}
-
-export interface MaintenanceEvent {
-  id: number;
-  assetId: number;
-  eventType: string;
-  eventDate: string;
-  cost: number;
-  downtime: number;
-  description: string | null;
-}
-
-export interface FailureMode {
-  id: number;
-  assetId: number;
-  description: string;
-  consequences: string;
-  detectionMethod: string | null;
-  currentControl: string | null;
-  isPredictable: boolean | null;
-  costOfFailure: number | null;
-}
-
-export interface WeibullParameters {
-  beta: number;
-  eta: number;
-  timeUnits: 'hours' | 'days' | 'months' | 'years';
-  timeHorizon: number;
-}
-
-export interface WeibullAnalysisResponse {
-  reliabilityCurve: { time: number; reliability: number }[];
-  failureRateCurve: { time: number; failureRate: number }[];
-  mtbf: number;
-  cumulativeFailureProbability: { time: number; probability: number }[];
-}
-
-export interface MaintenanceOptimizationParameters {
-  beta: number;
-  eta: number;
-  preventiveMaintenanceCost: number;
-  correctiveMaintenanceCost: number;
-  targetReliabilityThreshold: number;
-  maximumAcceptableDowntime: number;
-  timeHorizon: number;
-}
-
-export interface MaintenanceOptimizationResponse {
-  optimalInterval: number;
-  optimalCost: number;
-  costCurve: { interval: number; cost: number }[];
-}
-
-export interface RCMParameters {
-  assetCriticality: 'High' | 'Medium' | 'Low';
-  isPredictable: boolean;
-  costOfFailure: number;
-  failureModeDescriptions: string[];
-  failureConsequences: string[];
-  currentMaintenancePractices: string;
-}
-
-export interface RCMAnalysisResponse {
-  maintenanceStrategy: string;
-  taskRecommendations: string[];
-  analysisInputs: {
-    assetCriticality: string;
-    isPredictable: boolean;
-    costOfFailure: number;
+// Extended Weibull Analysis Response with data-driven analysis fields
+export interface ExtendedWeibullAnalysisResponse extends BaseWeibullAnalysisResponse {
+  fittedParameters?: {
+    beta: number;
+    eta: number;
+    r2: number;  // R-squared (goodness of fit)
   };
+  bLifeValues?: {
+    b10Life: number;  // Time at which 10% of components fail
+    b50Life: number;  // Time at which 50% of components fail
+  };
+  failurePattern?: 'early-life' | 'random' | 'wear-out';  // Classification based on beta
+  failureCount?: number;  // Number of failure records used
+  mechanismAnalysis?: Record<string, number>;  // Counts of each failure mechanism
+  dataPoints?: {
+    time: number;
+    rank: number;
+    adjusted: boolean;
+  }[];  // Data points used in fitting
 }
 
-export interface SimulationParameters {
-  beta: number;
-  eta: number;
-  numberOfRuns: number;
-  timeHorizon: number;
-  pmInterval?: number;
-  pmCost: number;
-  failureCost: number;
-}
+// Re-export types from schema
+export { type BaseWeibullAnalysisResponse as WeibullAnalysisResponse };
+export { type BaseFailureHistory as FailureHistory };
 
-export interface SimulationResponse {
-  totalCost: number;
-  averageFailures: number;
-  histogram: { binStart: number; binEnd: number; count: number }[];
+// Export other types used in the client
+export interface WeibullDataPoint {
+  time: number;
+  rank: number;
+  adjusted: boolean;
 }

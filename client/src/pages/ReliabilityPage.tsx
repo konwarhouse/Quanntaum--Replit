@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import WeibullAnalysisForm from "@/components/reliability/WeibullAnalysisForm";
+import DataDrivenWeibullAnalysis from "@/components/reliability/DataDrivenWeibullAnalysis";
 import MaintenanceOptimizationForm from "@/components/reliability/MaintenanceOptimizationForm";
 import RCMAnalysisForm from "@/components/reliability/RCMAnalysisForm";
 import SimulationForm from "@/components/reliability/SimulationForm";
@@ -81,7 +82,31 @@ const ReliabilityPage = () => {
                 Analyze equipment failure patterns using the Weibull distribution to predict reliability
               </p>
             </div>
-            <WeibullAnalysisForm />
+            
+            <Tabs defaultValue="data-driven">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="data-driven">Data-Driven Analysis</TabsTrigger>
+                <TabsTrigger value="manual">Manual Parameters</TabsTrigger>
+              </TabsList>
+              <TabsContent value="data-driven" className="py-4">
+                <div className="mb-4">
+                  <h3 className="text-lg font-semibold">Data-Driven Weibull Analysis</h3>
+                  <p className="text-muted-foreground text-sm">
+                    Fit Weibull parameters to your actual failure history data for precise reliability modeling
+                  </p>
+                </div>
+                <DataDrivenWeibullAnalysis />
+              </TabsContent>
+              <TabsContent value="manual" className="py-4">
+                <div className="mb-4">
+                  <h3 className="text-lg font-semibold">Manual Weibull Parameters</h3>
+                  <p className="text-muted-foreground text-sm">
+                    Input your own Weibull parameters for reliability analysis
+                  </p>
+                </div>
+                <WeibullAnalysisForm />
+              </TabsContent>
+            </Tabs>
           </TabsContent>
 
           <TabsContent value="maintenance" className="focus-visible:outline-none focus-visible:ring-0">

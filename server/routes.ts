@@ -15,7 +15,8 @@ import {
   WeibullParameters,
   MaintenanceOptimizationParameters,
   RCMParameters,
-  SimulationParameters
+  SimulationParameters,
+  FailureHistory
 } from "@shared/schema";
 import { z } from "zod";
 import { 
