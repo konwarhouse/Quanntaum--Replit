@@ -610,121 +610,115 @@ const FailureHistory = () => {
   }, [isEditDialogOpen, selectedRecordId, failureRecords, editForm]);
 
   // Handle form submission for adding a new record
-  const onAddSubmit = (data: any) => {
-    // Use the data as a FailureRecordFormValues
-    const formValues = data as FailureRecordFormValues;
-    
+  const onAddSubmit = (data: FailureRecordFormValues) => {
     // Format dates properly for PostgreSQL timestamp format
-    const formattedFailureDate = formValues.failureDate instanceof Date 
-      ? format(formValues.failureDate, 'yyyy-MM-dd HH:mm:ss')
-      : formValues.failureDate;
+    const formattedFailureDate = data.failureDate instanceof Date 
+      ? format(data.failureDate, 'yyyy-MM-dd HH:mm:ss')
+      : data.failureDate;
     
-    const formattedRepairDate = formValues.repairCompleteDate instanceof Date
-      ? format(formValues.repairCompleteDate, 'yyyy-MM-dd HH:mm:ss')
-      : formValues.repairCompleteDate;
+    const formattedRepairDate = data.repairCompleteDate instanceof Date
+      ? format(data.repairCompleteDate, 'yyyy-MM-dd HH:mm:ss')
+      : data.repairCompleteDate;
 
     // Convert form values to numbers where needed
-    const assetId = parseInt(formValues.assetId as string);
+    const assetId = parseInt(data.assetId);
     // Failure mode is now required by the schema
-    const failureModeId = parseInt(formValues.failureModeId as string);
+    const failureModeId = parseInt(data.failureModeId);
     
     // Format additional date fields if they exist
-    const formattedInstallationDate = formValues.installationDate instanceof Date 
-      ? format(formValues.installationDate, 'yyyy-MM-dd HH:mm:ss')
-      : formValues.installationDate;
+    const formattedInstallationDate = data.installationDate instanceof Date 
+      ? format(data.installationDate, 'yyyy-MM-dd HH:mm:ss')
+      : data.installationDate;
       
-    const formattedLastFailureDate = formValues.lastFailureDate instanceof Date 
-      ? format(formValues.lastFailureDate, 'yyyy-MM-dd HH:mm:ss')
-      : formValues.lastFailureDate;
+    const formattedLastFailureDate = data.lastFailureDate instanceof Date 
+      ? format(data.lastFailureDate, 'yyyy-MM-dd HH:mm:ss')
+      : data.lastFailureDate;
     
     createFailureRecordMutation.mutate({
       // References
       assetId: assetId,
       failureModeId: failureModeId,
-      workOrderNumber: formValues.workOrderNumber,
+      workOrderNumber: data.workOrderNumber,
       
       // Timing and dates
       installationDate: formattedInstallationDate,
       lastFailureDate: formattedLastFailureDate,
       failureDate: formattedFailureDate,
       repairCompleteDate: formattedRepairDate,
-      tbfDays: formValues.tbfDays ? parseFloat(formValues.tbfDays as string) : null,
+      tbfDays: data.tbfDays,
       
       // Duration metrics
-      downtimeHours: parseFloat(formValues.downtimeHours as string) || 0,
-      repairTimeHours: parseFloat(formValues.repairTimeHours as string) || 0,
-      operatingHoursAtFailure: formValues.operatingHoursAtFailure ? parseFloat(formValues.operatingHoursAtFailure as string) : null,
+      downtimeHours: data.downtimeHours,
+      repairTimeHours: data.repairTimeHours,
+      operatingHoursAtFailure: data.operatingHoursAtFailure,
       
       // Failure details
-      failedPart: formValues.failedPart,
-      failureDescription: formValues.failureDescription,
-      failureMechanism: formValues.failureMechanism,
-      failureCause: formValues.failureCause,
-      potentialRootCause: formValues.potentialRootCause,
+      failedPart: data.failedPart,
+      failureDescription: data.failureDescription,
+      failureMechanism: data.failureMechanism,
+      failureCause: data.failureCause,
+      potentialRootCause: data.potentialRootCause,
       
       // Equipment status
-      equipmentStatus: formValues.equipmentStatus,
-      equipmentLocation: formValues.equipmentLocation,
+      equipmentStatus: data.equipmentStatus,
+      equipmentLocation: data.equipmentLocation,
       
       // Classification fields
-      failureClassification: formValues.failureClassification,
-      failureDetectionMethod: formValues.failureDetectionMethod,
+      failureClassification: data.failureClassification,
+      failureDetectionMethod: data.failureDetectionMethod,
       
       // Impact assessment
-      safetyImpact: formValues.safetyImpact,
-      environmentalImpact: formValues.environmentalImpact,
-      productionImpact: formValues.productionImpact,
+      safetyImpact: data.safetyImpact,
+      environmentalImpact: data.environmentalImpact,
+      productionImpact: data.productionImpact,
       
       // Financial data
-      repairCost: formValues.repairCost ? parseFloat(formValues.repairCost as string) : null,
-      consequentialCost: formValues.consequentialCost ? parseFloat(formValues.consequentialCost as string) : null,
+      repairCost: data.repairCost,
+      consequentialCost: data.consequentialCost,
       
       // Repair details
-      partsReplaced: formValues.partsReplaced,
-      repairActions: formValues.repairActions,
-      repairTechnician: formValues.repairTechnician,
-      operatingConditions: formValues.operatingConditions,
+      partsReplaced: data.partsReplaced,
+      repairActions: data.repairActions,
+      repairTechnician: data.repairTechnician,
+      operatingConditions: data.operatingConditions,
       
       // RCM and prevention
-      preventability: formValues.preventability,
-      recommendedPreventiveAction: formValues.recommendedPreventiveAction,
-      needsRCA: formValues.needsRCA,
+      preventability: data.preventability,
+      recommendedPreventiveAction: data.recommendedPreventiveAction,
+      needsRCA: data.needsRCA,
       
       // Metadata
-      recordedBy: formValues.recordedBy,
-      verifiedBy: formValues.verifiedBy,
+      recordedBy: data.recordedBy,
+      verifiedBy: data.verifiedBy,
     });
   };
 
   // Handle form submission for editing an existing record
-  const onEditSubmit = (data: any) => {
+  const onEditSubmit = (data: FailureRecordFormValues) => {
     if (!selectedRecordId) return;
     
-    // Use the data as a FailureRecordFormValues
-    const formValues = data as FailureRecordFormValues;
-    
     // Format dates properly for PostgreSQL timestamp format
-    const formattedFailureDate = formValues.failureDate instanceof Date 
-      ? format(formValues.failureDate, 'yyyy-MM-dd HH:mm:ss')
-      : formValues.failureDate;
+    const formattedFailureDate = data.failureDate instanceof Date 
+      ? format(data.failureDate, 'yyyy-MM-dd HH:mm:ss')
+      : data.failureDate;
     
-    const formattedRepairDate = formValues.repairCompleteDate instanceof Date
-      ? format(formValues.repairCompleteDate, 'yyyy-MM-dd HH:mm:ss')
-      : formValues.repairCompleteDate;
+    const formattedRepairDate = data.repairCompleteDate instanceof Date
+      ? format(data.repairCompleteDate, 'yyyy-MM-dd HH:mm:ss')
+      : data.repairCompleteDate;
 
     // Convert form values to numbers where needed
-    const assetId = parseInt(formValues.assetId as string);
+    const assetId = parseInt(data.assetId);
     // Failure mode is now required by the schema
-    const failureModeId = parseInt(formValues.failureModeId as string);
+    const failureModeId = parseInt(data.failureModeId);
     
     // Format additional date fields if they exist
-    const formattedInstallationDate = formValues.installationDate instanceof Date 
-      ? format(formValues.installationDate, 'yyyy-MM-dd HH:mm:ss')
-      : formValues.installationDate;
+    const formattedInstallationDate = data.installationDate instanceof Date 
+      ? format(data.installationDate, 'yyyy-MM-dd HH:mm:ss')
+      : data.installationDate;
       
-    const formattedLastFailureDate = formValues.lastFailureDate instanceof Date 
-      ? format(formValues.lastFailureDate, 'yyyy-MM-dd HH:mm:ss')
-      : formValues.lastFailureDate;
+    const formattedLastFailureDate = data.lastFailureDate instanceof Date 
+      ? format(data.lastFailureDate, 'yyyy-MM-dd HH:mm:ss')
+      : data.lastFailureDate;
     
     updateFailureRecordMutation.mutate({
       id: selectedRecordId,
@@ -732,58 +726,58 @@ const FailureHistory = () => {
         // References
         assetId: assetId,
         failureModeId: failureModeId,
-        workOrderNumber: formValues.workOrderNumber,
+        workOrderNumber: data.workOrderNumber,
         
         // Timing and dates
         installationDate: formattedInstallationDate,
         lastFailureDate: formattedLastFailureDate,
         failureDate: formattedFailureDate,
         repairCompleteDate: formattedRepairDate,
-        tbfDays: formValues.tbfDays ? parseFloat(formValues.tbfDays as string) : null,
+        tbfDays: data.tbfDays,
         
         // Duration metrics
-        downtimeHours: parseFloat(formValues.downtimeHours as string) || 0,
-        repairTimeHours: parseFloat(formValues.repairTimeHours as string) || 0,
-        operatingHoursAtFailure: formValues.operatingHoursAtFailure ? parseFloat(formValues.operatingHoursAtFailure as string) : null,
+        downtimeHours: data.downtimeHours,
+        repairTimeHours: data.repairTimeHours,
+        operatingHoursAtFailure: data.operatingHoursAtFailure,
         
         // Failure details
-        failedPart: formValues.failedPart,
-        failureDescription: formValues.failureDescription,
-        failureMechanism: formValues.failureMechanism,
-        failureCause: formValues.failureCause,
-        potentialRootCause: formValues.potentialRootCause,
+        failedPart: data.failedPart,
+        failureDescription: data.failureDescription,
+        failureMechanism: data.failureMechanism,
+        failureCause: data.failureCause,
+        potentialRootCause: data.potentialRootCause,
         
         // Equipment status
-        equipmentStatus: formValues.equipmentStatus,
-        equipmentLocation: formValues.equipmentLocation,
+        equipmentStatus: data.equipmentStatus,
+        equipmentLocation: data.equipmentLocation,
         
         // Classification fields
-        failureClassification: formValues.failureClassification,
-        failureDetectionMethod: formValues.failureDetectionMethod,
+        failureClassification: data.failureClassification,
+        failureDetectionMethod: data.failureDetectionMethod,
         
         // Impact assessment
-        safetyImpact: formValues.safetyImpact,
-        environmentalImpact: formValues.environmentalImpact,
-        productionImpact: formValues.productionImpact,
+        safetyImpact: data.safetyImpact,
+        environmentalImpact: data.environmentalImpact,
+        productionImpact: data.productionImpact,
         
         // Financial data
-        repairCost: formValues.repairCost ? parseFloat(formValues.repairCost as string) : null,
-        consequentialCost: formValues.consequentialCost ? parseFloat(formValues.consequentialCost as string) : null,
+        repairCost: data.repairCost,
+        consequentialCost: data.consequentialCost,
         
         // Repair details
-        partsReplaced: formValues.partsReplaced,
-        repairActions: formValues.repairActions,
-        repairTechnician: formValues.repairTechnician,
-        operatingConditions: formValues.operatingConditions,
+        partsReplaced: data.partsReplaced,
+        repairActions: data.repairActions,
+        repairTechnician: data.repairTechnician,
+        operatingConditions: data.operatingConditions,
         
         // RCM and prevention
-        preventability: formValues.preventability,
-        recommendedPreventiveAction: formValues.recommendedPreventiveAction,
-        needsRCA: formValues.needsRCA,
+        preventability: data.preventability,
+        recommendedPreventiveAction: data.recommendedPreventiveAction,
+        needsRCA: data.needsRCA,
         
         // Metadata
-        recordedBy: formValues.recordedBy,
-        verifiedBy: formValues.verifiedBy,
+        recordedBy: data.recordedBy,
+        verifiedBy: data.verifiedBy,
       }
     });
   };
