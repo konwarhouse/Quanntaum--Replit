@@ -940,7 +940,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         calculateBLife, 
         classifyFailurePattern,
         analyzeFailureMechanisms,
-        calculateMTBF
+        calculateMTBF,
+        calculateWeibullMTBF
       } = await import('./reliability/weibullDataFitting');
       
       // Try to fit Weibull distribution to the data

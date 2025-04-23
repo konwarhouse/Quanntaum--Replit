@@ -1,0 +1,201 @@
+The calculation of Mean Time Between Failures (MTBF) using the Weibull distribution depends on its shape parameter (β). Unlike the exponential distribution (where MTBF = 1/λ), the Weibull MTBF requires integration of the reliability function and varies based on the failure pattern. Here's how it works:
+
+Weibull MTBF Formula
+
+The MTBF for a Weibull distribution is calculated using the gamma function (Γ):
+
+MTBF
+=
+η
+⋅
+Γ
+(
+1
++
+1
+β
+)
+MTBF=η⋅Γ(1+ 
+β
+1
+​	
+ )
+Where:
+
+η (eta) = Scale parameter (characteristic life, where 63.2% of units fail).
+β (beta) = Shape parameter (determines failure rate behavior):
+β < 1: Decreasing failure rate (early failures).
+β = 1: Constant failure rate (exponential distribution, MTBF = η).
+β > 1: Increasing failure rate (wear-out failures).
+Γ = Gamma function (available in Excel, Python, etc.).
+Step-by-Step Calculation
+
+1. Determine β and η
+
+Estimate these from historical failure data using:
+Maximum Likelihood Estimation (MLE), or
+Weibull probability plotting (e.g., rank regression on failure times).
+2. Compute Gamma Function
+
+Use the gamma function for 
+Γ
+(
+1
++
+1
+β
+)
+Γ(1+ 
+β
+1
+​	
+ ):
+
+In Excel: =EXP(GAMMALN(1 + 1/β))
+In Python: math.gamma(1 + 1/β)
+3. Multiply by η
+
+MTBF
+=
+η
+×
+Γ
+-result
+MTBF=η×Γ-result
+Examples
+
+Case 1: β = 1 (Exponential Distribution)
+
+Γ
+(
+1
++
+1
+/
+1
+)
+=
+Γ
+(
+2
+)
+=
+1
+Γ(1+1/1)=Γ(2)=1
+MTBF = η × 1 = η
+*(Matches exponential distribution where MTBF = 1/λ)*.
+Case 2: β = 2 (Increasing Failure Rate)
+
+Γ
+(
+1
++
+1
+/
+2
+)
+=
+Γ
+(
+1.5
+)
+≈
+0.8862
+Γ(1+1/2)=Γ(1.5)≈0.8862
+If η = 100 hours:
+MTBF = 100 × 0.8862 ≈ 88.62 hours.
+Case 3: β = 0.5 (Decreasing Failure Rate)
+
+Γ
+(
+1
++
+1
+/
+0.5
+)
+=
+Γ
+(
+3
+)
+=
+2
+Γ(1+1/0.5)=Γ(3)=2
+If η = 100 hours:
+MTBF = 100 × 2 = 200 hours.
+Key Notes
+
+MTBF vs. MTTF:
+For repairable systems, use MTBF.
+For non-repairable systems, use MTTF (Mean Time To Failure). The calculation is identical for Weibull.
+When β = 1:
+Weibull reduces to exponential distribution, and MTBF = η = 1/λ.
+Practical Implications:
+β > 1: MTBF < η (failures occur faster as β increases).
+β < 1: MTBF > η (longer average time between early failures).
+Excel Implementation
+
+Parameter	Value	Formula	Result
+η	100		100
+β	2		2
+MTBF		=B1*EXP(GAMMALN(1+1/B2))	88.62
+Python Code
+
+python
+import math
+
+def weibull_mtbf(eta, beta):
+    return eta * math.gamma(1 + 1/beta)
+
+# Example:
+print(weibull_mtbf(100, 2))  # Output: 88.62
+Why Gamma Function?
+
+The gamma function generalizes factorials to non-integers and is needed to solve the integral of the Weibull reliability function over infinite time:
+
+MTBF
+=
+∫
+0
+∞
+R
+(
+t
+)
+ 
+d
+t
+=
+∫
+0
+∞
+e
+−
+(
+t
+/
+η
+)
+β
+ 
+d
+t
+MTBF=∫ 
+0
+∞
+​	
+ R(t)dt=∫ 
+0
+∞
+​	
+ e 
+−(t/η) 
+β
+ 
+ dt
+Common Mistakes
+
+Assuming MTBF = η: Only true if β = 1.
+Ignoring β: Using exponential formulas when β ≠ 1 leads to errors.
+Units: Ensure η and MTBF use consistent units (hours, days, etc.).

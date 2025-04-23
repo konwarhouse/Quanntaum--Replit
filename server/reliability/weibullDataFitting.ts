@@ -4,6 +4,40 @@
  */
 import { FailureHistory } from "../../shared/schema";
 
+/**
+ * Gamma function for calculating Weibull MTBF
+ * Implementation of the Lanczos approximation for the gamma function
+ * @param z - Input value
+ * @returns Gamma function result
+ */
+export function gamma(z: number): number {
+  // Constants for Lanczos approximation
+  const p = [
+    676.5203681218851,
+    -1259.1392167224028,
+    771.32342877765313,
+    -176.61502916214059,
+    12.507343278686905,
+    -0.13857109526572012,
+    9.9843695780195716e-6,
+    1.5056327351493116e-7
+  ];
+  
+  // Reflection formula for z < 0.5
+  if (z < 0.5) {
+    return Math.PI / (Math.sin(Math.PI * z) * gamma(1 - z));
+  }
+  
+  z -= 1;
+  let x = 0.99999999999980993;
+  for (let i = 0; i < p.length; i++) {
+    x += p[i] / (z + i + 1);
+  }
+  
+  const t = z + p.length - 0.5;
+  return Math.sqrt(2 * Math.PI) * Math.pow(t, z + 0.5) * Math.exp(-t) * x;
+}
+
 export interface WeibullFitResult {
   beta: number;   // Shape parameter
   eta: number;    // Scale parameter
@@ -150,6 +184,28 @@ export function fitWeibullToFailureData(
 export function calculateBLife(beta: number, eta: number, percentage: number): number {
   const probability = percentage / 100;
   return eta * Math.pow(-Math.log(1 - probability), 1 / beta);
+}
+
+/**
+ * Calculate Mean Time Between Failures (MTBF) using the proper Weibull formula
+ * MTBF = η · Γ(1 + 1/β)
+ * @param beta - Shape parameter
+ * @param eta - Scale parameter
+ * @returns MTBF value
+ */
+export function calculateWeibullMTBF(beta: number, eta: number): number {
+  if (beta <= 0 || eta <= 0) {
+    throw new Error("Beta and eta must be positive values");
+  }
+  
+  // MTBF = η · Γ(1 + 1/β)
+  const gammaInput = 1 + 1/beta;
+  const gammaResult = gamma(gammaInput);
+  
+  console.log(`[DEBUG] Calculating Weibull MTBF with beta=${beta}, eta=${eta}, Γ(1+1/β)=${gammaResult}`);
+  
+  const mtbf = eta * gammaResult;
+  return mtbf;
 }
 
 /**
