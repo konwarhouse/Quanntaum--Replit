@@ -24,7 +24,8 @@ import {
   calculateOptimalPMInterval, 
   calculateTotalCost, 
   determineMaintenanceStrategy,
-  runSimulation
+  runSimulation,
+  calculateMTBF
 } from "./reliability/calculations";
 
 // Initialize OpenAI client

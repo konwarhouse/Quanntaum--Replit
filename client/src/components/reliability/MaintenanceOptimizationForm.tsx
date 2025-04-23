@@ -90,7 +90,9 @@ const MaintenanceOptimizationForm = () => {
     return unit.charAt(0).toUpperCase() + unit.slice(1);
   };
 
-  const isRunToFailure = results && !isFinite(results.optimalInterval);
+  const isRunToFailure = results ? 
+    (results.maintenanceStrategy === 'Run-to-Failure' || !isFinite(results.optimalInterval)) : 
+    false;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -115,7 +117,7 @@ const MaintenanceOptimizationForm = () => {
                   <SelectContent>
                     {assets.map((asset: Asset) => (
                       <SelectItem key={asset.id} value={asset.id.toString()}>
-                        {asset.name}
+                        {asset.assetNumber} - {asset.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
