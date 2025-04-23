@@ -1147,14 +1147,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       const data = schema.parse(req.body);
-      const { beta, eta, preventiveMaintenanceCost, correctiveMaintenanceCost, timeHorizon } = data;
+      const { 
+        beta, 
+        eta, 
+        preventiveMaintenanceCost, 
+        correctiveMaintenanceCost, 
+        timeHorizon,
+        maximumAcceptableDowntime 
+      } = data;
       
-      // Calculate optimal PM interval
-      const optimalInterval = calculateOptimalPMInterval(beta, eta);
+      let optimalInterval;
+      let maintenanceStrategy = '';
+      let recommendationReason = '';
+      
+      // If maximum acceptable downtime is 0, we can't tolerate any failures
+      // This supersedes the beta-based decision
+      if (maximumAcceptableDowntime === 0) {
+        // Calculate MTBF
+        const mtbf = calculateMTBF(beta, eta);
+        
+        // Use a conservative maintenance interval (e.g., 50% of MTBF or less)
+        optimalInterval = mtbf * 0.5;
+        maintenanceStrategy = 'Preventive Maintenance';
+        recommendationReason = 'Zero tolerance for downtime requires preventive maintenance before failure occurs';
+      } else {
+        // Use the standard calculation based on beta value
+        optimalInterval = calculateOptimalPMInterval(beta, eta);
+        
+        if (optimalInterval === Infinity) {
+          maintenanceStrategy = 'Run-to-Failure';
+          recommendationReason = 'For beta <= 1, failures occur early or randomly, making preventive maintenance suboptimal';
+        } else {
+          maintenanceStrategy = 'Preventive Maintenance';
+          recommendationReason = 'Regular preventive maintenance is optimal based on the wear-out pattern (beta > 1)';
+        }
+      }
       
       // Calculate cost at optimal interval
       const optimalCost = calculateTotalCost(
-        optimalInterval,
+        optimalInterval === Infinity ? Infinity : optimalInterval,
         beta,
         eta,
         preventiveMaintenanceCost,
@@ -1186,6 +1217,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         optimalInterval,
         optimalCost,
         costCurve,
+        maintenanceStrategy,
+        recommendationReason
       });
     } catch (error) {
       console.error("Error in maintenance optimization:", error);

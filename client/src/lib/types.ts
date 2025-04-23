@@ -34,6 +34,25 @@ export interface ExtendedWeibullAnalysisResponse extends Omit<BaseWeibullAnalysi
   };
 }
 
+// Define maintenance optimization types
+export interface MaintenanceOptimizationParameters {
+  beta: number;
+  eta: number;
+  preventiveMaintenanceCost: number;
+  correctiveMaintenanceCost: number;
+  targetReliabilityThreshold: number;
+  maximumAcceptableDowntime: number;
+  timeHorizon: number;
+}
+
+export interface MaintenanceOptimizationResponse {
+  optimalInterval: number;
+  optimalCost: number;
+  costCurve: { interval: number; cost: number }[];
+  maintenanceStrategy: string;
+  recommendationReason: string;
+}
+
 // Re-export types from schema
 export { type BaseWeibullAnalysisResponse as WeibullAnalysisResponse };
 export { type BaseFailureHistory as FailureHistory };
