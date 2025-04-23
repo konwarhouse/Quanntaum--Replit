@@ -579,6 +579,46 @@ const DataDrivenWeibullAnalysis = ({
                           </p>
                         </div>
                       )}
+                      
+                      {!results.fallbackCalculation && results.verification && (
+                        <div className="mt-3 text-sm border p-3 rounded bg-muted/50">
+                          <h5 className="font-medium mb-1 flex items-center gap-2">
+                            <Info className="h-4 w-4" />
+                            MTBF Cross-Verification
+                          </h5>
+                          
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <p className="text-xs font-medium">Weibull Formula: η · Γ(1 + 1/β)</p>
+                              <p className="text-xs">
+                                MTBF = {results.fittedParameters.eta.toFixed(2)} · 
+                                Γ(1 + 1/{results.fittedParameters.beta.toFixed(2)}) = 
+                                <span className="font-semibold"> {results.verification.weibullMTBF?.toFixed(2) || 'N/A'}</span>
+                              </p>
+                            </div>
+                            
+                            <div>
+                              <p className="text-xs font-medium">Simple Average Method</p>
+                              <p className="text-xs">
+                                MTBF = Sum of values / count = 
+                                {results.verification.mtbfDataPoints && results.verification.mtbfDataPoints.length > 0 ? 
+                                  <span> {results.verification.mtbfDataPoints.reduce((sum, val) => sum + val, 0).toFixed(1)} / 
+                                  {results.verification.mtbfDataPoints.length} = 
+                                  <span className="font-semibold"> {results.verification.simpleMTBF?.toFixed(2) || 'N/A'}</span></span> : 
+                                  <span> N/A</span>}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          <p className="text-xs mt-2 italic">
+                            {results.verification.calculationMethodDisplay === 'Operating Hours' ? (
+                              <>Using operating hours data from {results.verification.mtbfDataPoints?.length || 0} records.</>
+                            ) : (
+                              <>Using calendar days (TBF) data from {results.verification.mtbfDataPoints?.length || 0} records.</>
+                            )}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

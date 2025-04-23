@@ -5,6 +5,8 @@ import {
   SimulationParameters
 } from "../types";
 
+import { gamma } from "./weibullDataFitting";
+
 /**
  * Calculate reliability function R(t) = e^-(t/η)^β
  * @param t - Time
@@ -47,7 +49,10 @@ export function calculateFailureProbability(t: number, beta: number, eta: number
  * @returns MTBF value
  */
 export function calculateMTBF(beta: number, eta: number): number {
-  return eta * Math.exp(approximateLogGamma(1 + 1 / beta));
+  const gammaInput = 1 + 1/beta;
+  const gammaResult = gamma(gammaInput);
+  console.log(`[DEBUG] Accurate Weibull MTBF calculation: beta=${beta}, eta=${eta}, Γ(1+1/β)=${gammaResult}`);
+  return eta * gammaResult;
 }
 
 /**

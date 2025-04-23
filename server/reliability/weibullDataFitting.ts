@@ -209,6 +209,35 @@ export function calculateWeibullMTBF(beta: number, eta: number): number {
 }
 
 /**
+ * Cross verification calculation for MTBF using a simplified approach (average of failure times)
+ * This is for verification purposes only and not the mathematically correct Weibull MTBF
+ * @param failureHistoryRecords - Failure history records
+ * @param useOperatingHours - Whether to use operating hours
+ * @returns Average of failure times
+ */
+export function calculateSimpleMTBF(failureHistoryRecords: FailureHistory[], useOperatingHours: boolean = false): number | null {
+  // Filter records based on what we're using
+  const records = failureHistoryRecords.filter(record => 
+    useOperatingHours 
+    ? record.operatingHoursAtFailure !== null && record.operatingHoursAtFailure !== undefined
+    : record.tbfDays !== null && record.tbfDays !== undefined
+  );
+  
+  if (records.length === 0) {
+    return null;
+  }
+  
+  // Extract time values
+  const timeValues = records.map(record => 
+    useOperatingHours ? record.operatingHoursAtFailure as number : record.tbfDays as number
+  );
+  
+  // Calculate average
+  const sum = timeValues.reduce((acc, val) => acc + val, 0);
+  return sum / timeValues.length;
+}
+
+/**
  * Determine whether the Weibull model indicates early failures, random failures, or wear-out failures
  * @param beta - Shape parameter
  * @returns Classification of failure pattern

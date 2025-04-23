@@ -941,7 +941,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         classifyFailurePattern,
         analyzeFailureMechanisms,
         calculateMTBF,
-        calculateWeibullMTBF
+        calculateWeibullMTBF,
+        calculateSimpleMTBF
       } = await import('./reliability/weibullDataFitting');
       
       // Try to fit Weibull distribution to the data
@@ -1039,6 +1040,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         timeUnits: params.useOperatingHours ? 'hours' : 'days'
       });
       
+      // Calculate the MTBF using both methods for cross-verification
+      const weibullMTBF = calculateWeibullMTBF(beta, eta);
+      const simpleMTBF = calculateSimpleMTBF(failureRecords, params.useOperatingHours);
+      
       // Calculate B10, B50 life values (when 10% and 50% of components fail)
       const b10Life = calculateBLife(beta, eta, 10);
       const b50Life = calculateBLife(beta, eta, 50);
@@ -1083,6 +1088,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       }
 
+      // Get the calculation method and data points
+      const mtbfResult = calculateMTBF(failureRecords, params.useOperatingHours);
+      const simpleMTBFDataPoints = mtbfResult.dataPoints || [];
+      const calculationMethodDisplay = mtbfResult.calculationMethod === 'operatingHours' 
+        ? 'Operating Hours' 
+        : 'Calendar Days';
+      
       // Combine all results
       const enhancedResults = {
         ...analysisResults,
@@ -1099,7 +1111,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         failureCount: failureRecords.length,
         mechanismAnalysis,
         dataPoints: fitResult.dataPoints,
-        assetDetails
+        assetDetails,
+        // Add cross-verification data
+        verification: {
+          weibullMTBF: weibullMTBF,
+          simpleMTBF: simpleMTBF,
+          mtbfDataPoints: simpleMTBFDataPoints,
+          calculationMethod: mtbfResult.calculationMethod,
+          calculationMethodDisplay
+        }
       };
       
       res.json(enhancedResults);
