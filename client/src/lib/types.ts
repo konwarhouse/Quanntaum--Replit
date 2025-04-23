@@ -24,6 +24,14 @@ export interface ExtendedWeibullAnalysisResponse extends Omit<BaseWeibullAnalysi
     id: number | null;
     label: string;
   };  // Information about what asset/component is being analyzed
+  // New verification data for cross-checking MTBF calculations
+  verification?: {
+    weibullMTBF: number;       // MTBF calculated with Weibull formula η · Γ(1 + 1/β)
+    simpleMTBF: number | null; // MTBF calculated with simple average method
+    mtbfDataPoints: number[];  // Data points used in simple MTBF calculation
+    calculationMethod: 'operatingHours' | 'tbfDays' | null;
+    calculationMethodDisplay: string;
+  };
 }
 
 // Re-export types from schema
