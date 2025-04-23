@@ -53,6 +53,20 @@ export interface MaintenanceOptimizationResponse {
   recommendationReason: string;
 }
 
+// Asset interface
+export interface Asset {
+  id: number;
+  assetNumber: string;
+  name: string;
+  description?: string;
+  installationDate?: Date | string | null;
+  equipmentClass?: string | null;
+  criticality?: string | null;
+  weibullBeta: number;
+  weibullEta: number;
+  timeUnit: string;
+}
+
 // Re-export types from schema
 export { type BaseWeibullAnalysisResponse as WeibullAnalysisResponse };
 export { type BaseFailureHistory as FailureHistory };

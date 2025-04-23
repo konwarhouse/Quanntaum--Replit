@@ -31,9 +31,11 @@ const MaintenanceOptimizationForm = () => {
   });
   
   // Optimization mutation
-  const optimizationMutation = useMutation<MaintenanceOptimizationResponse, Error, MaintenanceOptimizationParameters>({
-    mutationFn: (params: MaintenanceOptimizationParameters) => 
-      apiRequest<MaintenanceOptimizationResponse>("POST", "/api/maintenance-optimization", params),
+  const optimizationMutation = useMutation({
+    mutationFn: async (params: MaintenanceOptimizationParameters) => {
+      const response = await apiRequest("POST", "/api/maintenance-optimization", params);
+      return response.json() as Promise<MaintenanceOptimizationResponse>;
+    },
     onSuccess: (data) => {
       setResults(data);
       toast({ 
@@ -278,8 +280,8 @@ const MaintenanceOptimizationForm = () => {
                       <span className="text-lg font-semibold">Run-to-Failure</span>
                     </div>
                     <p className="mt-4">
-                      Based on your parameters, run-to-failure is the most cost-effective strategy.
-                      This is typical when β ≤ 1 (decreasing or constant failure rate).
+                      {results.recommendationReason || 
+                        "Based on your parameters, run-to-failure is the most cost-effective strategy. This is typical when β ≤ 1 (decreasing or constant failure rate)."}
                     </p>
                   </div>
                 ) : (
@@ -287,14 +289,21 @@ const MaintenanceOptimizationForm = () => {
                     <div className="inline-block px-4 py-2 rounded-md border bg-green-100 text-green-800 border-green-300">
                       <span className="text-lg font-semibold">Preventive Maintenance</span>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                      <div>
-                        <p className="text-sm text-muted-foreground">Optimal Maintenance Interval:</p>
-                        <p className="text-2xl font-bold">{results.optimalInterval.toFixed(2)} {getTimeUnit()}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Expected Cost (per {formData.timeHorizon} {getTimeUnit()}):</p>
-                        <p className="text-2xl font-bold">${results.optimalCost.toFixed(2)}</p>
+                    <div className="space-y-4 mt-4">
+                      <p>
+                        {results.recommendationReason || 
+                          "Regular preventive maintenance is recommended based on the increasing failure rate pattern."}
+                      </p>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
+                        <div>
+                          <p className="text-sm text-muted-foreground">Optimal Maintenance Interval:</p>
+                          <p className="text-2xl font-bold">{results.optimalInterval.toFixed(2)} {getTimeUnit()}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Expected Cost (per {formData.timeHorizon} {getTimeUnit()}):</p>
+                          <p className="text-2xl font-bold">${results.optimalCost.toFixed(2)}</p>
+                        </div>
                       </div>
                     </div>
                   </div>
