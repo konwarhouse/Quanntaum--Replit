@@ -7,9 +7,92 @@ import {
   TabsTrigger 
 } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { useQuery } from "@tanstack/react-query";
+import { Loader2, AlertTriangle } from 'lucide-react';
 import SystemManager from '@/components/rcm/SystemManager';
 import ComponentManager from '@/components/rcm/ComponentManager';
-import { Loader2 } from 'lucide-react';
+import { Component } from '@shared/rcm-schema';
+
+// Component to display components for a selected system
+const SystemComponentsList: React.FC<{ systemId: number }> = ({ systemId }) => {
+  const { data: components, isLoading, error } = useQuery({
+    queryKey: [`/api/rcm/components?systemId=${systemId}`],
+    queryFn: ({ signal }) => 
+      fetch(`/api/rcm/components?systemId=${systemId}`, { signal })
+        .then(res => {
+          if (!res.ok) throw new Error('Failed to fetch components');
+          return res.json();
+        }),
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-6">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center p-4 border border-red-200 bg-red-50 rounded-md text-red-800 text-sm">
+        <AlertTriangle className="h-4 w-4 mr-2" />
+        Error loading components: {error.message}
+      </div>
+    );
+  }
+
+  if (!components || components.length === 0) {
+    return (
+      <div className="text-center py-6">
+        <p className="text-muted-foreground">No components found for this system.</p>
+        <p className="text-sm mt-2">Add components in the Components tab first.</p>
+      </div>
+    );
+  }
+
+  return (
+    <Table>
+      <TableCaption>Components available for RCM analysis</TableCaption>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Name</TableHead>
+          <TableHead>Function</TableHead>
+          <TableHead>Criticality</TableHead>
+          <TableHead>Parent</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {components.map((component: Component) => (
+          <TableRow key={component.id}>
+            <TableCell className="font-medium">{component.name}</TableCell>
+            <TableCell>{component.function}</TableCell>
+            <TableCell>
+              <Badge variant={
+                component.criticality === 'High' 
+                ? 'destructive' 
+                : component.criticality === 'Medium' 
+                  ? 'warning' 
+                  : 'secondary'
+              }>
+                {component.criticality}
+              </Badge>
+            </TableCell>
+            <TableCell>
+              {component.parentId 
+                ? components.find(c => c.id === component.parentId)?.name || 'Unknown'
+                : 'None'
+              }
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+};
 
 const RcmPage: React.FC = () => {
   const { user, isLoading } = useAuth();
@@ -94,7 +177,7 @@ const RcmPage: React.FC = () => {
         </TabsContent>
         
         <TabsContent value="analysis" className="space-y-6">
-          <Card>
+          <Card className="mb-6">
             <CardHeader>
               <CardTitle>RCM Analysis</CardTitle>
               <CardDescription>
@@ -102,13 +185,77 @@ const RcmPage: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center p-12">
-                <p className="text-muted-foreground">Analysis functionality coming soon.</p>
-                <p className="text-sm mt-4">
-                  The analysis module will provide tools for FMECA (Failure Mode, Effects and Criticality Analysis), 
-                  RCM decision logic, and RAM (Reliability, Availability, Maintainability) analysis.
-                </p>
+              {!selectedSystemId ? (
+                <div className="p-4 border border-amber-200 bg-amber-50 rounded-md text-amber-800 text-sm mb-6">
+                  Please select a system from the Systems tab first to perform analysis.
+                </div>
+              ) : (
+                <div className="p-4 border border-green-200 bg-green-50 rounded-md text-green-800 text-sm mb-6">
+                  System selected: System ID #{selectedSystemId}. Now you can analyze components for this system.
+                </div>
+              )}
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">FMECA Analysis</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Failure Mode, Effects and Criticality Analysis identifies potential failure modes and their impacts.
+                    </p>
+                    <Button disabled={!selectedSystemId} variant="outline" className="w-full">
+                      Start FMECA Analysis
+                    </Button>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">RCM Decision Logic</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Evaluate maintenance strategies based on failure consequences and criticality.
+                    </p>
+                    <Button disabled={!selectedSystemId} variant="outline" className="w-full">
+                      Start RCM Analysis
+                    </Button>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">RAM Analysis</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Reliability, Availability, and Maintainability metrics for system performance.
+                    </p>
+                    <Button disabled={!selectedSystemId} variant="outline" className="w-full">
+                      Start RAM Analysis
+                    </Button>
+                  </CardContent>
+                </Card>
               </div>
+              
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg">System Components</CardTitle>
+                  <CardDescription>
+                    Components in selected system available for analysis
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {!selectedSystemId ? (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground">Please select a system first</p>
+                    </div>
+                  ) : (
+                    <SystemComponentsList systemId={selectedSystemId} />
+                  )}
+                </CardContent>
+              </Card>
             </CardContent>
           </Card>
         </TabsContent>
