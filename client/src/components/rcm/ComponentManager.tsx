@@ -38,7 +38,7 @@ import { Loader2, Plus, Pencil, Trash2 } from 'lucide-react';
 type ComponentFormProps = {
   systems: System[];
   components?: Component[];
-  defaultValues?: Component;
+  defaultValues?: Partial<Component> | Component;
   onSubmit: (data: Partial<InsertComponent>) => void;
   isSubmitting: boolean;
 };
@@ -83,7 +83,7 @@ const ComponentForm: React.FC<ComponentFormProps> = ({
         <div className="grid gap-2">
           <Label htmlFor="systemId">System</Label>
           <Select
-            value={formData.systemId?.toString()}
+            value={formData.systemId?.toString() || ''}
             onValueChange={(value) => handleSelectChange('systemId', value)}
             required
           >
@@ -124,14 +124,14 @@ const ComponentForm: React.FC<ComponentFormProps> = ({
           <Textarea
             id="description"
             name="description"
-            value={formData.description}
+            value={formData.description || ''}
             onChange={handleChange}
           />
         </div>
         <div className="grid gap-2">
           <Label htmlFor="parentId">Parent Component (Optional)</Label>
           <Select
-            value={formData.parentId?.toString()}
+            value={formData.parentId?.toString() || ''}
             onValueChange={(value) => handleSelectChange('parentId', value)}
           >
             <SelectTrigger>
@@ -311,13 +311,13 @@ const ComponentManager: React.FC<ComponentManagerProps> = ({ systemId }) => {
   };
 
   const getSystemName = (systemId: number) => {
-    const system = systems?.find(s => s.id === systemId);
+    const system = systems?.find((s: { id: number }) => s.id === systemId);
     return system ? system.name : 'Unknown System';
   };
 
   const getParentComponentName = (parentId: number | null) => {
     if (!parentId) return 'None';
-    const parent = components?.find(c => c.id === parentId);
+    const parent = components?.find((c: { id: number }) => c.id === parentId);
     return parent ? parent.name : 'Unknown Component';
   };
 
