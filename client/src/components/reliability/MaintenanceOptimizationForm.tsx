@@ -283,6 +283,58 @@ const MaintenanceOptimizationForm = () => {
                       {results.recommendationReason || 
                         "Based on your parameters, run-to-failure is the most cost-effective strategy. This is typical when β ≤ 1 (decreasing or constant failure rate)."}
                     </p>
+                    
+                    {/* Display alternative calculation methods for run-to-failure */}
+                    {results.calculationDetails?.alternativeMethods && (
+                      <div className="mt-6 border-t pt-4">
+                        <h4 className="font-bold mb-2">Method Comparison</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="border p-3 rounded-md bg-white">
+                            <h5 className="font-bold text-primary">{results.calculationDetails.alternativeMethods.method1.name}</h5>
+                            <p className="text-sm text-muted-foreground mb-1">{results.calculationDetails.alternativeMethods.method1.description}</p>
+                            <div className="flex justify-between mt-2">
+                              <span className="text-sm">Strategy: <span className="font-semibold">Run-to-Failure</span></span>
+                              {results.calculationDetails.alternativeMethods.method1.applicability && (
+                                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
+                                  {results.calculationDetails.alternativeMethods.method1.applicability}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs italic mt-2">Analysis: {results.calculationDetails.alternativeMethods.method1.formula}</p>
+                          </div>
+                          
+                          <div className="border p-3 rounded-md bg-white">
+                            <h5 className="font-bold text-primary">{results.calculationDetails.alternativeMethods.method2.name}</h5>
+                            <p className="text-sm text-muted-foreground mb-1">{results.calculationDetails.alternativeMethods.method2.description}</p>
+                            <div className="flex justify-between mt-2">
+                              <span className="text-sm">Strategy: <span className="font-semibold">Run-to-Failure</span></span>
+                              {results.calculationDetails.alternativeMethods.method2.applicability && (
+                                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
+                                  {results.calculationDetails.alternativeMethods.method2.applicability}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs italic mt-2">Analysis: {results.calculationDetails.alternativeMethods.method2.formula}</p>
+                          </div>
+                        </div>
+
+                        {/* Optional info about TTF vs TBF */}
+                        {results.calculationDetails.dataUsage?.dataDefinitions && (
+                          <div className="mt-4 pt-4 border-t">
+                            <h5 className="font-bold mb-2">Data Definitions</h5>
+                            <div className="text-sm grid grid-cols-1 md:grid-cols-2 gap-2">
+                              <div className="bg-slate-50 p-2 rounded-md">
+                                <span className="font-semibold">TTF:</span> {results.calculationDetails.dataUsage.dataDefinitions.TTF}
+                              </div>
+                              <div className="bg-slate-50 p-2 rounded-md">
+                                <span className="font-semibold">TBF:</span> {results.calculationDetails.dataUsage.dataDefinitions.TBF}
+                              </div>
+                            </div>
+                            <p className="text-xs mt-2 italic">{results.calculationDetails.dataUsage.applicationNotes}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div>

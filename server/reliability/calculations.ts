@@ -430,6 +430,22 @@ export function optimizeMaintenanceInterval(params: MaintenanceOptimizationParam
           maximumDowntime: maximumAcceptableDowntime,
           decisionRule: 'When beta <= 1 and acceptable downtime > 24 hours, run-to-failure is usually more cost-effective'
         },
+        alternativeMethods: {
+          method1: {
+            name: "Weibull Model (Method 1)",
+            interval: Infinity, // Run-to-failure recommendation
+            description: "For β ≤ 1, run-to-failure is recommended as components fail randomly or early",
+            formula: "Cost Rate = (PM Cost × Reliability + Failure Cost × (1-Reliability)) / Interval",
+            applicability: "Recommended (β ≤ 1 indicates random or early-life failures)"
+          },
+          method2: {
+            name: "Exponential/MTBF Model (Method 2)",
+            interval: Infinity, // Run-to-failure recommendation
+            description: "For random failures, run-to-failure is most economical",
+            formula: "t* = √(2Cp/(λCf)) where λ = 1/MTBF",
+            applicability: "Recommended (β ≈ 1 indicates random failures)"
+          }
+        },
         costCalculation: {
           preventiveCost: preventiveMaintenanceCost,
           failureCost: correctiveMaintenanceCost,
