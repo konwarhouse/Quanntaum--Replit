@@ -1,8 +1,10 @@
 -- RCM Full Migration Script
 -- This script creates all tables needed for comprehensive RCM, FMECA, and RAM analysis
 
--- Functions Table (RCM Step 1)
-CREATE TABLE IF NOT EXISTS "functions" (
+-- Execute tables in correct order to prevent dependency issues
+
+-- 1. First create the system functions table (RCM Step 1)
+CREATE TABLE IF NOT EXISTS "system_functions" (
   "id" SERIAL PRIMARY KEY,
   "system_id" INTEGER REFERENCES "systems"("id") ON DELETE CASCADE,
   "component_id" INTEGER REFERENCES "components"("id") ON DELETE CASCADE,
@@ -12,23 +14,37 @@ CREATE TABLE IF NOT EXISTS "functions" (
   "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Functional Failures Table (RCM Step 2)
+-- 2. Create functional failures table (RCM Step 2)
 CREATE TABLE IF NOT EXISTS "functional_failures" (
   "id" SERIAL PRIMARY KEY,
-  "function_id" INTEGER REFERENCES "functions"("id") ON DELETE CASCADE,
+  "system_function_id" INTEGER REFERENCES "system_functions"("id") ON DELETE CASCADE,
   "failure_description" TEXT NOT NULL,
   "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Enhance existing Failure Modes table with RCM fields (RCM Step 3)
-ALTER TABLE "failure_modes" 
-  ADD COLUMN IF NOT EXISTS "functional_failure_id" INTEGER REFERENCES "functional_failures"("id") ON DELETE SET NULL,
-  ADD COLUMN IF NOT EXISTS "failure_rate" FLOAT,
-  ADD COLUMN IF NOT EXISTS "mttr" FLOAT;
+-- 3. Enhance existing Failure Modes table with RCM fields (RCM Step 3)
+-- First check if columns exist to avoid errors
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                WHERE table_name = 'failure_modes' AND column_name = 'functional_failure_id') THEN
+    ALTER TABLE "failure_modes" ADD COLUMN "functional_failure_id" INTEGER REFERENCES "functional_failures"("id") ON DELETE SET NULL;
+  END IF;
+  
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                WHERE table_name = 'failure_modes' AND column_name = 'failure_rate') THEN
+    ALTER TABLE "failure_modes" ADD COLUMN "failure_rate" FLOAT;
+  END IF;
+  
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                WHERE table_name = 'failure_modes' AND column_name = 'mttr') THEN
+    ALTER TABLE "failure_modes" ADD COLUMN "mttr" FLOAT;
+  END IF;
+END $$;
 
--- Effects Table (RCM Step 4)
-CREATE TABLE IF NOT EXISTS "effects" (
+-- 4. Create effects table (RCM Step 4)
+CREATE TABLE IF NOT EXISTS "failure_effects" (
   "id" SERIAL PRIMARY KEY,
   "failure_mode_id" INTEGER REFERENCES "failure_modes"("id") ON DELETE CASCADE,
   "local_effect" TEXT,
@@ -38,8 +54,8 @@ CREATE TABLE IF NOT EXISTS "effects" (
   "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Criticality Table (RCM Step 5)
-CREATE TABLE IF NOT EXISTS "criticality" (
+-- 5. Create criticality table (RCM Step 5)
+CREATE TABLE IF NOT EXISTS "failure_criticality" (
   "id" SERIAL PRIMARY KEY,
   "failure_mode_id" INTEGER REFERENCES "failure_modes"("id") ON DELETE CASCADE,
   "severity" INTEGER CHECK (severity BETWEEN 1 AND 10),
@@ -52,7 +68,7 @@ CREATE TABLE IF NOT EXISTS "criticality" (
   "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Maintenance Tasks Table (RCM Steps 6-7)
+-- 6. Create maintenance tasks table (RCM Steps 6-7)
 CREATE TABLE IF NOT EXISTS "maintenance_tasks" (
   "id" SERIAL PRIMARY KEY,
   "failure_mode_id" INTEGER REFERENCES "failure_modes"("id") ON DELETE CASCADE,
@@ -65,7 +81,7 @@ CREATE TABLE IF NOT EXISTS "maintenance_tasks" (
   "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- RAM Metrics Table
+-- 7. Create RAM metrics table
 CREATE TABLE IF NOT EXISTS "ram_metrics" (
   "id" SERIAL PRIMARY KEY,
   "system_id" INTEGER REFERENCES "systems"("id") ON DELETE CASCADE,
@@ -78,8 +94,8 @@ CREATE TABLE IF NOT EXISTS "ram_metrics" (
   "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Decision Logic Table (for RCM decision tree)
-CREATE TABLE IF NOT EXISTS "decision_logic" (
+-- 8. Create decision logic table (for RCM decision tree)
+CREATE TABLE IF NOT EXISTS "rcm_decision_logic" (
   "id" SERIAL PRIMARY KEY,
   "failure_mode_id" INTEGER REFERENCES "failure_modes"("id") ON DELETE CASCADE,
   "hidden_function" BOOLEAN DEFAULT FALSE,
@@ -97,14 +113,14 @@ CREATE TABLE IF NOT EXISTS "decision_logic" (
   "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create indexes to improve query performance
-CREATE INDEX IF NOT EXISTS "idx_functions_system_id" ON "functions"("system_id");
-CREATE INDEX IF NOT EXISTS "idx_functions_component_id" ON "functions"("component_id");
-CREATE INDEX IF NOT EXISTS "idx_functional_failures_function_id" ON "functional_failures"("function_id");
+-- Create indexes to improve query performance - only after all tables are created
+CREATE INDEX IF NOT EXISTS "idx_system_functions_system_id" ON "system_functions"("system_id");
+CREATE INDEX IF NOT EXISTS "idx_system_functions_component_id" ON "system_functions"("component_id");
+CREATE INDEX IF NOT EXISTS "idx_functional_failures_system_function_id" ON "functional_failures"("system_function_id");
 CREATE INDEX IF NOT EXISTS "idx_failure_modes_functional_failure_id" ON "failure_modes"("functional_failure_id");
-CREATE INDEX IF NOT EXISTS "idx_effects_failure_mode_id" ON "effects"("failure_mode_id");
-CREATE INDEX IF NOT EXISTS "idx_criticality_failure_mode_id" ON "criticality"("failure_mode_id");
+CREATE INDEX IF NOT EXISTS "idx_failure_effects_failure_mode_id" ON "failure_effects"("failure_mode_id");
+CREATE INDEX IF NOT EXISTS "idx_failure_criticality_failure_mode_id" ON "failure_criticality"("failure_mode_id");
 CREATE INDEX IF NOT EXISTS "idx_maintenance_tasks_failure_mode_id" ON "maintenance_tasks"("failure_mode_id");
 CREATE INDEX IF NOT EXISTS "idx_ram_metrics_system_id" ON "ram_metrics"("system_id");
 CREATE INDEX IF NOT EXISTS "idx_ram_metrics_component_id" ON "ram_metrics"("component_id");
-CREATE INDEX IF NOT EXISTS "idx_decision_logic_failure_mode_id" ON "decision_logic"("failure_mode_id");
+CREATE INDEX IF NOT EXISTS "idx_rcm_decision_logic_failure_mode_id" ON "rcm_decision_logic"("failure_mode_id");
