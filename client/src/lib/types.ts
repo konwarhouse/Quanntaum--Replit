@@ -51,6 +51,50 @@ export interface MaintenanceOptimizationResponse {
   costCurve: { interval: number; cost: number }[];
   maintenanceStrategy: string;
   recommendationReason: string;
+  calculationDetails?: {
+    mtbf: number;
+    reliabilityAtOptimal: number;
+    failureProbability: number;
+    alternativeMethods?: {
+      method1: {
+        name: string;
+        interval: number;
+        description: string;
+        formula: string;
+        applicability?: string;
+      };
+      method2: {
+        name: string;
+        interval: number;
+        description: string;
+        formula: string;
+        applicability?: string;
+      };
+      method3?: {
+        name: string;
+        interval: number;
+        targetReliability?: number;
+        description: string;
+        formula: string;
+      };
+    };
+    decisionFactors?: {
+      betaValue: number;
+      etaValue: number;
+      maximumDowntime: number;
+      decisionRule: string;
+    };
+    dataUsage?: {
+      tbfDataRole: string;
+      interpretationGuide: string;
+      dataSources: string;
+      dataDefinitions?: {
+        TTF: string;
+        TBF: string;
+      };
+      applicationNotes?: string;
+    };
+  };
 }
 
 // Asset interface

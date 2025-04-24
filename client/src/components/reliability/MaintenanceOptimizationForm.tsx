@@ -305,6 +305,58 @@ const MaintenanceOptimizationForm = () => {
                           <p className="text-2xl font-bold">${results.optimalCost.toFixed(2)}</p>
                         </div>
                       </div>
+                      
+                      {/* Display alternative calculation methods */}
+                      {results.calculationDetails?.alternativeMethods && (
+                        <div className="mt-6 border-t pt-4">
+                          <h4 className="font-bold mb-2">Alternative Calculation Methods</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="border p-3 rounded-md bg-white">
+                              <h5 className="font-bold text-primary">{results.calculationDetails.alternativeMethods.method1.name}</h5>
+                              <p className="text-sm text-muted-foreground mb-1">{results.calculationDetails.alternativeMethods.method1.description}</p>
+                              <div className="flex justify-between mt-2">
+                                <span className="text-sm">Interval: <span className="font-semibold">{results.calculationDetails.alternativeMethods.method1.interval.toFixed(2)} {getTimeUnit()}</span></span>
+                                {results.calculationDetails.alternativeMethods.method1.applicability && (
+                                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
+                                    {results.calculationDetails.alternativeMethods.method1.applicability}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs italic mt-2">Formula: {results.calculationDetails.alternativeMethods.method1.formula}</p>
+                            </div>
+                            
+                            <div className="border p-3 rounded-md bg-white">
+                              <h5 className="font-bold text-primary">{results.calculationDetails.alternativeMethods.method2.name}</h5>
+                              <p className="text-sm text-muted-foreground mb-1">{results.calculationDetails.alternativeMethods.method2.description}</p>
+                              <div className="flex justify-between mt-2">
+                                <span className="text-sm">Interval: <span className="font-semibold">{results.calculationDetails.alternativeMethods.method2.interval.toFixed(2)} {getTimeUnit()}</span></span>
+                                {results.calculationDetails.alternativeMethods.method2.applicability && (
+                                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
+                                    {results.calculationDetails.alternativeMethods.method2.applicability}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs italic mt-2">Formula: {results.calculationDetails.alternativeMethods.method2.formula}</p>
+                            </div>
+                          </div>
+
+                          {/* Optional info about TTF vs TBF */}
+                          {results.calculationDetails.dataUsage?.dataDefinitions && (
+                            <div className="mt-4 pt-4 border-t">
+                              <h5 className="font-bold mb-2">Data Definitions</h5>
+                              <div className="text-sm grid grid-cols-1 md:grid-cols-2 gap-2">
+                                <div className="bg-slate-50 p-2 rounded-md">
+                                  <span className="font-semibold">TTF:</span> {results.calculationDetails.dataUsage.dataDefinitions.TTF}
+                                </div>
+                                <div className="bg-slate-50 p-2 rounded-md">
+                                  <span className="font-semibold">TBF:</span> {results.calculationDetails.dataUsage.dataDefinitions.TBF}
+                                </div>
+                              </div>
+                              <p className="text-xs mt-2 italic">{results.calculationDetails.dataUsage.applicationNotes}</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
