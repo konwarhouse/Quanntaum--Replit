@@ -90,6 +90,10 @@ export async function createFmecaEntry(req: Request, res: Response) {
 
     // Create a new failure mode
     const [newFailureMode] = await db.insert(failureModes).values({
+      description: failureMode, // Use existing description field
+      consequences: failureCause, // Map to existing consequences field
+      equipmentClass: 'RCM', // Default equipment class for RCM entries
+      // New FMECA specific fields
       name: failureMode,
       cause: failureCause,
       localEffect: localEffect,
@@ -162,6 +166,9 @@ export async function updateFmecaEntry(req: Request, res: Response) {
     // Update the failure mode
     await db.update(failureModes)
       .set({
+        description: failureMode, // Use existing description field
+        consequences: failureCause, // Map to existing consequences field
+        // FMECA specific fields
         name: failureMode,
         cause: failureCause,
         localEffect: localEffect,

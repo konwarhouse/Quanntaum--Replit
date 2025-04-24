@@ -14,6 +14,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Loader2, AlertTriangle } from 'lucide-react';
 import SystemManager from '@/components/rcm/SystemManager';
 import ComponentManager from '@/components/rcm/ComponentManager';
+import FmecaAnalysis from '@/components/rcm/FmecaAnalysis';
 import { Component } from '@shared/rcm-schema';
 
 // Component to display components for a selected system
@@ -140,8 +141,11 @@ const RcmPage: React.FC = () => {
     // setActiveTab("components");
   };
 
-  // Track active tab
+  // Track active main tab
   const [activeTab, setActiveTab] = useState<string>("systems");
+  
+  // Track active analysis sub-tab
+  const [activeAnalysisTab, setActiveAnalysisTab] = useState<string>("fmeca");
 
   return (
     <div className="container mx-auto p-6">
@@ -223,6 +227,7 @@ const RcmPage: React.FC = () => {
                 </div>
               )}
               
+              {/* Analysis Type Selection */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                 <Card>
                   <CardHeader className="pb-2">
@@ -232,7 +237,12 @@ const RcmPage: React.FC = () => {
                     <p className="text-sm text-muted-foreground mb-4">
                       Failure Mode, Effects and Criticality Analysis identifies potential failure modes and their impacts.
                     </p>
-                    <Button disabled={!selectedSystemId} variant="outline" className="w-full">
+                    <Button 
+                      disabled={!selectedSystemId} 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={() => setActiveAnalysisTab("fmeca")}
+                    >
                       Start FMECA Analysis
                     </Button>
                   </CardContent>
@@ -246,7 +256,12 @@ const RcmPage: React.FC = () => {
                     <p className="text-sm text-muted-foreground mb-4">
                       Evaluate maintenance strategies based on failure consequences and criticality.
                     </p>
-                    <Button disabled={!selectedSystemId} variant="outline" className="w-full">
+                    <Button 
+                      disabled={!selectedSystemId} 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={() => setActiveAnalysisTab("rcm")}
+                    >
                       Start RCM Analysis
                     </Button>
                   </CardContent>
@@ -260,14 +275,65 @@ const RcmPage: React.FC = () => {
                     <p className="text-sm text-muted-foreground mb-4">
                       Reliability, Availability, and Maintainability metrics for system performance.
                     </p>
-                    <Button disabled={!selectedSystemId} variant="outline" className="w-full">
+                    <Button 
+                      disabled={!selectedSystemId} 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={() => setActiveAnalysisTab("ram")}
+                    >
                       Start RAM Analysis
                     </Button>
                   </CardContent>
                 </Card>
               </div>
               
-              <Card>
+              {/* Analysis Content */}
+              <Tabs value={activeAnalysisTab} onValueChange={setActiveAnalysisTab} className="w-full">
+                <TabsList className="mb-6 grid w-full grid-cols-3">
+                  <TabsTrigger value="fmeca">FMECA</TabsTrigger>
+                  <TabsTrigger value="rcm">RCM Logic</TabsTrigger>
+                  <TabsTrigger value="ram">RAM Analysis</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="fmeca">
+                  <FmecaAnalysis systemId={selectedSystemId} />
+                </TabsContent>
+                
+                <TabsContent value="rcm">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>RCM Decision Logic</CardTitle>
+                      <CardDescription>
+                        Determine maintenance strategies based on failure consequences
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-muted-foreground mb-4">
+                        This module is coming soon. It will include SAE JA1011 compliant RCM decision logic.
+                      </p>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+                
+                <TabsContent value="ram">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>RAM Analysis</CardTitle>
+                      <CardDescription>
+                        Reliability, Availability, and Maintainability analysis
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-muted-foreground mb-4">
+                        This module is coming soon. It will include system reliability modeling and availability calculations.
+                      </p>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
+              
+              {/* System Component List */}
+              <Card className="mt-6">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg">System Components</CardTitle>
                   <CardDescription>
