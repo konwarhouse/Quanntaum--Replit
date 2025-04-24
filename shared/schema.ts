@@ -300,30 +300,7 @@ export type InsertFailureMode = z.infer<typeof insertFailureModeSchema>;
 export type FailureHistory = typeof failureHistory.$inferSelect;
 export type InsertFailureHistory = z.infer<typeof insertFailureHistorySchema>;
 
-// RCM Module types
-export type System = typeof systems.$inferSelect;
-export type InsertSystem = z.infer<typeof insertSystemSchema>;
 
-export type Component = typeof components.$inferSelect;
-export type InsertComponent = z.infer<typeof insertComponentSchema>;
-
-export type PerformanceStandard = typeof performanceStandards.$inferSelect;
-export type InsertPerformanceStandard = z.infer<typeof insertPerformanceStandardSchema>;
-
-export type FunctionalFailure = typeof functionalFailures.$inferSelect;
-export type InsertFunctionalFailure = z.infer<typeof insertFunctionalFailureSchema>;
-
-export type FmecaRating = typeof fmecaRatings.$inferSelect;
-export type InsertFmecaRating = z.infer<typeof insertFmecaRatingSchema>;
-
-export type RcmConsequence = typeof rcmConsequences.$inferSelect;
-export type InsertRcmConsequence = z.infer<typeof insertRcmConsequenceSchema>;
-
-export type MaintenanceTask = typeof maintenanceTasks.$inferSelect;
-export type InsertMaintenanceTask = z.infer<typeof insertMaintenanceTaskSchema>;
-
-export type RamMetric = typeof ramMetrics.$inferSelect;
-export type InsertRamMetric = z.infer<typeof insertRamMetricSchema>;
 
 // Chat completion request type
 export interface ChatCompletionRequest {
@@ -440,6 +417,8 @@ export const failureHistoryRelations = relations(failureHistory, ({ one }) => ({
     references: [failureModes.id],
   }),
 }));
+
+// RCM Module - Systems table
 export const systems = pgTable("systems", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
