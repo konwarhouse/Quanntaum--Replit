@@ -50,14 +50,34 @@ const ComponentForm: React.FC<ComponentFormProps> = ({
   onSubmit, 
   isSubmitting 
 }) => {
-  const [formData, setFormData] = useState<Partial<InsertComponent>>({
+  // Create a custom type that allows string for UI select component values
+  type ComponentFormData = {
+    systemId?: number;
+    name: string;
+    function: string; 
+    description?: string;
+    parentId: string | number; // For UI, we need to allow string values
+    criticality: string;
+  };
+
+  const [formData, setFormData] = useState<ComponentFormData>({
     systemId: defaultValues?.systemId || undefined,
     name: defaultValues?.name || '',
     function: defaultValues?.function || '',
     description: defaultValues?.description || '',
-    parentId: defaultValues?.parentId !== undefined ? defaultValues.parentId : "_none",
+    parentId: "_none", // Always start with "_none" and use actual value if available
     criticality: defaultValues?.criticality || 'Medium'
   });
+  
+  // Set actual parentId value if it exists in defaultValues
+  React.useEffect(() => {
+    if (defaultValues?.parentId !== undefined) {
+      setFormData(prev => ({
+        ...prev,
+        parentId: defaultValues.parentId
+      }));
+    }
+  }, [defaultValues]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
