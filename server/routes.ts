@@ -28,6 +28,7 @@ import {
   calculateMTBF,
   optimizeMaintenanceInterval
 } from "./reliability/calculations";
+import rcmRoutes from "./rcm/routes";
 
 // Initialize OpenAI client
 const openai = new OpenAI({
