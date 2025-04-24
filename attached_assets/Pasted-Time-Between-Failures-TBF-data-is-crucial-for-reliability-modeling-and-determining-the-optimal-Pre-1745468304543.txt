@@ -1,0 +1,114 @@
+Time Between Failures (TBF) data is crucial for reliability modeling and determining the optimal Preventive Maintenance (PM) interval.
+
+Why TBF Matters
+
+TBF (or Time-to-Failure, TTF) is the primary input for:
+Estimating Weibull parameters (β, η) or MTBF (if using exponential distribution).
+Modeling failure trends (increasing/decreasing failure rates).
+Without TBF data, you must rely on assumed failure distributions (less accurate).
+How to Incorporate TBF into PM Optimization
+
+Step 1: Collect & Analyze TBF Data
+
+Gather historical failure times (e.g., [150 hrs, 450 hrs, 980 hrs, ...]).
+If no failures, use accelerated life testing or industry benchmarks.
+Step 2: Fit a Distribution (Weibull, Exponential, etc.)
+
+Weibull Analysis:
+Estimate shape (β) and scale (η) from TBF data (using MLE or regression).
+Example: If β > 1, failures are wear-out related → PM is effective.
+Exponential Model (if β ≈ 1):
+Calculate MTBF = (Total Operational Time) / (Number of Failures).
+Step 3: Use TBF Data in PM Optimization
+
+Cost-Based Approach:
+Total Cost = PM Cost (Cp) + Failure Cost (Cf) × Probability of Failure.
+Optimize PM interval (t) to minimize:
+Cost Rate
+=
+C
+p
+⋅
+R
+(
+t
+)
++
+C
+f
+⋅
+[
+1
+−
+R
+(
+t
+)
+]
+t
+Cost Rate= 
+t
+Cp⋅R(t)+Cf⋅[1−R(t)]
+​	
+ 
+where 
+R
+(
+t
+)
+=
+e
+−
+(
+t
+/
+η
+)
+β
+R(t)=e 
+−(t/η) 
+β
+ 
+  (Weibull reliability).
+Reliability Threshold Approach:
+Set PM at time 
+t
+t where reliability drops below a target (e.g., 90%):
+t
+=
+η
+⋅
+(
+−
+ln
+⁡
+R
+)
+1
+/
+β
+t=η⋅(−lnR) 
+1/β
+ 
+Availability Maximization:
+If downtime data is available, optimize PM interval to maximize uptime.
+Example with TBF Data
+
+Given:
+
+TBF dataset (hrs): [200, 500, 800, 1100, 1400]
+Weibull parameters: β = 2.1, η = 1000 hrs
+Costs: Cp = $300, Cf = $3000
+Step 1: Fit Weibull to TBF data (if parameters unknown).
+Step 2: Compute reliability at candidate PM intervals:
+
+PM Interval (t)	Reliability R(t)	Cost Rate
+400 hrs	0.92	$1.02/hr
+600 hrs	0.83	$0.98/hr
+800 hrs	0.70	$1.05/hr
+Optimal PM Interval: ~600 hrs (minimizes cost rate).
+Key Takeaways
+
+TBF is essential for accurate reliability modeling.
+Without TBF, you must assume β and η (higher uncertainty).
+Combine TBF with cost/reliability targets to find the best PM interval.

@@ -25,7 +25,8 @@ import {
   calculateTotalCost, 
   determineMaintenanceStrategy,
   runSimulation,
-  calculateMTBF
+  calculateMTBF,
+  optimizeMaintenanceInterval
 } from "./reliability/calculations";
 
 // Initialize OpenAI client
@@ -1147,88 +1148,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
         timeHorizon: z.number().positive(),
       });
       
+      // Parse and validate the input data
       const data = schema.parse(req.body);
-      const { 
-        beta, 
-        eta, 
-        preventiveMaintenanceCost, 
-        correctiveMaintenanceCost, 
-        timeHorizon,
-        maximumAcceptableDowntime 
-      } = data;
       
-      console.log(`[DEBUG] Maintenance optimization parameters: beta=${beta}, eta=${eta}, maximumAcceptableDowntime=${maximumAcceptableDowntime}`);
+      console.log(`[DEBUG] Maintenance optimization parameters: beta=${data.beta}, eta=${data.eta}, maximumAcceptableDowntime=${data.maximumAcceptableDowntime}`);
       
-      let optimalInterval;
-      let maintenanceStrategy = '';
-      let recommendationReason = '';
+      // Use the updated optimizeMaintenanceInterval function that properly handles maximumAcceptableDowntime
+      const optimizationResult = optimizeMaintenanceInterval(data);
       
-      // If maximum acceptable downtime is 0, we can't tolerate any failures
-      // This supersedes the beta-based decision
-      if (maximumAcceptableDowntime === 0) {
-        console.log(`[DEBUG] Zero downtime case activated`);
-        // Calculate MTBF
-        const mtbf = calculateMTBF(beta, eta);
-        console.log(`[DEBUG] Calculated MTBF: ${mtbf}`);
-        
-        // Use a conservative maintenance interval (e.g., 50% of MTBF or less)
-        optimalInterval = mtbf * 0.5;
-        maintenanceStrategy = 'Preventive Maintenance';
-        recommendationReason = 'Zero tolerance for downtime requires preventive maintenance before failure occurs';
-        console.log(`[DEBUG] Setting optimalInterval=${optimalInterval}, strategy=${maintenanceStrategy}`);
-      } else {
-        console.log(`[DEBUG] Standard calculation case activated`);
-        // Use the standard calculation based on beta value
-        optimalInterval = calculateOptimalPMInterval(beta, eta);
-        console.log(`[DEBUG] Calculated optimalInterval from formula: ${optimalInterval}`);
-        
-        if (optimalInterval === Infinity) {
-          maintenanceStrategy = 'Run-to-Failure';
-          recommendationReason = 'For beta <= 1, failures occur early or randomly, making preventive maintenance suboptimal';
+      // Get maintenance strategy and reason if not provided by optimizeMaintenanceInterval
+      let result = optimizationResult;
+      
+      // Add maintenance strategy if not already included
+      if (!result.maintenanceStrategy) {
+        if (result.optimalInterval === Infinity || !isFinite(result.optimalInterval)) {
+          result = {
+            ...result,
+            maintenanceStrategy: 'Run-to-Failure',
+            recommendationReason: 'For beta <= 1, failures occur early or randomly, making preventive maintenance suboptimal'
+          };
         } else {
-          maintenanceStrategy = 'Preventive Maintenance';
-          recommendationReason = 'Regular preventive maintenance is optimal based on the wear-out pattern (beta > 1)';
+          result = {
+            ...result,
+            maintenanceStrategy: 'Preventive Maintenance',
+            recommendationReason: 'Regular preventive maintenance is optimal based on the wear-out pattern (beta > 1)'
+          };
         }
-        console.log(`[DEBUG] Setting strategy=${maintenanceStrategy}`);
       }
       
-      // Calculate cost at optimal interval
-      const optimalCost = calculateTotalCost(
-        optimalInterval === Infinity ? Infinity : optimalInterval,
-        beta,
-        eta,
-        preventiveMaintenanceCost,
-        correctiveMaintenanceCost,
-        timeHorizon
-      );
+      console.log(`[DEBUG] Final optimization result: strategy=${result.maintenanceStrategy}, interval=${result.optimalInterval}`);
       
-      // Generate cost vs interval data for plotting
-      const costCurve = [];
-      const numPoints = 20;
-      const maxInterval = eta * 2;
-      const intervalStep = maxInterval / numPoints;
-      
-      for (let i = 1; i <= numPoints; i++) {
-        const interval = i * intervalStep;
-        const cost = calculateTotalCost(
-          interval,
-          beta,
-          eta,
-          preventiveMaintenanceCost,
-          correctiveMaintenanceCost,
-          timeHorizon
-        );
-        
-        costCurve.push({ interval, cost });
-      }
-      
-      res.json({
-        optimalInterval,
-        optimalCost,
-        costCurve,
-        maintenanceStrategy,
-        recommendationReason
-      });
+      // Return the optimization results
+      res.json(result);
     } catch (error) {
       console.error("Error in maintenance optimization:", error);
       res.status(500).json({ 

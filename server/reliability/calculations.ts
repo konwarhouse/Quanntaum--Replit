@@ -195,11 +195,103 @@ export function optimizeMaintenanceInterval(params: MaintenanceOptimizationParam
     eta,
     preventiveMaintenanceCost,
     correctiveMaintenanceCost,
-    timeHorizon
+    timeHorizon,
+    maximumAcceptableDowntime,
+    targetReliabilityThreshold
   } = params;
   
-  // If beta <= 1, run-to-failure is optimal
-  if (beta <= 1) {
+  // Case 1: If maximum acceptable downtime is 0, preventive maintenance is mandatory regardless of beta
+  if (maximumAcceptableDowntime === 0) {
+    // Calculate MTBF for a conservative maintenance interval
+    const mtbf = calculateMTBF(beta, eta);
+    const optimalInterval = mtbf * 0.5; // Use 50% of MTBF as a conservative interval
+    
+    const pmCost = calculateTotalCost(
+      optimalInterval,
+      beta,
+      eta,
+      preventiveMaintenanceCost,
+      correctiveMaintenanceCost,
+      timeHorizon
+    );
+    
+    // Generate cost curve
+    const numPoints = 50;
+    const maxInterval = eta * 2;
+    const intervalStep = maxInterval / numPoints;
+    const costCurve = [];
+    
+    for (let i = 1; i <= numPoints; i++) {
+      const interval = i * intervalStep;
+      const cost = calculateTotalCost(
+        interval,
+        beta,
+        eta,
+        preventiveMaintenanceCost,
+        correctiveMaintenanceCost,
+        timeHorizon
+      );
+      costCurve.push({ interval, cost });
+    }
+    
+    return {
+      optimalInterval,
+      optimalCost: pmCost,
+      costCurve,
+      maintenanceStrategy: 'Preventive Maintenance',
+      recommendationReason: 'Zero tolerance for downtime requires preventive maintenance before failure occurs'
+    };
+  }
+  
+  // Case 2: If there is limited acceptable downtime but still critical (≤ 24 hours) for beta ≤ 1
+  // This handles real-world cases where some downtime is acceptable but still needs preventive action
+  if (maximumAcceptableDowntime > 0 && maximumAcceptableDowntime <= 24 && beta <= 1) {
+    // Calculate a suitable maintenance interval based on the MTBF and acceptable downtime
+    const mtbf = calculateMTBF(beta, eta);
+    // Use a reliability-based interval that ensures failures are rare within the acceptable downtime window
+    // More conservative for lower acceptable downtime values
+    const reliabilityFactor = Math.max(0.6, 1 - (maximumAcceptableDowntime / 24));
+    const optimalInterval = mtbf * reliabilityFactor;
+    
+    const pmCost = calculateTotalCost(
+      optimalInterval,
+      beta,
+      eta,
+      preventiveMaintenanceCost,
+      correctiveMaintenanceCost,
+      timeHorizon
+    );
+    
+    // Generate cost curve
+    const numPoints = 50;
+    const maxInterval = eta * 2;
+    const intervalStep = maxInterval / numPoints;
+    const costCurve = [];
+    
+    for (let i = 1; i <= numPoints; i++) {
+      const interval = i * intervalStep;
+      const cost = calculateTotalCost(
+        interval,
+        beta,
+        eta,
+        preventiveMaintenanceCost,
+        correctiveMaintenanceCost,
+        timeHorizon
+      );
+      costCurve.push({ interval, cost });
+    }
+    
+    return {
+      optimalInterval,
+      optimalCost: pmCost,
+      costCurve,
+      maintenanceStrategy: 'Preventive Maintenance',
+      recommendationReason: 'Despite random failures (β ≤ 1), limited acceptable downtime requires preventive maintenance'
+    };
+  }
+  
+  // If beta <= 1 AND maximumAcceptableDowntime is not 0, run-to-failure may be optimal based on cost
+  if (beta <= 1 && maximumAcceptableDowntime > 0) {
     const runToFailureCost = calculateTotalCost(
       Infinity,
       beta,
@@ -212,7 +304,9 @@ export function optimizeMaintenanceInterval(params: MaintenanceOptimizationParam
     return {
       optimalInterval: Infinity,
       optimalCost: runToFailureCost,
-      costCurve: [{ interval: eta, cost: runToFailureCost }]
+      costCurve: [{ interval: eta, cost: runToFailureCost }],
+      maintenanceStrategy: 'Run-to-Failure',
+      recommendationReason: 'For beta <= 1, failures occur early or randomly, making preventive maintenance suboptimal'
     };
   }
   
