@@ -356,6 +356,7 @@ const ComponentManager: React.FC<ComponentManagerProps> = ({ systemId }) => {
               <ComponentForm 
                 systems={systems || []}
                 components={components}
+                defaultValues={systemId ? { systemId } : undefined}
                 onSubmit={handleCreateSubmit} 
                 isSubmitting={createComponentMutation.isPending} 
               />

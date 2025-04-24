@@ -279,15 +279,36 @@ const SystemManager: React.FC<SystemManagerProps> = ({ onSystemSelect }) => {
           <TableBody>
             {systems && systems.length > 0 ? (
               systems.map((system: System) => (
-                <TableRow key={system.id}>
+                <TableRow 
+                  key={system.id} 
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => onSystemSelect && onSystemSelect(system.id)}
+                >
                   <TableCell className="font-medium">{system.name}</TableCell>
                   <TableCell>{system.purpose}</TableCell>
                   <TableCell>{new Date(system.createdAt).toLocaleDateString()}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end space-x-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent row click event
+                          onSystemSelect && onSystemSelect(system.id);
+                        }}
+                      >
+                        Select
+                      </Button>
                       <Dialog open={editingSystem?.id === system.id} onOpenChange={(open) => !open && setEditingSystem(null)}>
                         <DialogTrigger asChild>
-                          <Button variant="outline" size="icon" onClick={() => setEditingSystem(system)}>
+                          <Button 
+                            variant="outline" 
+                            size="icon" 
+                            onClick={(e) => {
+                              e.stopPropagation(); // Prevent row click event
+                              setEditingSystem(system);
+                            }}
+                          >
                             <Pencil className="h-4 w-4" />
                           </Button>
                         </DialogTrigger>
@@ -310,7 +331,10 @@ const SystemManager: React.FC<SystemManagerProps> = ({ onSystemSelect }) => {
                       <Button 
                         variant="destructive" 
                         size="icon" 
-                        onClick={() => handleDelete(system.id)}
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent row click event
+                          handleDelete(system.id);
+                        }}
                         disabled={deleteSystemMutation.isPending}
                       >
                         <Trash2 className="h-4 w-4" />

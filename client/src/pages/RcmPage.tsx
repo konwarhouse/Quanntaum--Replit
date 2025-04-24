@@ -65,7 +65,7 @@ const RcmPage: React.FC = () => {
             </CardContent>
           </Card>
           
-          <SystemManager onSystemSelect={(id) => setSelectedSystemId(id)} />
+          <SystemManager onSystemSelect={(id: number) => setSelectedSystemId(id)} />
         </TabsContent>
         
         <TabsContent value="components" className="space-y-6">
