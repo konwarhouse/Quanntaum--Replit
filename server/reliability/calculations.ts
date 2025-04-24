@@ -499,10 +499,15 @@ export function optimizeMaintenanceInterval(params: MaintenanceOptimizationParam
   const failureProbAtOptimal = 1 - reliabilityAtOptimal;
   const mtbf = calculateMTBF(beta, eta);
   
-  // Method 1: Cost-Based Approach (primary method we're using)
-  const costBasedInterval = optimalInterval;
+  // Method 1: Weibull Model (primary method we're using)
+  const weibullModelInterval = optimalInterval;
   
-  // Method 2: Reliability Threshold Approach
+  // Method 2: Exponential/MTBF Model (simplified constant failure rate model)
+  // Formula: t* = √(2Cp/(λCf)) where λ = 1/MTBF
+  const failureRate = 1 / mtbf; // λ = 1/MTBF
+  const exponentialModelInterval = Math.sqrt((2 * preventiveMaintenanceCost) / (failureRate * correctiveMaintenanceCost));
+  
+  // Method 3: Reliability Threshold Approach
   // For example, calculate at 90% reliability target if not specified
   const reliabilityTarget = targetReliabilityThreshold || 0.9;
   const reliabilityBasedInterval = eta * Math.pow(-Math.log(reliabilityTarget), 1/beta);
@@ -519,12 +524,20 @@ export function optimizeMaintenanceInterval(params: MaintenanceOptimizationParam
       failureProbability: failureProbAtOptimal * 100,   // Convert to percentage
       alternativeMethods: {
         method1: {
-          name: "Cost-Based Approach",
-          interval: costBasedInterval,
-          description: "Minimizes total cost rate by balancing PM and failure costs",
-          formula: "Cost Rate = (PM Cost × Reliability + Failure Cost × (1-Reliability)) / Interval"
+          name: "Weibull Model (Method 1)",
+          interval: weibullModelInterval,
+          description: "Uses full Weibull distribution to account for wear-out patterns",
+          formula: "Cost Rate = (PM Cost × Reliability + Failure Cost × (1-Reliability)) / Interval",
+          applicability: beta > 1 ? "Recommended (β > 1 indicates wear-out)" : beta < 0.95 ? "Recommended (β < 0.95 indicates early-life failures)" : "Comparable to Method 2 (β ≈ 1)"
         },
         method2: {
+          name: "Exponential/MTBF Model (Method 2)",
+          interval: exponentialModelInterval,
+          description: "Simplified model using constant failure rate assumption",
+          formula: "t* = √(2Cp/(λCf)) where λ = 1/MTBF",
+          applicability: beta >= 0.95 && beta <= 1.05 ? "Recommended (β ≈ 1 indicates random failures)" : "Less accurate (β significantly different from 1)"
+        },
+        method3: {
           name: "Reliability Threshold Approach",
           interval: reliabilityBasedInterval,
           targetReliability: reliabilityTarget * 100, // Convert to percentage
