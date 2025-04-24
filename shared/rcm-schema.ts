@@ -37,12 +37,8 @@ export const components = pgTable("components", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// After components definition, set up the self-reference
-export const componentsConstraints = components.alterTable(table => {
-  return [
-    table.foreignKey({ columns: [components.parentId], foreignColumns: [components.id], name: "components_parent_id_fkey" })
-  ];
-});
+// The self-reference for parent-child relationship is already handled by 
+// the reference in the components table definition (parentId references components.id)
 
 export const insertComponentSchema = createInsertSchema(components).pick({
   systemId: true,

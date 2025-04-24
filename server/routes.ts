@@ -1314,6 +1314,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Mount RCM module routes
+  app.use('/api/rcm', rcmRoutes);
+
   const httpServer = createServer(app);
   return httpServer;
 }

@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import ChatPage from "@/pages/ChatPage";
 import ReliabilityPage from "@/pages/ReliabilityPage";
+import RcmPage from "@/pages/RcmPage";
 import AuthPage from "@/pages/auth-page";
 import UserManagementPage from "@/pages/UserManagementPage";
 import { ProtectedRoute } from "@/components/auth/protected-route";
@@ -37,6 +38,14 @@ function Router() {
         <Layout>
           <ProtectedRoute>
             <UserManagementPage />
+          </ProtectedRoute>
+        </Layout>
+      </Route>
+
+      <Route path="/rcm">
+        <Layout>
+          <ProtectedRoute>
+            <RcmPage />
           </ProtectedRoute>
         </Layout>
       </Route>

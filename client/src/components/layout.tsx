@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { UserProfileMenu } from "./auth/user-profile-menu";
 import { UserRole } from "@shared/auth";
 import { useAuth } from "@/hooks/use-auth";
-import { MessageSquare, BarChart2, Home, Users } from "lucide-react";
+import { MessageSquare, BarChart2, Home, Users, Settings } from "lucide-react";
 
 interface LayoutProps {
   children: ReactNode;
@@ -29,6 +29,13 @@ export default function Layout({ children }: LayoutProps) {
       icon: BarChart2,
       current: location === '/reliability',
       roles: [UserRole.ADMIN, UserRole.ANALYST, UserRole.TECHNICIAN, UserRole.VIEWER],
+    },
+    {
+      name: 'RCM',
+      href: '/rcm',
+      icon: Settings,
+      current: location === '/rcm',
+      roles: [UserRole.ADMIN, UserRole.ANALYST, UserRole.TECHNICIAN],
     },
     {
       name: 'User Management',
