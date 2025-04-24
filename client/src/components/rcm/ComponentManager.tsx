@@ -55,7 +55,7 @@ const ComponentForm: React.FC<ComponentFormProps> = ({
     name: defaultValues?.name || '',
     function: defaultValues?.function || '',
     description: defaultValues?.description || '',
-    parentId: defaultValues?.parentId || undefined,
+    parentId: defaultValues?.parentId !== undefined ? defaultValues.parentId : "_none",
     criticality: defaultValues?.criticality || 'Medium'
   });
 
@@ -73,7 +73,7 @@ const ComponentForm: React.FC<ComponentFormProps> = ({
     onSubmit({
       ...formData,
       systemId: Number(formData.systemId),
-      parentId: formData.parentId ? Number(formData.parentId) : undefined
+      parentId: formData.parentId && typeof formData.parentId === 'string' && formData.parentId !== "_none" ? Number(formData.parentId) : undefined
     });
   };
 
@@ -138,7 +138,7 @@ const ComponentForm: React.FC<ComponentFormProps> = ({
               <SelectValue placeholder="None (Top-level component)" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">None (Top-level component)</SelectItem>
+              <SelectItem value="_none">None (Top-level component)</SelectItem>
               {components?.filter(c => c.id !== defaultValues?.id).map((component) => (
                 <SelectItem key={component.id} value={component.id.toString()}>
                   {component.name}
