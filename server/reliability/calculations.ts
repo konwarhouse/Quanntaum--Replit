@@ -242,6 +242,14 @@ export function optimizeMaintenanceInterval(params: MaintenanceOptimizationParam
       costCurve.push({ interval, cost });
     }
     
+    // Method 1: Cost-Based Approach (primary method we're using)
+    const costBasedInterval = optimalInterval;
+    
+    // Method 2: Reliability Threshold Approach
+    // For zero downtime, use a higher reliability target (95%)
+    const reliabilityTarget = 0.95; 
+    const reliabilityBasedInterval = eta * Math.pow(-Math.log(reliabilityTarget), 1/beta);
+    
     return {
       optimalInterval,
       optimalCost: pmCost,
@@ -252,16 +260,36 @@ export function optimizeMaintenanceInterval(params: MaintenanceOptimizationParam
         mtbf,
         reliabilityAtOptimal: reliabilityAtOptimal * 100, // Convert to percentage
         failureProbability: failureProbAtOptimal * 100,   // Convert to percentage
+        alternativeMethods: {
+          method1: {
+            name: "Cost-Based Approach with Zero Downtime Constraint",
+            interval: costBasedInterval,
+            description: "Conservative PM interval (50% of MTBF) to ensure zero downtime",
+            formula: "Interval = MTBF × 0.5"
+          },
+          method2: {
+            name: "Reliability Threshold Approach",
+            interval: reliabilityBasedInterval,
+            targetReliability: reliabilityTarget * 100, // Convert to percentage
+            description: "Sets PM interval where reliability is 95% or higher",
+            formula: "t = η · (-ln(R))^(1/β) where R = 0.95"
+          }
+        },
         decisionFactors: {
           betaValue: beta,
           etaValue: eta,
           maximumDowntime: maximumAcceptableDowntime,
           decisionRule: 'Zero downtime tolerance overrides standard beta-based decision'
         },
-        costCalculation: {
-          preventiveCost: preventiveMaintenanceCost,
-          failureCost: correctiveMaintenanceCost,
-          costFormula: 'Cost Rate = (PM Cost × Reliability + Failure Cost × (1-Reliability)) / Interval'
+        dataUsage: {
+          tbfDataRole: 'TBF/TTF data is used to estimate Weibull parameters (β, η)',
+          interpretationGuide: 'Zero downtime constraint makes beta value less relevant for strategy selection',
+          dataSources: 'Derived from failure history records (Time Between Failures or Time To Failure values)',
+          dataDefinitions: {
+            TTF: 'Time To Failure - Used primarily for non-repairable items that are replaced after failure',
+            TBF: 'Time Between Failures - Used for repairable items that can experience multiple failures over their lifetime'
+          },
+          applicationNotes: 'First failure uses TTF (from installation to first failure), subsequent failures use TBF (between consecutive failures)'
         }
       }
     };
@@ -309,6 +337,18 @@ export function optimizeMaintenanceInterval(params: MaintenanceOptimizationParam
       costCurve.push({ interval, cost });
     }
     
+    // Method 1: Cost-Based Approach modified for limited downtime
+    const costBasedInterval = optimalInterval;
+    
+    // Method 2: Reliability Threshold Approach
+    // For limited downtime, calculate based on downtime percentage
+    const reliabilityTarget = Math.max(0.8, 1 - (maximumAcceptableDowntime / 48)); // Higher reliability for lower allowable downtime
+    const reliabilityBasedInterval = eta * Math.pow(-Math.log(reliabilityTarget), 1/beta);
+    
+    // Method 3: Availability Maximization (simplified for this case)
+    const availabilityTarget = 1 - (maximumAcceptableDowntime / (24 * 30)); // Target monthly availability
+    const availabilityBasedInterval = mtbf * availabilityTarget;
+    
     return {
       optimalInterval,
       optimalCost: pmCost,
@@ -321,17 +361,42 @@ export function optimizeMaintenanceInterval(params: MaintenanceOptimizationParam
         failureProbability: failureProbAtOptimal * 100,   // Convert to percentage
         reliabilityFactor: reliabilityFactor,
         adjustedForDowntime: true,
+        alternativeMethods: {
+          method1: {
+            name: "Modified Cost-Based Approach",
+            interval: costBasedInterval,
+            description: `Adjusted for limited downtime (${maximumAcceptableDowntime} hours)`,
+            formula: `Interval = MTBF × ${reliabilityFactor.toFixed(2)} (reliability factor)`
+          },
+          method2: {
+            name: "Reliability Threshold Approach",
+            interval: reliabilityBasedInterval,
+            targetReliability: reliabilityTarget * 100, // Convert to percentage
+            description: "Sets PM interval to maintain minimum required reliability",
+            formula: "t = η · (-ln(R))^(1/β) where R is target reliability"
+          },
+          method3: {
+            name: "Availability Maximization",
+            interval: availabilityBasedInterval,
+            description: "Optimizes interval to meet availability requirements",
+            formula: "Interval ≈ MTBF × Target Availability"
+          }
+        },
         decisionFactors: {
           betaValue: beta,
           etaValue: eta,
           maximumDowntime: maximumAcceptableDowntime,
           decisionRule: 'Limited downtime tolerance (≤24 hours) overrides standard beta-based decision'
         },
-        costCalculation: {
-          preventiveCost: preventiveMaintenanceCost,
-          failureCost: correctiveMaintenanceCost,
-          costFormula: 'Cost Rate = (PM Cost × Reliability + Failure Cost × (1-Reliability)) / Interval',
-          tbfDataUsed: 'TBF data incorporated through Weibull parameters (β, η)'
+        dataUsage: {
+          tbfDataRole: 'TBF/TTF data is used to estimate Weibull parameters (β, η)',
+          interpretationGuide: 'Despite β ≤ 1 suggesting random failures, downtime constraints require preventive action',
+          dataSources: 'Derived from failure history records (Time Between Failures or Time To Failure values)',
+          dataDefinitions: {
+            TTF: 'Time To Failure - Used primarily for non-repairable items that are replaced after failure',
+            TBF: 'Time Between Failures - Used for repairable items that can experience multiple failures over their lifetime'
+          },
+          applicationNotes: 'First failure uses TTF (from installation to first failure), subsequent failures use TBF (between consecutive failures)'
         }
       }
     };
@@ -368,8 +433,18 @@ export function optimizeMaintenanceInterval(params: MaintenanceOptimizationParam
         costCalculation: {
           preventiveCost: preventiveMaintenanceCost,
           failureCost: correctiveMaintenanceCost,
-          tbfDataUsed: 'TBF data incorporated through Weibull parameters (β, η)',
+          tbfDataUsed: 'TBF/TTF data incorporated through Weibull parameters (β, η)',
           costFormula: 'For run-to-failure, total cost = number of failures × failure cost'
+        },
+        dataUsage: {
+          tbfDataRole: 'TBF/TTF data is used to estimate Weibull parameters (β, η)',
+          interpretationGuide: 'β ≤ 1 indicates random or early-life failures, making run-to-failure more economical',
+          dataSources: 'Derived from failure history records (Time Between Failures or Time To Failure values)',
+          dataDefinitions: {
+            TTF: 'Time To Failure - Used primarily for non-repairable items that are replaced after failure',
+            TBF: 'Time Between Failures - Used for repairable items that can experience multiple failures over their lifetime'
+          },
+          applicationNotes: 'For early-life failures (β < 1), run-to-failure combined with proper burn-in testing is often optimal'
         }
       }
     };
@@ -424,6 +499,14 @@ export function optimizeMaintenanceInterval(params: MaintenanceOptimizationParam
   const failureProbAtOptimal = 1 - reliabilityAtOptimal;
   const mtbf = calculateMTBF(beta, eta);
   
+  // Method 1: Cost-Based Approach (primary method we're using)
+  const costBasedInterval = optimalInterval;
+  
+  // Method 2: Reliability Threshold Approach
+  // For example, calculate at 90% reliability target if not specified
+  const reliabilityTarget = targetReliabilityThreshold || 0.9;
+  const reliabilityBasedInterval = eta * Math.pow(-Math.log(reliabilityTarget), 1/beta);
+  
   return {
     optimalInterval,
     optimalCost: minCost,
@@ -434,18 +517,36 @@ export function optimizeMaintenanceInterval(params: MaintenanceOptimizationParam
       mtbf,
       reliabilityAtOptimal: reliabilityAtOptimal * 100, // Convert to percentage
       failureProbability: failureProbAtOptimal * 100,   // Convert to percentage
+      alternativeMethods: {
+        method1: {
+          name: "Cost-Based Approach",
+          interval: costBasedInterval,
+          description: "Minimizes total cost rate by balancing PM and failure costs",
+          formula: "Cost Rate = (PM Cost × Reliability + Failure Cost × (1-Reliability)) / Interval"
+        },
+        method2: {
+          name: "Reliability Threshold Approach",
+          interval: reliabilityBasedInterval,
+          targetReliability: reliabilityTarget * 100, // Convert to percentage
+          description: "Sets PM interval where reliability drops below target",
+          formula: "t = η · (-ln(R))^(1/β) where R is target reliability"
+        }
+      },
       decisionFactors: {
         betaValue: beta,
         etaValue: eta,
         maximumDowntime: maximumAcceptableDowntime,
         decisionRule: 'When beta > 1, component shows wear-out pattern, favoring preventive maintenance'
       },
-      costCalculation: {
-        preventiveCost: preventiveMaintenanceCost,
-        failureCost: correctiveMaintenanceCost,
-        costFormula: 'Cost Rate = (PM Cost × Reliability + Failure Cost × (1-Reliability)) / Interval',
-        tbfDataUsed: 'TBF data incorporated through Weibull parameters (β, η)',
-        optimizationMethod: 'Numerical cost minimization with analytical validation'
+      dataUsage: {
+        tbfDataRole: 'TBF/TTF data is used to estimate Weibull parameters (β, η)',
+        interpretationGuide: 'β > 1 indicates wear-out failures; β < 1 indicates early-life failures; β ≈ 1 indicates random failures',
+        dataSources: 'Derived from failure history records (Time Between Failures or Time To Failure values)',
+        dataDefinitions: {
+          TTF: 'Time To Failure - Used primarily for non-repairable items that are replaced after failure',
+          TBF: 'Time Between Failures - Used for repairable items that can experience multiple failures over their lifetime'
+        },
+        applicationNotes: 'First failure uses TTF (from installation to first failure), subsequent failures use TBF (between consecutive failures)'
       }
     }
   };
