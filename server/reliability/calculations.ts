@@ -186,8 +186,12 @@ export function generateWeibullAnalysis(params: WeibullParameters) {
 
 /**
  * Find optimal maintenance interval by evaluating a range of intervals
+ * Uses TBF data (implicitly through Weibull parameters) to determine optimal PM interval
+ * Implements the cost-based approach described in the TBF specification:
+ * Cost Rate = (PM Cost × Reliability + Failure Cost × (1-Reliability)) / Interval
+ * 
  * @param params - Maintenance optimization parameters
- * @returns Optimization results
+ * @returns Optimization results with detailed cost information
  */
 export function optimizeMaintenanceInterval(params: MaintenanceOptimizationParameters) {
   const {
@@ -221,6 +225,10 @@ export function optimizeMaintenanceInterval(params: MaintenanceOptimizationParam
     const intervalStep = maxInterval / numPoints;
     const costCurve = [];
     
+    // Calculate reliability at optimal interval for transparency
+    const reliabilityAtOptimal = calculateReliability(optimalInterval, beta, eta);
+    const failureProbAtOptimal = 1 - reliabilityAtOptimal;
+    
     for (let i = 1; i <= numPoints; i++) {
       const interval = i * intervalStep;
       const cost = calculateTotalCost(
@@ -239,7 +247,23 @@ export function optimizeMaintenanceInterval(params: MaintenanceOptimizationParam
       optimalCost: pmCost,
       costCurve,
       maintenanceStrategy: 'Preventive Maintenance',
-      recommendationReason: 'Zero tolerance for downtime requires preventive maintenance before failure occurs'
+      recommendationReason: 'Zero tolerance for downtime requires preventive maintenance before failure occurs',
+      calculationDetails: {
+        mtbf,
+        reliabilityAtOptimal: reliabilityAtOptimal * 100, // Convert to percentage
+        failureProbability: failureProbAtOptimal * 100,   // Convert to percentage
+        decisionFactors: {
+          betaValue: beta,
+          etaValue: eta,
+          maximumDowntime: maximumAcceptableDowntime,
+          decisionRule: 'Zero downtime tolerance overrides standard beta-based decision'
+        },
+        costCalculation: {
+          preventiveCost: preventiveMaintenanceCost,
+          failureCost: correctiveMaintenanceCost,
+          costFormula: 'Cost Rate = (PM Cost × Reliability + Failure Cost × (1-Reliability)) / Interval'
+        }
+      }
     };
   }
   
@@ -268,6 +292,10 @@ export function optimizeMaintenanceInterval(params: MaintenanceOptimizationParam
     const intervalStep = maxInterval / numPoints;
     const costCurve = [];
     
+    // Calculate reliability at optimal interval for transparency
+    const reliabilityAtOptimal = calculateReliability(optimalInterval, beta, eta);
+    const failureProbAtOptimal = 1 - reliabilityAtOptimal;
+    
     for (let i = 1; i <= numPoints; i++) {
       const interval = i * intervalStep;
       const cost = calculateTotalCost(
@@ -286,12 +314,31 @@ export function optimizeMaintenanceInterval(params: MaintenanceOptimizationParam
       optimalCost: pmCost,
       costCurve,
       maintenanceStrategy: 'Preventive Maintenance',
-      recommendationReason: 'Despite random failures (β ≤ 1), limited acceptable downtime requires preventive maintenance'
+      recommendationReason: 'Despite random failures (β ≤ 1), limited acceptable downtime requires preventive maintenance',
+      calculationDetails: {
+        mtbf,
+        reliabilityAtOptimal: reliabilityAtOptimal * 100, // Convert to percentage
+        failureProbability: failureProbAtOptimal * 100,   // Convert to percentage
+        reliabilityFactor: reliabilityFactor,
+        adjustedForDowntime: true,
+        decisionFactors: {
+          betaValue: beta,
+          etaValue: eta,
+          maximumDowntime: maximumAcceptableDowntime,
+          decisionRule: 'Limited downtime tolerance (≤24 hours) overrides standard beta-based decision'
+        },
+        costCalculation: {
+          preventiveCost: preventiveMaintenanceCost,
+          failureCost: correctiveMaintenanceCost,
+          costFormula: 'Cost Rate = (PM Cost × Reliability + Failure Cost × (1-Reliability)) / Interval',
+          tbfDataUsed: 'TBF data incorporated through Weibull parameters (β, η)'
+        }
+      }
     };
   }
   
-  // If beta <= 1 AND maximumAcceptableDowntime is not 0, run-to-failure may be optimal based on cost
-  if (beta <= 1 && maximumAcceptableDowntime > 0) {
+  // If beta <= 1 AND maximumAcceptableDowntime is greater than 24 hours, run-to-failure may be optimal based on cost
+  if (beta <= 1 && maximumAcceptableDowntime > 24) {
     const runToFailureCost = calculateTotalCost(
       Infinity,
       beta,
@@ -301,12 +348,30 @@ export function optimizeMaintenanceInterval(params: MaintenanceOptimizationParam
       timeHorizon
     );
     
+    // Calculate MTBF for information purposes
+    const mtbf = calculateMTBF(beta, eta);
+    
     return {
       optimalInterval: Infinity,
       optimalCost: runToFailureCost,
       costCurve: [{ interval: eta, cost: runToFailureCost }],
       maintenanceStrategy: 'Run-to-Failure',
-      recommendationReason: 'For beta <= 1, failures occur early or randomly, making preventive maintenance suboptimal'
+      recommendationReason: 'For beta <= 1, failures occur early or randomly, making preventive maintenance suboptimal',
+      calculationDetails: {
+        mtbf,
+        decisionFactors: {
+          betaValue: beta,
+          etaValue: eta,
+          maximumDowntime: maximumAcceptableDowntime,
+          decisionRule: 'When beta <= 1 and acceptable downtime > 24 hours, run-to-failure is usually more cost-effective'
+        },
+        costCalculation: {
+          preventiveCost: preventiveMaintenanceCost,
+          failureCost: correctiveMaintenanceCost,
+          tbfDataUsed: 'TBF data incorporated through Weibull parameters (β, η)',
+          costFormula: 'For run-to-failure, total cost = number of failures × failure cost'
+        }
+      }
     };
   }
   
@@ -354,10 +419,35 @@ export function optimizeMaintenanceInterval(params: MaintenanceOptimizationParam
     optimalInterval = analyticalOptimal;
   }
   
+  // Calculate reliability at optimal interval for transparency
+  const reliabilityAtOptimal = calculateReliability(optimalInterval, beta, eta);
+  const failureProbAtOptimal = 1 - reliabilityAtOptimal;
+  const mtbf = calculateMTBF(beta, eta);
+  
   return {
     optimalInterval,
     optimalCost: minCost,
-    costCurve
+    costCurve,
+    maintenanceStrategy: 'Preventive Maintenance',
+    recommendationReason: 'For beta > 1, wear-out failures are predictable, making preventive maintenance optimal',
+    calculationDetails: {
+      mtbf,
+      reliabilityAtOptimal: reliabilityAtOptimal * 100, // Convert to percentage
+      failureProbability: failureProbAtOptimal * 100,   // Convert to percentage
+      decisionFactors: {
+        betaValue: beta,
+        etaValue: eta,
+        maximumDowntime: maximumAcceptableDowntime,
+        decisionRule: 'When beta > 1, component shows wear-out pattern, favoring preventive maintenance'
+      },
+      costCalculation: {
+        preventiveCost: preventiveMaintenanceCost,
+        failureCost: correctiveMaintenanceCost,
+        costFormula: 'Cost Rate = (PM Cost × Reliability + Failure Cost × (1-Reliability)) / Interval',
+        tbfDataUsed: 'TBF data incorporated through Weibull parameters (β, η)',
+        optimizationMethod: 'Numerical cost minimization with analytical validation'
+      }
+    }
   };
 }
 

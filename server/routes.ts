@@ -1156,25 +1156,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Use the updated optimizeMaintenanceInterval function that properly handles maximumAcceptableDowntime
       const optimizationResult = optimizeMaintenanceInterval(data);
       
-      // Get maintenance strategy and reason if not provided by optimizeMaintenanceInterval
-      let result = optimizationResult;
-      
-      // Add maintenance strategy if not already included
-      if (!result.maintenanceStrategy) {
-        if (result.optimalInterval === Infinity || !isFinite(result.optimalInterval)) {
-          result = {
-            ...result,
-            maintenanceStrategy: 'Run-to-Failure',
-            recommendationReason: 'For beta <= 1, failures occur early or randomly, making preventive maintenance suboptimal'
-          };
-        } else {
-          result = {
-            ...result,
-            maintenanceStrategy: 'Preventive Maintenance',
-            recommendationReason: 'Regular preventive maintenance is optimal based on the wear-out pattern (beta > 1)'
-          };
-        }
-      }
+      // All strategy cases now include this information directly from optimizeMaintenanceInterval
+      // This section is now only for logging and safeguards
+      const result = optimizationResult;
       
       console.log(`[DEBUG] Final optimization result: strategy=${result.maintenanceStrategy}, interval=${result.optimalInterval}`);
       
