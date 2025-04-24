@@ -75,7 +75,7 @@ const SystemComponentsList: React.FC<{ systemId: number }> = ({ systemId }) => {
                 component.criticality === 'High' 
                 ? 'destructive' 
                 : component.criticality === 'Medium' 
-                  ? 'warning' 
+                  ? 'outline' 
                   : 'secondary'
               }>
                 {component.criticality}
@@ -83,7 +83,7 @@ const SystemComponentsList: React.FC<{ systemId: number }> = ({ systemId }) => {
             </TableCell>
             <TableCell>
               {component.parentId 
-                ? components.find(c => c.id === component.parentId)?.name || 'Unknown'
+                ? components.find((c: { id: number }) => c.id === component.parentId)?.name || 'Unknown'
                 : 'None'
               }
             </TableCell>
@@ -115,6 +115,34 @@ const RcmPage: React.FC = () => {
     );
   }
 
+  // Use localStorage to persist selected system when page reloads
+  React.useEffect(() => {
+    // Check if we have a stored system ID in localStorage
+    const storedSystemId = localStorage.getItem('rcm-selected-system-id');
+    if (storedSystemId) {
+      setSelectedSystemId(parseInt(storedSystemId, 10));
+    }
+  }, []);
+
+  // Save selected system ID to localStorage when it changes
+  React.useEffect(() => {
+    if (selectedSystemId) {
+      localStorage.setItem('rcm-selected-system-id', selectedSystemId.toString());
+    } else {
+      localStorage.removeItem('rcm-selected-system-id');
+    }
+  }, [selectedSystemId]);
+
+  // Function to handle system selection and force tab change
+  const handleSystemSelect = (id: number) => {
+    setSelectedSystemId(id);
+    // Optional: Auto-switch to components tab when system is selected
+    // setActiveTab("components");
+  };
+
+  // Track active tab
+  const [activeTab, setActiveTab] = useState<string>("systems");
+
   return (
     <div className="container mx-auto p-6">
       <div className="mb-8">
@@ -124,7 +152,7 @@ const RcmPage: React.FC = () => {
         </p>
       </div>
 
-      <Tabs defaultValue="systems" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="mb-8 grid w-full grid-cols-3">
           <TabsTrigger value="systems">Systems</TabsTrigger>
           <TabsTrigger value="components">Components</TabsTrigger>
@@ -148,7 +176,7 @@ const RcmPage: React.FC = () => {
             </CardContent>
           </Card>
           
-          <SystemManager onSystemSelect={(id: number) => setSelectedSystemId(id)} />
+          <SystemManager onSystemSelect={handleSystemSelect} />
         </TabsContent>
         
         <TabsContent value="components" className="space-y-6">
