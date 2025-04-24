@@ -1157,6 +1157,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         maximumAcceptableDowntime 
       } = data;
       
+      console.log(`[DEBUG] Maintenance optimization parameters: beta=${beta}, eta=${eta}, maximumAcceptableDowntime=${maximumAcceptableDowntime}`);
+      
       let optimalInterval;
       let maintenanceStrategy = '';
       let recommendationReason = '';
@@ -1164,16 +1166,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // If maximum acceptable downtime is 0, we can't tolerate any failures
       // This supersedes the beta-based decision
       if (maximumAcceptableDowntime === 0) {
+        console.log(`[DEBUG] Zero downtime case activated`);
         // Calculate MTBF
         const mtbf = calculateMTBF(beta, eta);
+        console.log(`[DEBUG] Calculated MTBF: ${mtbf}`);
         
         // Use a conservative maintenance interval (e.g., 50% of MTBF or less)
         optimalInterval = mtbf * 0.5;
         maintenanceStrategy = 'Preventive Maintenance';
         recommendationReason = 'Zero tolerance for downtime requires preventive maintenance before failure occurs';
+        console.log(`[DEBUG] Setting optimalInterval=${optimalInterval}, strategy=${maintenanceStrategy}`);
       } else {
+        console.log(`[DEBUG] Standard calculation case activated`);
         // Use the standard calculation based on beta value
         optimalInterval = calculateOptimalPMInterval(beta, eta);
+        console.log(`[DEBUG] Calculated optimalInterval from formula: ${optimalInterval}`);
         
         if (optimalInterval === Infinity) {
           maintenanceStrategy = 'Run-to-Failure';
@@ -1182,6 +1189,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           maintenanceStrategy = 'Preventive Maintenance';
           recommendationReason = 'Regular preventive maintenance is optimal based on the wear-out pattern (beta > 1)';
         }
+        console.log(`[DEBUG] Setting strategy=${maintenanceStrategy}`);
       }
       
       // Calculate cost at optimal interval
