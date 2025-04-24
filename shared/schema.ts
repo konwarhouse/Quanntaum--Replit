@@ -116,6 +116,15 @@ export const failureModes = pgTable("failure_modes", {
   isPredictable: boolean("is_predictable").default(false),
   costOfFailure: real("cost_of_failure"),
   equipmentClass: text("equipment_class").notNull(), // ISO 14224 equipment class reference - required
+  
+  // FMECA specific fields
+  name: text("name"),
+  cause: text("cause"),
+  localEffect: text("local_effect"),
+  systemEffect: text("system_effect"),
+  endEffect: text("end_effect"),
+  recommendedActions: text("recommended_actions"),
+  componentId: integer("component_id"), // For linking to components in the RCM module
 });
 
 export const insertFailureModeSchema = createInsertSchema(failureModes)
@@ -128,8 +137,26 @@ export const insertFailureModeSchema = createInsertSchema(failureModes)
   isPredictable: true,
   costOfFailure: true,
   equipmentClass: true,
+  // FMECA fields
+  name: true,
+  cause: true,
+  localEffect: true,
+  systemEffect: true,
+  endEffect: true,
+  recommendedActions: true,
+  componentId: true,
 })
-.partial({ assetId: true }); // Make assetId optional in the schema
+.partial({ 
+  assetId: true,
+  // FMECA fields are also optional
+  name: true,
+  cause: true,
+  localEffect: true,
+  systemEffect: true,
+  endEffect: true,
+  recommendedActions: true,
+  componentId: true,
+}); // Make assetId and FMECA fields optional in the schema
 
 // Failure History table - Comprehensive version for reliability analysis
 export const failureHistory = pgTable("failure_history", {
