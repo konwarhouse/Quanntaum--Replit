@@ -44,7 +44,7 @@ export const createSystem = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "System name is required" });
     }
     
-    const createdAt = new Date().toISOString();
+    // The timestamp column will use PostgreSQL's DEFAULT NOW() constraint
     const userId = req.user?.id || null;
     
     const [newSystem] = await db.insert(systems).values({
@@ -52,8 +52,8 @@ export const createSystem = async (req: Request, res: Response) => {
       purpose: purpose || null,
       operatingContext: operatingContext || null,
       boundaries: boundaries || null,
-      createdAt,
       createdBy: userId
+      // Let the database handle createdAt with its default value
     }).returning();
     
     res.status(201).json(newSystem);
@@ -84,8 +84,8 @@ export const updateSystem = async (req: Request, res: Response) => {
         purpose: purpose || null,
         operatingContext: operatingContext || null,
         boundaries: boundaries || null,
-        updatedAt: new Date().toISOString(),
         updatedBy: req.user?.id || null
+        // Let the database handle updatedAt with its default value
       })
       .where(eq(systems.id, systemId))
       .returning();
@@ -229,8 +229,8 @@ export const createComponent = async (req: Request, res: Response) => {
       function: componentFunction || null,
       criticality: criticality || 'Medium',
       parentId: parentId || null,
-      createdAt: new Date().toISOString(),
       createdBy: req.user?.id || null
+      // Let the database handle createdAt with its default value
     }).returning();
     
     res.status(201).json(newComponent);
@@ -304,8 +304,8 @@ export const updateComponent = async (req: Request, res: Response) => {
         function: componentFunction || null,
         criticality: criticality || 'Medium',
         parentId: parentId || null,
-        updatedAt: new Date().toISOString(),
         updatedBy: req.user?.id || null
+        // Let the database handle updatedAt with its default value
       })
       .where(eq(components.id, componentId))
       .returning();
