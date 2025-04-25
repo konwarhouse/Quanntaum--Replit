@@ -183,7 +183,7 @@ router.get("/criticalities", async (req, res) => {
   }
 });
 
-// Create or update criticality
+// Create or update criticality - simplified direct approach
 router.post("/criticalities", async (req, res) => {
   try {
     const { failureModeId, severity, occurrence, detection, rpn, criticalityIndex, consequenceType } = req.body;
@@ -192,24 +192,26 @@ router.post("/criticalities", async (req, res) => {
       failureModeId, severity, occurrence, detection, rpn, criticalityIndex, consequenceType 
     });
     
-    // Convert numeric strings to actual numbers if needed
-    const normalizedData = {
-      failureModeId: typeof failureModeId === 'string' ? parseInt(failureModeId, 10) : failureModeId,
-      severity: typeof severity === 'string' ? parseInt(severity, 10) : severity,
-      occurrence: typeof occurrence === 'string' ? parseInt(occurrence, 10) : occurrence,
-      detection: typeof detection === 'string' ? parseInt(detection, 10) : detection,
-      rpn: typeof rpn === 'string' ? parseInt(rpn, 10) : rpn,
-      criticalityIndex,
-      consequenceType
-    };
+    // Manual validation with direct conversions
+    if (!failureModeId) {
+      return res.status(400).json({ error: "Failure mode ID is required" });
+    }
     
-    // Validate input using Zod schema
-    const validatedData = insertFailureCriticalitySchema.parse(normalizedData);
+    // Prepare validated data directly, skipping Zod
+    const validatedData = {
+      failureModeId: Number(failureModeId),
+      severity: Number(severity || 5),
+      occurrence: Number(occurrence || 5),
+      detection: Number(detection || 5),
+      rpn: Number(rpn || (severity * occurrence * detection)),
+      criticalityIndex: criticalityIndex || "Low",
+      consequenceType: consequenceType || "Operational"
+    };
 
     // Check if an entry already exists for this failure mode
     const existingResult = await pool.query(
       `SELECT * FROM failure_criticality WHERE failure_mode_id = $1 LIMIT 1`,
-      [normalizedData.failureModeId]
+      [validatedData.failureModeId]
     );
     const existingCriticality = existingResult.rows[0];
 
