@@ -55,14 +55,6 @@ function Router() {
       <Route path="/fmeca">
         <Layout>
           <ProtectedRoute>
-            <FmecaPage />
-          </ProtectedRoute>
-        </Layout>
-      </Route>
-      
-      <Route path="/enhanced-fmeca">
-        <Layout>
-          <ProtectedRoute>
             <EnhancedFmecaPage />
           </ProtectedRoute>
         </Layout>
