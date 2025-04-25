@@ -1,7 +1,7 @@
 import React, { useState, useEffect, ChangeEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { Loader2, FileText, Database, Plus, Trash } from "lucide-react";
+import { Loader2, FileText, Database, Plus, Trash, CheckCircle2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import FmecaManager from "@/components/fmeca/FmecaManager";
 
 interface System {
   id: number;
@@ -50,6 +51,9 @@ interface AssetFmecaRow {
   action: string;
   responsibility: string; // Person or role responsible for the action
   targetDate: string;
+  completionDate?: string; // When the action was actually completed
+  verifiedBy?: string; // Who verified the action was completed
+  effectivenessVerified?: 'yes' | 'no' | 'partial' | ''; // Whether the action was effective
   comments: string;
 }
 
@@ -72,6 +76,9 @@ interface SystemFmecaRow {
   action: string;
   responsibility: string; // Person or role responsible for the action
   targetDate: string;
+  completionDate?: string; // When the action was actually completed
+  verifiedBy?: string; // Who verified the action was completed
+  effectivenessVerified?: 'yes' | 'no' | 'partial' | ''; // Whether the action was effective
   comments: string;
 }
 

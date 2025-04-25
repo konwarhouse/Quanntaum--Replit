@@ -325,54 +325,50 @@ export const EditRowDialog: React.FC<EditRowDialogProps> = ({
             />
           </div>
           
-          {rowType === 'asset' && (
-            <>
-              <div>
-                <Label htmlFor="completionDate" className="text-right">
-                  Completion Date
-                </Label>
-                <Input
-                  id="completionDate"
-                  type="date"
-                  value={editedRow.completionDate || ''}
-                  onChange={(e) => handleChange('completionDate', e.target.value)}
-                  className="mt-1"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="verifiedBy" className="text-right">
-                  Verified By
-                </Label>
-                <Input
-                  id="verifiedBy"
-                  value={editedRow.verifiedBy || ''}
-                  onChange={(e) => handleChange('verifiedBy', e.target.value)}
-                  className="mt-1"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="effectivenessVerified" className="text-right">
-                  Effectiveness Verified
-                </Label>
-                <Select 
-                  onValueChange={(value) => handleChange('effectivenessVerified', value)}
-                  value={editedRow.effectivenessVerified || ''}
-                >
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Select..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Not Verified</SelectItem>
-                    <SelectItem value="yes">Yes - Fully Effective</SelectItem>
-                    <SelectItem value="partial">Partial - Requires Additional Actions</SelectItem>
-                    <SelectItem value="no">No - Action Was Not Effective</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </>
-          )}
+          <div>
+            <Label htmlFor="completionDate" className="text-right">
+              Completion Date
+            </Label>
+            <Input
+              id="completionDate"
+              type="date"
+              value={editedRow.completionDate || ''}
+              onChange={(e) => handleChange('completionDate', e.target.value)}
+              className="mt-1"
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="verifiedBy" className="text-right">
+              Verified By
+            </Label>
+            <Input
+              id="verifiedBy"
+              value={editedRow.verifiedBy || ''}
+              onChange={(e) => handleChange('verifiedBy', e.target.value)}
+              className="mt-1"
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="effectivenessVerified" className="text-right">
+              Effectiveness Verified
+            </Label>
+            <Select 
+              onValueChange={(value) => handleChange('effectivenessVerified', value)}
+              value={editedRow.effectivenessVerified || ''}
+            >
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Select..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Not Verified</SelectItem>
+                <SelectItem value="yes">Yes - Fully Effective</SelectItem>
+                <SelectItem value="partial">Partial - Requires Additional Actions</SelectItem>
+                <SelectItem value="no">No - Action Was Not Effective</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           
           <div className={rowType === 'asset' ? "col-span-2" : ""}>
             <Label htmlFor="comments" className="text-right">
