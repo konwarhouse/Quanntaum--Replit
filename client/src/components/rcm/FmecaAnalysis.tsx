@@ -377,11 +377,15 @@ export const FmecaAnalysis: React.FC<FmecaAnalysisProps> = ({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {failureModes?.map((mode) => (
-                                <SelectItem key={mode.id} value={mode.id.toString()}>
-                                  {mode.name}
-                                </SelectItem>
-                              ))}
+                              {failureModes && failureModes.length > 0 ? (
+                                failureModes.map((mode) => (
+                                  <SelectItem key={mode.id} value={mode.id.toString()}>
+                                    {mode.name || mode.description}
+                                  </SelectItem>
+                                ))
+                              ) : (
+                                <SelectItem disabled value="none">No failure modes available</SelectItem>
+                              )}
                             </SelectContent>
                           </Select>
                           <FormMessage />

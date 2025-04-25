@@ -38,6 +38,8 @@ router.get("/failure-modes", async (req, res) => {
   try {
     const { componentId, equipmentClass } = req.query;
     
+    console.log("Failure modes query params:", { componentId, equipmentClass });
+    
     // If equipmentClass is provided directly, use it
     if (equipmentClass) {
       const equipmentFailureModes = await db.query.failureModes.findMany({
@@ -49,7 +51,10 @@ router.get("/failure-modes", async (req, res) => {
     
     // Otherwise, require componentId
     if (!componentId) {
-      return res.status(400).json({ error: "Either componentId or equipmentClass is required" });
+      // If neither is provided, return all failure modes as fallback
+      const allModes = await db.query.failureModes.findMany();
+      console.log(`No parameters provided, returning all ${allModes.length} failure modes`);
+      return res.status(200).json(allModes);
     }
 
     // First check if there are any failure modes directly linked to this component
@@ -62,17 +67,20 @@ router.get("/failure-modes", async (req, res) => {
       return res.status(200).json(componentFailureModes);
     }
 
-    // If no failure modes directly linked, use equipment class from assets table
-    // Get all equipment classes from assets table
-    const allEquipmentClasses = await db.select({ equipmentClass: assets.equipmentClass }).from(assets);
+    console.log(`No component-specific failure modes found for component ${componentId}`);
     
-    // Extract unique equipment class values
-    const uniqueEquipmentClasses = Array.from(new Set(allEquipmentClasses.map(ec => ec.equipmentClass))).filter(Boolean);
-    
-    // Get all failure modes for all equipment classes
+    // Since we have BEARING component but failure modes are for Centrifugal Pump, 
+    // let's return all available failure modes
     const allFailureModes = await db.query.failureModes.findMany();
     
-    console.log(`Found ${allFailureModes.length} failure modes across all equipment classes`);
+    // Log all failure modes for debugging
+    console.log("All available failure modes:", allFailureModes.map(fm => ({
+      id: fm.id,
+      name: fm.name || fm.description,
+      equipmentClass: fm.equipmentClass
+    })));
+    
+    console.log(`Returning ${allFailureModes.length} failure modes across all equipment classes`);
     return res.status(200).json(allFailureModes);
   } catch (error) {
     console.error("Error fetching failure modes:", error);
