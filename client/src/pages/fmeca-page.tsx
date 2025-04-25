@@ -32,6 +32,9 @@ interface Component {
 
 interface AssetFmecaRow {
   id: string;
+  tagNumber: string;     // Associated with the asset tag number
+  assetDescription: string; // Associated with the asset description
+  assetFunction: string;  // Associated with the asset function
   component: string;
   failureMode: string;
   cause: string;
@@ -134,6 +137,16 @@ const FmecaPage: React.FC = () => {
     const targetDateEl = document.getElementById('new-target-date') as HTMLInputElement;
     const commentsEl = document.getElementById('new-comments') as HTMLInputElement;
     
+    // Validate required fields
+    if (!assetTagNumber) {
+      toast({
+        title: "Asset Information Required",
+        description: "Please enter the Asset Tag Number before adding components",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     if (!componentEl.value || !failureModeEl.value) {
       toast({
         title: "Input Required",
@@ -143,9 +156,12 @@ const FmecaPage: React.FC = () => {
       return;
     }
     
-    // Create new row
+    // Create new row with asset information
     const newRow: AssetFmecaRow = {
       id: Date.now().toString(),
+      tagNumber: assetTagNumber,
+      assetDescription: assetDescription,
+      assetFunction: assetFunction,
       component: componentEl.value,
       failureMode: failureModeEl.value,
       cause: causeEl.value,
@@ -456,62 +472,91 @@ const FmecaPage: React.FC = () => {
             
             {/* FMECA Table */}
             <div className="overflow-x-auto">
-              <table className="min-w-full border-collapse border border-gray-300">
-                <thead>
-                  <tr className="bg-slate-100">
-                    <th className="border border-gray-300 p-2 text-left">Component</th>
-                    <th className="border border-gray-300 p-2 text-left">Failure Mode</th>
-                    <th className="border border-gray-300 p-2 text-left">Cause</th>
-                    <th className="border border-gray-300 p-2 text-left">Effect</th>
-                    <th className="border border-gray-300 p-2 text-left">Severity</th>
-                    <th className="border border-gray-300 p-2 text-left">Probability</th>
-                    <th className="border border-gray-300 p-2 text-left">Detection</th>
-                    <th className="border border-gray-300 p-2 text-left">RPN</th>
-                    <th className="border border-gray-300 p-2 text-left">Action Required</th>
-                    <th className="border border-gray-300 p-2 text-left">Target Date</th>
-                    <th className="border border-gray-300 p-2 text-left">Comments</th>
-                    <th className="border border-gray-300 p-2 text-center">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {assetRows.map((row) => (
-                    <tr key={row.id}>
-                      <td className="border border-gray-300 p-2">{row.component}</td>
-                      <td className="border border-gray-300 p-2">{row.failureMode}</td>
-                      <td className="border border-gray-300 p-2">{row.cause}</td>
-                      <td className="border border-gray-300 p-2">{row.effect}</td>
-                      <td className="border border-gray-300 p-2">{row.severity}</td>
-                      <td className="border border-gray-300 p-2">{row.probability}</td>
-                      <td className="border border-gray-300 p-2">{row.detection}</td>
-                      <td className="border border-gray-300 p-2">
-                        <span className={`font-bold ${getColorByRpn(row.rpn)}`}>
-                          {row.rpn}
-                        </span>
-                      </td>
-                      <td className="border border-gray-300 p-2">{row.action}</td>
-                      <td className="border border-gray-300 p-2">{row.targetDate}</td>
-                      <td className="border border-gray-300 p-2">{row.comments}</td>
-                      <td className="border border-gray-300 p-2 text-center">
-                        <Button 
-                          variant="destructive" 
-                          size="sm"
-                          onClick={() => handleDeleteAssetRow(row.id)}
-                        >
-                          <Trash className="h-4 w-4" />
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                  
-                  {assetRows.length === 0 && (
-                    <tr>
-                      <td colSpan={12} className="border border-gray-300 p-4 text-center">
-                        No data available. Add a new row to begin your FMECA.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+              {assetRows.length > 0 ? (
+                <div className="space-y-6">
+                  {/* Group rows by tag number */}
+                  {Array.from(new Set(assetRows.map(row => row.tagNumber))).map(tagNumber => {
+                    const assetRowsForTag = assetRows.filter(row => row.tagNumber === tagNumber);
+                    const firstRow = assetRowsForTag[0];
+                    
+                    return (
+                      <div key={tagNumber} className="border rounded-md overflow-hidden">
+                        {/* Asset Information Header */}
+                        <div className="p-4 bg-blue-50 border-b border-blue-100">
+                          <div className="grid grid-cols-3 gap-4">
+                            <div>
+                              <h3 className="font-medium text-blue-800">Tag Number:</h3>
+                              <p className="font-bold">{firstRow.tagNumber}</p>
+                            </div>
+                            <div>
+                              <h3 className="font-medium text-blue-800">Asset Description:</h3>
+                              <p>{firstRow.assetDescription}</p>
+                            </div>
+                            <div>
+                              <h3 className="font-medium text-blue-800">Function:</h3>
+                              <p>{firstRow.assetFunction}</p>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Asset Components Table */}
+                        <table className="min-w-full border-collapse">
+                          <thead>
+                            <tr className="bg-slate-100">
+                              <th className="border border-gray-300 p-2 text-left">Component</th>
+                              <th className="border border-gray-300 p-2 text-left">Failure Mode</th>
+                              <th className="border border-gray-300 p-2 text-left">Cause</th>
+                              <th className="border border-gray-300 p-2 text-left">Effect</th>
+                              <th className="border border-gray-300 p-2 text-left">Severity</th>
+                              <th className="border border-gray-300 p-2 text-left">Probability</th>
+                              <th className="border border-gray-300 p-2 text-left">Detection</th>
+                              <th className="border border-gray-300 p-2 text-left">RPN</th>
+                              <th className="border border-gray-300 p-2 text-left">Action Required</th>
+                              <th className="border border-gray-300 p-2 text-left">Target Date</th>
+                              <th className="border border-gray-300 p-2 text-left">Comments</th>
+                              <th className="border border-gray-300 p-2 text-center">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {assetRowsForTag.map((row) => (
+                              <tr key={row.id}>
+                                <td className="border border-gray-300 p-2">{row.component}</td>
+                                <td className="border border-gray-300 p-2">{row.failureMode}</td>
+                                <td className="border border-gray-300 p-2">{row.cause}</td>
+                                <td className="border border-gray-300 p-2">{row.effect}</td>
+                                <td className="border border-gray-300 p-2">{row.severity}</td>
+                                <td className="border border-gray-300 p-2">{row.probability}</td>
+                                <td className="border border-gray-300 p-2">{row.detection}</td>
+                                <td className="border border-gray-300 p-2">
+                                  <span className={`font-bold ${getColorByRpn(row.rpn)}`}>
+                                    {row.rpn}
+                                  </span>
+                                </td>
+                                <td className="border border-gray-300 p-2">{row.action}</td>
+                                <td className="border border-gray-300 p-2">{row.targetDate}</td>
+                                <td className="border border-gray-300 p-2">{row.comments}</td>
+                                <td className="border border-gray-300 p-2 text-center">
+                                  <Button 
+                                    variant="destructive" 
+                                    size="sm"
+                                    onClick={() => handleDeleteAssetRow(row.id)}
+                                  >
+                                    <Trash className="h-4 w-4" />
+                                  </Button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="border border-gray-300 p-6 text-center rounded">
+                  <p className="text-gray-500">No data available. Add a new row to begin your FMECA.</p>
+                </div>
+              )}
             </div>
             
             {/* Add New Row Form */}
