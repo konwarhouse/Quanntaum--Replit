@@ -106,10 +106,10 @@ const FmecaAnalysis: React.FC<FmecaAnalysisProps> = ({
 
   // Get all components for the selected system
   const { data: components, isLoading: componentsLoading } = useQuery<Component[]>({
-    queryKey: ["/api/components", systemId],
+    queryKey: ["/api/fmeca/components", systemId],
     queryFn: () => {
       if (!systemId) return Promise.resolve([]);
-      return apiRequest("GET", `/api/components?systemId=${systemId}`)
+      return apiRequest("GET", `/api/fmeca/components?systemId=${systemId}`)
         .then(res => res.json());
     },
     enabled: !!systemId
@@ -117,12 +117,12 @@ const FmecaAnalysis: React.FC<FmecaAnalysisProps> = ({
 
   // Get component's details to extract equipment class
   const { data: componentDetails } = useQuery<Component>({
-    queryKey: ["/api/components/details", selectedComponent],
+    queryKey: ["/api/fmeca/components/details", selectedComponent],
     queryFn: async () => {
       if (!selectedComponent) return null;
       
       try {
-        const response = await apiRequest("GET", `/api/components/${selectedComponent}`);
+        const response = await apiRequest("GET", `/api/fmeca/components/${selectedComponent}`);
         if (!response.ok) {
           console.error("Failed to fetch component details");
           return null;

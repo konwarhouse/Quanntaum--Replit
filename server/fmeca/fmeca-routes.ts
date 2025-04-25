@@ -4,6 +4,59 @@ import { pool } from '../db';
 
 const router = express.Router();
 
+// Get all systems
+router.get("/systems", async (req, res) => {
+  try {
+    const result = await pool.query(`SELECT * FROM systems ORDER BY name`);
+    return res.status(200).json(result.rows);
+  } catch (error) {
+    console.error("Error fetching systems:", error);
+    return res.status(500).json({ error: "Failed to fetch systems" });
+  }
+});
+
+// Get components by system ID
+router.get("/components", async (req, res) => {
+  try {
+    const { systemId } = req.query;
+    
+    if (!systemId) {
+      return res.status(400).json({ error: "System ID is required" });
+    }
+    
+    const result = await pool.query(
+      `SELECT * FROM components WHERE system_id = $1 ORDER BY name`,
+      [systemId]
+    );
+    
+    return res.status(200).json(result.rows);
+  } catch (error) {
+    console.error("Error fetching components:", error);
+    return res.status(500).json({ error: "Failed to fetch components" });
+  }
+});
+
+// Get single component
+router.get("/components/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const result = await pool.query(
+      `SELECT * FROM components WHERE id = $1`,
+      [id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Component not found" });
+    }
+    
+    return res.status(200).json(result.rows[0]);
+  } catch (error) {
+    console.error("Error fetching component:", error);
+    return res.status(500).json({ error: "Failed to fetch component" });
+  }
+});
+
 // Get all criticalities
 router.get("/criticalities", async (req, res) => {
   try {
