@@ -821,21 +821,31 @@ const FmecaAnalysis: React.FC<FmecaAnalysisProps> = ({
                           </TableCell>
                           <TableCell>
                             {criticality?.completionDate || criticality?.verifiedBy || criticality?.effectivenessVerification ? (
-                              <div className="space-y-1 text-xs">
+                              <div className="space-y-2 text-sm">
                                 {criticality.completionDate && (
-                                  <div><span className="font-semibold">Completed:</span> {new Date(criticality.completionDate).toLocaleDateString()}</div>
+                                  <div className="flex items-center gap-1">
+                                    <span className="font-semibold whitespace-nowrap">Completed:</span> 
+                                    <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded-sm text-xs">
+                                      {new Date(criticality.completionDate).toLocaleDateString()}
+                                    </span>
+                                  </div>
                                 )}
                                 {criticality.verifiedBy && (
-                                  <div><span className="font-semibold">Verified by:</span> {criticality.verifiedBy}</div>
+                                  <div className="flex items-center gap-1">
+                                    <span className="font-semibold whitespace-nowrap">Verified by:</span> 
+                                    <span className="bg-purple-50 text-purple-700 px-2 py-0.5 rounded-sm text-xs">
+                                      {criticality.verifiedBy}
+                                    </span>
+                                  </div>
                                 )}
                                 {criticality.effectivenessVerification && (
-                                  <div>
-                                    <span className="font-semibold">Status:</span> 
-                                    <Badge variant="outline" className={
-                                      criticality.effectivenessVerification === "Verified" ? "bg-green-100 text-green-800 border-green-300" :
-                                      criticality.effectivenessVerification === "Partially" ? "bg-yellow-100 text-yellow-800 border-yellow-300" :
-                                      criticality.effectivenessVerification === "Not Verified" ? "bg-red-100 text-red-800 border-red-300" :
-                                      "bg-gray-100 text-gray-800 border-gray-300"
+                                  <div className="flex items-center gap-1">
+                                    <span className="font-semibold whitespace-nowrap">Status:</span> 
+                                    <Badge className={
+                                      criticality.effectivenessVerification === "Verified" ? "bg-green-500 hover:bg-green-600" :
+                                      criticality.effectivenessVerification === "Partially" ? "bg-yellow-500 hover:bg-yellow-600" :
+                                      criticality.effectivenessVerification === "Not Verified" ? "bg-red-500 hover:bg-red-600" :
+                                      "bg-gray-500 hover:bg-gray-600"
                                     }>
                                       {criticality.effectivenessVerification}
                                     </Badge>
@@ -843,32 +853,36 @@ const FmecaAnalysis: React.FC<FmecaAnalysisProps> = ({
                                 )}
                               </div>
                             ) : (
-                              "Not Verified"
+                              <Badge variant="outline" className="bg-gray-100">Not Verified</Badge>
                             )}
                           </TableCell>
                           <TableCell>
-                            <div className="flex space-x-2">
+                            <div className="flex space-x-2 justify-center">
                               <Button
                                 variant="outline"
-                                size="icon"
+                                size="sm"
+                                className="h-8 px-2 py-0"
                                 onClick={() => {
                                   setSelectedFailureMode(mode.id);
                                   setOpenDialog(true);
                                 }}
                               >
-                                <Edit className="h-4 w-4" />
+                                <Edit className="h-4 w-4 mr-1" />
+                                <span>Edit</span>
                               </Button>
                               {criticality && (
                                 <Button
                                   variant="destructive"
-                                  size="icon"
+                                  size="sm"
+                                  className="h-8 px-2 py-0"
                                   onClick={() => {
                                     if (window.confirm("Are you sure you want to delete this criticality analysis?")) {
                                       deleteMutation.mutate(criticality.id);
                                     }
                                   }}
                                 >
-                                  <Trash className="h-4 w-4" />
+                                  <Trash className="h-4 w-4 mr-1" />
+                                  <span>Delete</span>
                                 </Button>
                               )}
                             </div>
