@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { 
@@ -130,9 +130,16 @@ const EditRowDialog: React.FC<EditRowDialogProps> = ({
   onSave,
   rowType 
 }) => {
-  const [editedRow, setEditedRow] = useState<any>(rowData);
+  const [editedRow, setEditedRow] = useState<AssetFmecaRow | SystemFmecaRow | null>(null);
   
-  if (!rowData) return null;
+  // Update editedRow whenever rowData changes or dialog opens
+  useEffect(() => {
+    if (rowData) {
+      setEditedRow(JSON.parse(JSON.stringify(rowData)));
+    }
+  }, [rowData, isOpen]);
+  
+  if (!editedRow) return null;
   
   const handleChange = (field: string, value: any) => {
     setEditedRow({
@@ -1333,22 +1340,28 @@ const EnhancedFmecaPage: React.FC = () => {
   };
   
   // Handlers for adding rows
-  const handleAddAssetRow = (newRow: AssetFmecaRow) => {
-    setAssetRows([...assetRows, newRow]);
-    
-    toast({
-      title: "Success",
-      description: "FMECA row added successfully"
-    });
+  const handleAddAssetRow = (newRow: AssetFmecaRow | SystemFmecaRow) => {
+    // Type guard to ensure we're working with AssetFmecaRow
+    if ('tagNumber' in newRow) {
+      setAssetRows([...assetRows, newRow as AssetFmecaRow]);
+      
+      toast({
+        title: "Success",
+        description: "Asset FMECA row added successfully"
+      });
+    }
   };
   
-  const handleAddSystemRow = (newRow: SystemFmecaRow) => {
-    setSystemRows([...systemRows, newRow]);
-    
-    toast({
-      title: "Success",
-      description: "System FMECA row added successfully"
-    });
+  const handleAddSystemRow = (newRow: AssetFmecaRow | SystemFmecaRow) => {
+    // Type guard to ensure we're working with SystemFmecaRow
+    if ('systemName' in newRow) {
+      setSystemRows([...systemRows, newRow as SystemFmecaRow]);
+      
+      toast({
+        title: "Success",
+        description: "System FMECA row added successfully"
+      });
+    }
   };
   
   // Handler for saving FMECA
