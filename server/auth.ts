@@ -2,14 +2,14 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import express, { Request, Response, NextFunction } from "express";
 import session from "express-session";
-import connectPgSimple from "connect-pg-simple";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 import { users, User, InsertUser } from "@shared/schema";
-import { pool } from "./db";
 import { UserRole } from "@shared/auth";
+// Use memory-based session store instead of PostgreSQL
+import memorystore from "memorystore";
 
 // For type augmentation with express-session
 declare module "express-session" {
@@ -59,16 +59,14 @@ export async function comparePasswords(plainPassword: string, hashedPassword: st
   }
 }
 
-// Initialize PostgreSQL session store
-const PgStore = connectPgSimple(session);
+// Initialize memory store session instead of PostgreSQL to avoid connection issues
+const MemStore = memorystore(session);
 
 export function setupAuth(app: express.Express) {
   // Session configuration
   app.use(session({
-    store: new PgStore({
-      pool,
-      tableName: "session", // Default is "session"
-      createTableIfMissing: true,
+    store: new MemStore({
+      checkPeriod: 86400000 // prune expired entries every 24h
     }),
     secret: process.env.SESSION_SECRET || "change-me-in-production",
     resave: false,
