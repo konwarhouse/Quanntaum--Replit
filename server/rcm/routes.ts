@@ -43,6 +43,13 @@ router.post("/rcm-consequences", authenticateUser, rcmController.createRcmConseq
 router.get("/maintenance-tasks", rcmController.getMaintenanceTasks);
 router.post("/maintenance-tasks", authenticateUser, rcmController.createMaintenanceTask);
 
+// RAM Metrics endpoints
+router.get("/ram-metrics", rcmController.getRamMetrics);
+router.get("/ram-metrics/:id", rcmController.getRamMetricById);
+router.post("/ram-metrics", authenticateUser, rcmController.createRamMetric);
+router.put("/ram-metrics/:id", authenticateUser, rcmController.updateRamMetric);
+router.delete("/ram-metrics/:id", authenticateUser, rcmController.deleteRamMetric);
+
 // Analysis endpoints
 router.get("/analysis/fmeca/:systemId", rcmController.fmecaAnalysis);
 router.get("/analysis/rcm/:failureModeId", rcmController.rcmAnalysis);

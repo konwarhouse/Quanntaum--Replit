@@ -80,3 +80,23 @@ export const rcmAnalysis = (req: Request, res: Response) => {
 export const ramAnalysis = (req: Request, res: Response) => {
   res.json({});
 };
+
+export const getRamMetrics = (req: Request, res: Response) => {
+  res.json([]);
+};
+
+export const getRamMetricById = (req: Request, res: Response) => {
+  res.json({});
+};
+
+export const createRamMetric = (req: Request, res: Response) => {
+  res.status(201).json({});
+};
+
+export const updateRamMetric = (req: Request, res: Response) => {
+  res.json({});
+};
+
+export const deleteRamMetric = (req: Request, res: Response) => {
+  res.json({ success: true });
+};

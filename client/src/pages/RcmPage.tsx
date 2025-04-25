@@ -15,6 +15,8 @@ import { Loader2, AlertTriangle } from 'lucide-react';
 import SystemManager from '@/components/rcm/SystemManager';
 import ComponentManager from '@/components/rcm/ComponentManager';
 import { FmecaAnalysis } from '@/components/rcm/FmecaAnalysis';
+import { RcmDecisionLogic } from '@/components/rcm/RcmDecisionLogic';
+import { RamAnalysis } from '@/components/rcm/RamAnalysis';
 import { Component } from '@shared/rcm-schema';
 
 // Component to display components for a selected system
@@ -300,35 +302,11 @@ const RcmPage: React.FC = () => {
                 </TabsContent>
                 
                 <TabsContent value="rcm">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>RCM Decision Logic</CardTitle>
-                      <CardDescription>
-                        Determine maintenance strategies based on failure consequences
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-muted-foreground mb-4">
-                        This module is coming soon. It will include SAE JA1011 compliant RCM decision logic.
-                      </p>
-                    </CardContent>
-                  </Card>
+                  <RcmDecisionLogic systemId={selectedSystemId} />
                 </TabsContent>
                 
                 <TabsContent value="ram">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>RAM Analysis</CardTitle>
-                      <CardDescription>
-                        Reliability, Availability, and Maintainability analysis
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-muted-foreground mb-4">
-                        This module is coming soon. It will include system reliability modeling and availability calculations.
-                      </p>
-                    </CardContent>
-                  </Card>
+                  <RamAnalysis systemId={selectedSystemId} />
                 </TabsContent>
               </Tabs>
               
