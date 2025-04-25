@@ -148,6 +148,7 @@ export const FmecaAnalysis: React.FC<FmecaAnalysisProps> = ({
   const form = useForm<FmecaFormValues>({
     resolver: zodResolver(fmecaFormSchema),
     defaultValues: {
+      failureModeId: 0, // Initialize with a default value
       severity: 5,
       occurrence: 5,
       detection: 5,
@@ -353,7 +354,7 @@ export const FmecaAnalysis: React.FC<FmecaAnalysisProps> = ({
                           <FormLabel>Failure Mode</FormLabel>
                           <Select
                             onValueChange={(value) => field.onChange(Number(value))}
-                            defaultValue={field.value?.toString()}
+                            value={field.value > 0 ? field.value.toString() : undefined}
                           >
                             <FormControl>
                               <SelectTrigger>
