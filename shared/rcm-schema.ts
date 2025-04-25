@@ -365,8 +365,8 @@ export const insertFailureEffectSchema = createInsertSchema(failureEffects, {
 }).omit({ id: true, createdAt: true, updatedAt: true });
 
 export const insertFailureCriticalitySchema = createInsertSchema(failureCriticality, {
-  failureModeId: z.number().int().refine(value => value > 0, {
-    message: "Please select a failure mode"
+  failureModeId: z.number().int().refine(value => value >= 0, {
+    message: "Please select a valid failure mode"
   }),
   severity: z.number().int().min(1).max(10),
   occurrence: z.number().int().min(1).max(10),

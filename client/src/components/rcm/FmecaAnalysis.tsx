@@ -380,8 +380,11 @@ export const FmecaAnalysis: React.FC<FmecaAnalysisProps> = ({
                         <FormItem>
                           <FormLabel>Failure Mode</FormLabel>
                           <Select
-                            onValueChange={(value) => field.onChange(Number(value))}
-                            value={field.value > 0 ? field.value.toString() : undefined}
+                            onValueChange={(value) => {
+                              console.log(`Selected failure mode value: ${value}`);
+                              field.onChange(Number(value));
+                            }}
+                            value={field.value ? field.value.toString() : undefined}
                           >
                             <FormControl>
                               <SelectTrigger>
