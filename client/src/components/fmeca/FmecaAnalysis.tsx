@@ -350,6 +350,21 @@ const FmecaAnalysis: React.FC<FmecaAnalysisProps> = ({
               <li>Their causes and effects</li>
               <li>Risk Priority Number (RPN) = Severity × Occurrence × Detection</li>
             </ul>
+            <div className="mt-3 text-sm">
+              <p className="font-medium mb-1">RPN Risk Levels:</p>
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 inline-block bg-red-500 rounded-full"></span>
+                <span>High Risk (RPN &ge; 200)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 inline-block bg-yellow-500 rounded-full"></span>
+                <span>Medium Risk (125 &le; RPN &lt; 200)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 inline-block bg-green-500 rounded-full"></span>
+                <span>Low Risk (RPN &lt; 125)</span>
+              </div>
+            </div>
           </CardContent>
         </Card>
         
@@ -519,10 +534,12 @@ const FmecaAnalysis: React.FC<FmecaAnalysisProps> = ({
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="Safety">Safety</SelectItem>
-                              <SelectItem value="Operational">Operational</SelectItem>
-                              <SelectItem value="Environmental">Environmental</SelectItem>
-                              <SelectItem value="Economic">Economic</SelectItem>
+                              <SelectItem value="Safety">Safety Hazard</SelectItem>
+                              <SelectItem value="Operational">Operational Impact</SelectItem>
+                              <SelectItem value="Environmental">Environmental Risk</SelectItem>
+                              <SelectItem value="Economic">Economic Loss</SelectItem>
+                              <SelectItem value="Process">Process Disruption</SelectItem>
+                              <SelectItem value="Reliability">Reliability Reduction</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />

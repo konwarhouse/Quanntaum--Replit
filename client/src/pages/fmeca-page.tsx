@@ -31,8 +31,29 @@ const FmecaPage: React.FC = () => {
       <h1 className="text-3xl font-bold tracking-tight">FMECA Analysis</h1>
       <p className="text-muted-foreground">
         Failure Mode, Effects, and Criticality Analysis is a structured approach to identifying potential
-        failure modes in a system and their effects.
+        failure modes in a system and their effects. This analysis can be performed at both the system level
+        and component/asset level.
       </p>
+      
+      <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-4 mb-6">
+        <h2 className="text-lg font-semibold mb-2">Two Levels of FMECA Analysis:</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="p-3 border rounded-md">
+            <h3 className="font-medium text-md">System-Level FMECA</h3>
+            <p className="text-sm text-muted-foreground">
+              Focuses on subsystems like Burner, Gas System, Automation, Electrical.
+              Provides broader operational risk analysis.
+            </p>
+          </div>
+          <div className="p-3 border rounded-md">
+            <h3 className="font-medium text-md">Asset-Level FMECA</h3>
+            <p className="text-sm text-muted-foreground">
+              Detailed component analysis (Mechanical Seal, Bearing, Shaft, Motor).
+              Allows grouping similar assets with the same application or service.
+            </p>
+          </div>
+        </div>
+      </div>
       
       {systems && systems.length > 0 && (
         <FmecaAnalysis systemId={systems[0].id} />
