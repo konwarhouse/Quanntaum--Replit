@@ -45,7 +45,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 // Import types from types.ts
-import { Component, FailureMode, FailureCriticality } from "./types";
+import { Component, FailureMode, FailureCriticality as ImportedFailureCriticality } from "./types";
+
+// Use a type alias to avoid conflicts
+type FailureCriticality = ImportedFailureCriticality;
 
 interface FunctionalFailure {
   id: number;
@@ -65,6 +68,9 @@ const fmecaFormSchema = z.object({
   detection: z.number().min(1).max(10),
   consequenceType: z.string().optional(),
 });
+
+// Define local form values type to avoid conflicts with imported type
+type FmecaFormValues = z.infer<typeof fmecaFormSchema>;
 
 interface FmecaAnalysisProps {
   systemId?: number;
