@@ -182,7 +182,7 @@ const EditRowDialog: React.FC<EditRowDialogProps> = ({
                 </Label>
                 <Input
                   id="component"
-                  value={editedRow.component}
+                  value={'component' in editedRow ? editedRow.component : ''}
                   onChange={(e) => handleChange('component', e.target.value)}
                   className="mt-1"
                 />
@@ -196,7 +196,7 @@ const EditRowDialog: React.FC<EditRowDialogProps> = ({
                 </Label>
                 <Input
                   id="subsystem"
-                  value={editedRow.subsystem}
+                  value={'subsystem' in editedRow ? editedRow.subsystem : ''}
                   onChange={(e) => handleChange('subsystem', e.target.value)}
                   className="mt-1"
                 />
@@ -604,6 +604,7 @@ const FmecaManager: React.FC<FmecaManagerProps> = ({
   
   const handleEditRow = (row: AssetFmecaRow | SystemFmecaRow) => {
     // Create a deep copy of the row to prevent reference issues
+    console.log('Editing row:', row);
     setEditingRow(JSON.parse(JSON.stringify(row)));
     setIsEditDialogOpen(true);
   };
@@ -1306,7 +1307,7 @@ const AddRowDialog: React.FC<AddRowDialogProps> = ({
 };
 
 // Main FMECA Page Component
-const EnhancedFmecaPage: React.FC = () => {
+const EnhancedFmecaPage = () => {
   const [selectedTab, setSelectedTab] = useState("asset-level");
   const { toast } = useToast();
   
