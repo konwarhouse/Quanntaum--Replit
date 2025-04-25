@@ -8,6 +8,7 @@ import ChatPage from "@/pages/ChatPage";
 import ReliabilityPage from "@/pages/ReliabilityPage";
 import RcmPage from "@/pages/RcmPage";
 import FmecaPage from "@/pages/fmeca-page";
+import EnhancedFmecaPage from "@/pages/enhanced-fmeca-page";
 import AuthPage from "@/pages/auth-page";
 import UserManagementPage from "@/pages/UserManagementPage";
 import { ProtectedRoute } from "@/components/auth/protected-route";
@@ -55,6 +56,14 @@ function Router() {
         <Layout>
           <ProtectedRoute>
             <FmecaPage />
+          </ProtectedRoute>
+        </Layout>
+      </Route>
+      
+      <Route path="/fmeca-enhanced">
+        <Layout>
+          <ProtectedRoute>
+            <EnhancedFmecaPage />
           </ProtectedRoute>
         </Layout>
       </Route>

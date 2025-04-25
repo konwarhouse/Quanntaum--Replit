@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { UserProfileMenu } from "./auth/user-profile-menu";
 import { UserRole } from "@shared/auth";
 import { useAuth } from "@/hooks/use-auth";
-import { MessageSquare, BarChart2, Home, Users, Settings, FileDigit, Activity } from "lucide-react";
+import { MessageSquare, BarChart2, Home, Users, Settings, FileDigit, Activity, ClipboardCheck } from "lucide-react";
 
 interface LayoutProps {
   children: ReactNode;
@@ -35,6 +35,13 @@ export default function Layout({ children }: LayoutProps) {
       href: '/fmeca',
       icon: FileDigit,
       current: location === '/fmeca',
+      roles: [UserRole.ADMIN, UserRole.ANALYST, UserRole.TECHNICIAN],
+    },
+    {
+      name: 'FMECA Enhanced',
+      href: '/fmeca-enhanced',
+      icon: ClipboardCheck,
+      current: location === '/fmeca-enhanced',
       roles: [UserRole.ADMIN, UserRole.ANALYST, UserRole.TECHNICIAN],
     },
     {
