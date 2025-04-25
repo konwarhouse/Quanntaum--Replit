@@ -210,6 +210,11 @@ const FmecaPage: React.FC = () => {
       return;
     }
 
+    // Get verification tracking fields
+    const completionDateEl = document.getElementById('new-completion-date') as HTMLInputElement;
+    const verifiedByEl = document.getElementById('new-verified-by') as HTMLInputElement;
+    const effectivenessSelect = document.querySelector('select[name="effectiveness"]') as HTMLSelectElement;
+    
     // Create new row with asset information
     const newRow: AssetFmecaRow = {
       id: Date.now().toString(),
@@ -230,6 +235,9 @@ const FmecaPage: React.FC = () => {
       action: actionEl.value,
       responsibility: responsibilityEl.value,
       targetDate: targetDateEl.value,
+      completionDate: completionDateEl?.value || '',
+      verifiedBy: verifiedByEl?.value || '',
+      effectivenessVerified: effectivenessSelect?.value as 'yes' | 'no' | 'partial' | '',
       comments: commentsEl.value
     };
     
@@ -493,6 +501,11 @@ const FmecaPage: React.FC = () => {
       return;
     }
 
+    // Get verification tracking fields
+    const completionDateEl = document.getElementById('new-system-completion-date') as HTMLInputElement;
+    const verifiedByEl = document.getElementById('new-system-verified-by') as HTMLInputElement;
+    const effectivenessSelect = document.querySelector('select[name="system-effectiveness"]') as HTMLSelectElement;
+    
     // Create new row with system information
     const newRow: SystemFmecaRow = {
       id: Date.now().toString(),
@@ -513,6 +526,9 @@ const FmecaPage: React.FC = () => {
       action: actionEl.value,
       responsibility: responsibilityEl.value,
       targetDate: targetDateEl.value,
+      completionDate: completionDateEl?.value || '',
+      verifiedBy: verifiedByEl?.value || '',
+      effectivenessVerified: effectivenessSelect?.value as 'yes' | 'no' | 'partial' | '',
       comments: commentsEl.value
     };
     
