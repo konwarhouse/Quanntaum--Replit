@@ -1399,6 +1399,31 @@ const EnhancedFmecaPage: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {/* RPN Guide Section */}
+              <div className="mb-6 rounded-md bg-blue-50 border border-blue-100">
+                <div className="p-4">
+                  <h3 className="text-md font-semibold text-blue-800 mb-2">RPN (Risk Priority Number) Guide</h3>
+                  <p className="text-sm text-blue-700 mb-2">RPN = Severity × Probability × Detection (Range: 1-1000)</p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+                    <div className="bg-red-100 rounded-md p-3">
+                      <h4 className="text-sm font-semibold text-red-800">High Risk (RPN ≥ 200)</h4>
+                      <p className="text-xs text-red-700">Immediate action required. Critical priority for risk mitigation.</p>
+                    </div>
+                    
+                    <div className="bg-amber-100 rounded-md p-3">
+                      <h4 className="text-sm font-semibold text-amber-800">Medium Risk (125-200)</h4>
+                      <p className="text-xs text-amber-700">Action needed soon. Secondary priority for risk mitigation.</p>
+                    </div>
+                    
+                    <div className="bg-green-100 rounded-md p-3">
+                      <h4 className="text-sm font-semibold text-green-800">Low Risk (under 125)</h4>
+                      <p className="text-xs text-green-700">Monitor and address during routine maintenance.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
               {/* Asset Information Section */}
               <div className="space-y-4 mb-6">
                 <h3 className="text-lg font-medium">Asset Information</h3>
@@ -1521,6 +1546,31 @@ const EnhancedFmecaPage: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {/* RPN Guide Section */}
+              <div className="mb-6 rounded-md bg-blue-50 border border-blue-100">
+                <div className="p-4">
+                  <h3 className="text-md font-semibold text-blue-800 mb-2">RPN (Risk Priority Number) Guide</h3>
+                  <p className="text-sm text-blue-700 mb-2">RPN = Severity × Probability × Detection (Range: 1-1000)</p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+                    <div className="bg-red-100 rounded-md p-3">
+                      <h4 className="text-sm font-semibold text-red-800">High Risk (RPN ≥ 200)</h4>
+                      <p className="text-xs text-red-700">Immediate action required. Critical priority for risk mitigation.</p>
+                    </div>
+                    
+                    <div className="bg-amber-100 rounded-md p-3">
+                      <h4 className="text-sm font-semibold text-amber-800">Medium Risk (125-200)</h4>
+                      <p className="text-xs text-amber-700">Action needed soon. Secondary priority for risk mitigation.</p>
+                    </div>
+                    
+                    <div className="bg-green-100 rounded-md p-3">
+                      <h4 className="text-sm font-semibold text-green-800">Low Risk (under 125)</h4>
+                      <p className="text-xs text-green-700">Monitor and address during routine maintenance.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* System Information Section */}
               <div className="space-y-4 mb-6">
                 <h3 className="text-lg font-medium">System Information</h3>
