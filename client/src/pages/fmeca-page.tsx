@@ -40,8 +40,11 @@ interface AssetFmecaRow {
   cause: string;
   effect: string;
   severity: number;
+  severityJustification: string; // Justification for severity rating
   probability: number;
+  probabilityJustification: string; // Justification for probability rating
   detection: number;
+  detectionJustification: string; // Justification for detection rating
   rpn: number;
   action: string;
   targetDate: string;
@@ -58,8 +61,11 @@ interface SystemFmecaRow {
   cause: string;
   effect: string;
   severity: number;
+  severityJustification: string; // Justification for severity rating
   probability: number;
+  probabilityJustification: string; // Justification for probability rating
   detection: number;
+  detectionJustification: string; // Justification for detection rating
   rpn: number;
   action: string;
   targetDate: string;
@@ -434,6 +440,28 @@ const FmecaPage: React.FC = () => {
           <div className="mt-6 p-6 border rounded-lg bg-white">
             <h2 className="text-xl font-bold mb-4">Asset-Level FMECA Sheet</h2>
             
+            {/* RPN Guide and Matrix */}
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded">
+              <h3 className="font-semibold text-blue-800">RPN (Risk Priority Number) Guide</h3>
+              <p className="text-sm text-blue-700 mt-1">
+                RPN = Severity × Probability × Detection (Range: 1-1000)
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
+                <div className="p-2 rounded bg-red-100 border border-red-200">
+                  <span className="font-bold text-red-700">High Risk (RPN ≥ 200)</span>
+                  <p className="text-xs text-red-600 mt-1">Immediate action required. Critical priority for risk mitigation.</p>
+                </div>
+                <div className="p-2 rounded bg-amber-100 border border-amber-200">
+                  <span className="font-bold text-amber-700">Medium Risk (125-200)</span>
+                  <p className="text-xs text-amber-600 mt-1">Action needed soon. Secondary priority for risk mitigation.</p>
+                </div>
+                <div className="p-2 rounded bg-green-100 border border-green-200">
+                  <span className="font-bold text-green-700">Low Risk (under 125)</span>
+                  <p className="text-xs text-green-600 mt-1">Monitor and address during routine maintenance.</p>
+                </div>
+              </div>
+            </div>
+            
             <div className="mb-6 p-4 bg-amber-50 border-l-4 border-amber-500 rounded">
               <h3 className="font-semibold text-amber-800">Example Asset FMECA</h3>
               <p className="text-sm text-amber-700 mt-1">
@@ -451,7 +479,7 @@ const FmecaPage: React.FC = () => {
                 </div>
               </div>
               <div className="mt-2 text-sm text-amber-700">
-                <span className="font-medium">Example Components:</span> Mechanical Seal (RPN 144, High Risk), Bearing (RPN 140, Medium Risk), Shaft (RPN 150, High Risk)
+                <span className="font-medium">Example Components:</span> Mechanical Seal (RPN 144, Medium Risk), Bearing (RPN 140, Medium Risk), Shaft (RPN 150, Medium Risk)
               </div>
             </div>
             
@@ -527,6 +555,7 @@ const FmecaPage: React.FC = () => {
                               <th className="border border-gray-300 p-2 text-left">Probability</th>
                               <th className="border border-gray-300 p-2 text-left">Detection</th>
                               <th className="border border-gray-300 p-2 text-left">RPN</th>
+                              <th className="border border-gray-300 p-2 text-left">Risk Level</th>
                               <th className="border border-gray-300 p-2 text-left">Action Required</th>
                               <th className="border border-gray-300 p-2 text-left">Target Date</th>
                               <th className="border border-gray-300 p-2 text-left">Comments</th>
@@ -547,6 +576,11 @@ const FmecaPage: React.FC = () => {
                                   <span className={`font-bold ${getColorByRpn(row.rpn)}`}>
                                     {row.rpn}
                                   </span>
+                                </td>
+                                <td className="border border-gray-300 p-2">
+                                  <Badge className={getColorClassByRpn(row.rpn)}>
+                                    {getRiskLevelByRpn(row.rpn)}
+                                  </Badge>
                                 </td>
                                 <td className="border border-gray-300 p-2">{row.action}</td>
                                 <td className="border border-gray-300 p-2">{row.targetDate}</td>
@@ -755,6 +789,28 @@ const FmecaPage: React.FC = () => {
           <div className="mt-6 p-6 border rounded-lg bg-white">
             <h2 className="text-xl font-bold mb-4">System-Level FMECA Sheet</h2>
             
+            {/* RPN Guide and Matrix */}
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded">
+              <h3 className="font-semibold text-blue-800">RPN (Risk Priority Number) Guide</h3>
+              <p className="text-sm text-blue-700 mt-1">
+                RPN = Severity × Probability × Detection (Range: 1-1000)
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
+                <div className="p-2 rounded bg-red-100 border border-red-200">
+                  <span className="font-bold text-red-700">High Risk (RPN ≥ 200)</span>
+                  <p className="text-xs text-red-600 mt-1">Immediate action required. Critical priority for risk mitigation.</p>
+                </div>
+                <div className="p-2 rounded bg-amber-100 border border-amber-200">
+                  <span className="font-bold text-amber-700">Medium Risk (125-200)</span>
+                  <p className="text-xs text-amber-600 mt-1">Action needed soon. Secondary priority for risk mitigation.</p>
+                </div>
+                <div className="p-2 rounded bg-green-100 border border-green-200">
+                  <span className="font-bold text-green-700">Low Risk (under 125)</span>
+                  <p className="text-xs text-green-600 mt-1">Monitor and address during routine maintenance.</p>
+                </div>
+              </div>
+            </div>
+            
             <div className="mb-6 p-4 bg-amber-50 border-l-4 border-amber-500 rounded">
               <h3 className="font-semibold text-amber-800">Example System FMECA</h3>
               <p className="text-sm text-amber-700 mt-1">
@@ -772,7 +828,7 @@ const FmecaPage: React.FC = () => {
                 </div>
               </div>
               <div className="mt-2 text-sm text-amber-700">
-                <span className="font-medium">Example Subsystems:</span> Burner (RPN 108, Medium Risk), Gas System (RPN 150, High Risk), Automation & Control (RPN 160, High Risk)
+                <span className="font-medium">Example Subsystems:</span> Burner (RPN 108, Low Risk), Gas System (RPN 150, Medium Risk), Automation & Control (RPN 160, Medium Risk)
               </div>
             </div>
             
@@ -844,6 +900,7 @@ const FmecaPage: React.FC = () => {
                               <th className="border border-gray-300 p-2 text-left">Probability</th>
                               <th className="border border-gray-300 p-2 text-left">Detection</th>
                               <th className="border border-gray-300 p-2 text-left">RPN</th>
+                              <th className="border border-gray-300 p-2 text-left">Risk Level</th>
                               <th className="border border-gray-300 p-2 text-left">Action Required</th>
                               <th className="border border-gray-300 p-2 text-left">Target Date</th>
                               <th className="border border-gray-300 p-2 text-left">Comments</th>
@@ -864,6 +921,11 @@ const FmecaPage: React.FC = () => {
                                   <span className={`font-bold ${getColorByRpn(row.rpn)}`}>
                                     {row.rpn}
                                   </span>
+                                </td>
+                                <td className="border border-gray-300 p-2">
+                                  <Badge className={getColorClassByRpn(row.rpn)}>
+                                    {getRiskLevelByRpn(row.rpn)}
+                                  </Badge>
                                 </td>
                                 <td className="border border-gray-300 p-2">{row.action}</td>
                                 <td className="border border-gray-300 p-2">{row.targetDate}</td>
