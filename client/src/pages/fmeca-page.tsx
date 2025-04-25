@@ -1458,7 +1458,11 @@ const FmecaPage: React.FC = () => {
                               <th className="border border-gray-300 p-2 text-left">RPN</th>
                               <th className="border border-gray-300 p-2 text-left">Risk Level</th>
                               <th className="border border-gray-300 p-2 text-left">Action Required</th>
+                              <th className="border border-gray-300 p-2 text-left">Responsibility</th>
                               <th className="border border-gray-300 p-2 text-left">Target Date</th>
+                              <th className="border border-gray-300 p-2 text-left bg-green-50">Completion Date</th>
+                              <th className="border border-gray-300 p-2 text-left bg-green-50">Verified By</th>
+                              <th className="border border-gray-300 p-2 text-left bg-green-50">Effectiveness</th>
                               <th className="border border-gray-300 p-2 text-left">Comments</th>
                               <th className="border border-gray-300 p-2 text-center">Actions</th>
                             </tr>
