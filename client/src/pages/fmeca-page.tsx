@@ -1488,7 +1488,15 @@ const FmecaPage: React.FC = () => {
                                   </Badge>
                                 </td>
                                 <td className="border border-gray-300 p-2">{row.action}</td>
+                                <td className="border border-gray-300 p-2">{row.responsibility}</td>
                                 <td className="border border-gray-300 p-2">{row.targetDate}</td>
+                                <td className="border border-gray-300 p-2 bg-green-50">{row.completionDate || "Not completed"}</td>
+                                <td className="border border-gray-300 p-2 bg-green-50">{row.verifiedBy || "Not verified"}</td>
+                                <td className="border border-gray-300 p-2 bg-green-50">
+                                  {row.effectivenessVerified === 'yes' ? "Yes" : 
+                                   row.effectivenessVerified === 'no' ? "No" : 
+                                   row.effectivenessVerified === 'partial' ? "Partial" : "Not verified"}
+                                </td>
                                 <td className="border border-gray-300 p-2">{row.comments}</td>
                                 <td className="border border-gray-300 p-2 text-center">
                                   <div className="flex gap-2 justify-center">
