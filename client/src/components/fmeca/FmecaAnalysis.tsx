@@ -66,11 +66,18 @@ interface FailureCriticality {
   id: number;
   failureModeId: number;
   severity: number;
+  severityJustification?: string;
   occurrence: number;
+  occurrenceJustification?: string;
   detection: number;
+  detectionJustification?: string;
   rpn: number;
   criticalityIndex?: string;
   consequenceType?: string;
+  responsibility?: string;
+  completionDate?: string;
+  verifiedBy?: string;
+  effectivenessVerification?: string;
 }
 
 // Form schema for FMECA
@@ -81,9 +88,16 @@ const fmecaFormSchema = z.object({
     message: "Please select a valid failure mode"
   }),
   severity: z.number().min(1).max(10),
+  severityJustification: z.string().min(1, "Severity justification is required"),
   occurrence: z.number().min(1).max(10),
+  occurrenceJustification: z.string().min(1, "Occurrence justification is required"),
   detection: z.number().min(1).max(10),
+  detectionJustification: z.string().min(1, "Detection justification is required"),
   consequenceType: z.string().optional(),
+  responsibility: z.string().optional(),
+  completionDate: z.string().optional(),
+  verifiedBy: z.string().optional(),
+  effectivenessVerification: z.string().optional(),
 });
 
 // Define form values type
@@ -197,9 +211,16 @@ const FmecaAnalysis: React.FC<FmecaAnalysisProps> = ({
     defaultValues: {
       failureModeId: 0,
       severity: 5,
+      severityJustification: '',
       occurrence: 5,
+      occurrenceJustification: '',
       detection: 5,
+      detectionJustification: '',
       consequenceType: "Operational",
+      responsibility: '',
+      completionDate: '',
+      verifiedBy: '',
+      effectivenessVerification: '',
     },
   });
 
@@ -215,17 +236,31 @@ const FmecaAnalysis: React.FC<FmecaAnalysisProps> = ({
           form.reset({
             failureModeId: failureMode.id,
             severity: existingCriticality.severity,
+            severityJustification: existingCriticality.severityJustification || '',
             occurrence: existingCriticality.occurrence,
+            occurrenceJustification: existingCriticality.occurrenceJustification || '',
             detection: existingCriticality.detection,
-            consequenceType: existingCriticality.consequenceType,
+            detectionJustification: existingCriticality.detectionJustification || '',
+            consequenceType: existingCriticality.consequenceType || 'Operational',
+            responsibility: existingCriticality.responsibility || '',
+            completionDate: existingCriticality.completionDate || '',
+            verifiedBy: existingCriticality.verifiedBy || '',
+            effectivenessVerification: existingCriticality.effectivenessVerification || '',
           });
         } else {
           form.reset({
             failureModeId: failureMode.id,
             severity: 5,
+            severityJustification: '',
             occurrence: 5,
+            occurrenceJustification: '',
             detection: 5,
+            detectionJustification: '',
             consequenceType: "Operational",
+            responsibility: '',
+            completionDate: '',
+            verifiedBy: '',
+            effectivenessVerification: '',
           });
         }
       }
@@ -233,9 +268,16 @@ const FmecaAnalysis: React.FC<FmecaAnalysisProps> = ({
       form.reset({
         failureModeId: 0,
         severity: 5,
+        severityJustification: '',
         occurrence: 5,
+        occurrenceJustification: '',
         detection: 5,
+        detectionJustification: '',
         consequenceType: "Operational",
+        responsibility: '',
+        completionDate: '',
+        verifiedBy: '',
+        effectivenessVerification: '',
       });
     }
   }, [openDialog, selectedFailureMode, failureModes, criticalities, form]);
@@ -520,32 +562,182 @@ const FmecaAnalysis: React.FC<FmecaAnalysisProps> = ({
                         )}
                       />
                     </div>
-                    <FormField
-                      control={form.control}
-                      name="consequenceType"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Consequence Type</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            value={field.value || "Operational"}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Safety">Safety Hazard</SelectItem>
-                              <SelectItem value="Operational">Operational Impact</SelectItem>
-                              <SelectItem value="Environmental">Environmental Risk</SelectItem>
-                              <SelectItem value="Economic">Economic Loss</SelectItem>
-                              <SelectItem value="Process">Process Disruption</SelectItem>
-                              <SelectItem value="Reliability">Reliability Reduction</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+
+                    {/* Justification Fields */}
+                    <div className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="severityJustification"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Severity Justification</FormLabel>
+                            <FormControl>
+                              <textarea
+                                className="w-full min-h-[80px] px-3 py-2 text-sm rounded-md border border-input bg-background ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                placeholder="Explain the reasoning behind your severity rating"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="occurrenceJustification"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Occurrence Justification</FormLabel>
+                            <FormControl>
+                              <textarea
+                                className="w-full min-h-[80px] px-3 py-2 text-sm rounded-md border border-input bg-background ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                placeholder="Explain the reasoning behind your occurrence rating"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="detectionJustification"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Detection Justification</FormLabel>
+                            <FormControl>
+                              <textarea
+                                className="w-full min-h-[80px] px-3 py-2 text-sm rounded-md border border-input bg-background ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                placeholder="Explain the reasoning behind your detection rating"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    {/* Action and Verification Fields */}
+                    <div className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="consequenceType"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Consequence Type</FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              value={field.value || "Operational"}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Safety">Safety Hazard</SelectItem>
+                                <SelectItem value="Operational">Operational Impact</SelectItem>
+                                <SelectItem value="Environmental">Environmental Risk</SelectItem>
+                                <SelectItem value="Economic">Economic Loss</SelectItem>
+                                <SelectItem value="Process">Process Disruption</SelectItem>
+                                <SelectItem value="Reliability">Reliability Reduction</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="responsibility"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Responsible Person/Team</FormLabel>
+                            <FormControl>
+                              <input
+                                className="w-full px-3 py-2 text-sm rounded-md border border-input bg-background ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                placeholder="Who is responsible for this action"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
+                    {/* Verification Fields */}
+                    <div className="space-y-4 border p-4 rounded-md bg-muted/10">
+                      <h4 className="font-medium text-sm text-muted-foreground">Verification Information</h4>
+                      
+                      <FormField
+                        control={form.control}
+                        name="completionDate"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Completion Date</FormLabel>
+                            <FormControl>
+                              <input 
+                                type="date"
+                                className="w-full px-3 py-2 text-sm rounded-md border border-input bg-background ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              When was this action completed
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="verifiedBy"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Verified By</FormLabel>
+                            <FormControl>
+                              <input
+                                className="w-full px-3 py-2 text-sm rounded-md border border-input bg-background ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                placeholder="Who verified this action was effective"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="effectivenessVerification"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Effectiveness Verification</FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              value={field.value || ""}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select verification status" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Verified">Verified ✓</SelectItem>
+                                <SelectItem value="Partially">Partially Verified</SelectItem>
+                                <SelectItem value="Not Verified">Not Verified</SelectItem>
+                                <SelectItem value="Not Required">Not Required</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormDescription>
+                              Status of verification for this action
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                     <div className="flex justify-end space-x-2 pt-4">
                       <Button 
                         type="button" 
@@ -577,6 +769,8 @@ const FmecaAnalysis: React.FC<FmecaAnalysisProps> = ({
                   <TableHead>Detection</TableHead>
                   <TableHead>RPN</TableHead>
                   <TableHead>Criticality</TableHead>
+                  <TableHead>Responsibility</TableHead>
+                  <TableHead>Verification</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
