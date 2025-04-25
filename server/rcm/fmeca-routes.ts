@@ -41,11 +41,36 @@ router.get("/failure-modes", async (req, res) => {
       return res.status(400).json({ error: "Component ID is required" });
     }
 
-    const componentFailureModes = await db.query.failureModes.findMany({
-      where: eq(failureModes.componentId, Number(componentId)),
+    // First, get the component to find its system
+    const component = await db.query.components.findFirst({
+      where: eq(components.id, Number(componentId)),
+      with: {
+        system: true
+      }
     });
 
-    return res.status(200).json(componentFailureModes);
+    if (!component) {
+      return res.status(404).json({ error: "Component not found" });
+    }
+
+    // Get the component's related asset to determine equipment class
+    const asset = await db.query.assets.findFirst({
+      where: eq(assets.name, component.name)
+    });
+
+    // If no specific asset found, return empty array
+    if (!asset || !asset.equipmentClass) {
+      console.log("No asset or equipment class found for component:", component.name);
+      return res.status(200).json([]);
+    }
+
+    // Get all failure modes for this equipment class
+    const equipmentFailureModes = await db.query.failureModes.findMany({
+      where: eq(failureModes.equipmentClass, asset.equipmentClass),
+    });
+
+    console.log(`Found ${equipmentFailureModes.length} failure modes for equipment class ${asset.equipmentClass}`);
+    return res.status(200).json(equipmentFailureModes);
   } catch (error) {
     console.error("Error fetching failure modes:", error);
     return res.status(500).json({ error: "Failed to fetch failure modes" });
@@ -61,17 +86,40 @@ router.get("/criticalities", async (req, res) => {
       return res.status(400).json({ error: "Component ID is required" });
     }
 
-    // Get failure modes for this component
-    const componentFailureModes = await db.query.failureModes.findMany({
-      where: eq(failureModes.componentId, Number(componentId)),
+    // First, get the component to find its system
+    const component = await db.query.components.findFirst({
+      where: eq(components.id, Number(componentId)),
+      with: {
+        system: true
+      }
+    });
+
+    if (!component) {
+      return res.status(404).json({ error: "Component not found" });
+    }
+
+    // Get the component's related asset to determine equipment class
+    const asset = await db.query.assets.findFirst({
+      where: eq(assets.name, component.name)
+    });
+
+    // If no specific asset found, return empty array
+    if (!asset || !asset.equipmentClass) {
+      console.log("No asset or equipment class found for component:", component.name);
+      return res.status(200).json([]);
+    }
+
+    // Get all failure modes for this equipment class
+    const equipmentFailureModes = await db.query.failureModes.findMany({
+      where: eq(failureModes.equipmentClass, asset.equipmentClass),
     });
     
-    if (componentFailureModes.length === 0) {
+    if (equipmentFailureModes.length === 0) {
       return res.status(200).json([]);
     }
 
     // Get all failure mode IDs
-    const failureModeIds = componentFailureModes.map(mode => mode.id);
+    const failureModeIds = equipmentFailureModes.map(mode => mode.id);
     
     // Get criticalities for these failure modes
     // Use raw SQL query as a temporary workaround
@@ -81,6 +129,7 @@ router.get("/criticalities", async (req, res) => {
     );
     const criticalities = result.rows;
 
+    console.log(`Found ${criticalities.length} criticalities for equipment class ${asset.equipmentClass}`);
     return res.status(200).json(criticalities);
   } catch (error) {
     console.error("Error fetching criticalities:", error);
