@@ -87,6 +87,8 @@ interface FunctionalFailure {
 const fmecaFormSchema = z.object({
   failureModeId: z.number({
     required_error: "Please select a failure mode",
+  }).refine(value => value >= 0, {
+    message: "Please select a valid failure mode"
   }),
   severity: z.number().min(1).max(10),
   occurrence: z.number().min(1).max(10),
@@ -128,15 +130,25 @@ export const FmecaAnalysis: React.FC<FmecaAnalysisProps> = ({
     queryFn: async () => {
       if (!selectedComponent) return Promise.resolve([]);
       
+      // Get the selected component details to find its equipment class
+      const selectedComponentData = components?.find(c => c.id === selectedComponent);
+      
+      console.log("Selected component:", selectedComponentData);
+      
       // First attempt to get component-specific failure modes
       const response = await apiRequest("GET", `/api/rcm/failure-modes?componentId=${selectedComponent}`);
       const data = await response.json();
       
-      // If no specific failure modes found, get all failure modes
+      console.log(`Found ${data.length} component-specific failure modes`);
+      
+      // If no specific failure modes found, try to get by equipment class if available
       if (data.length === 0) {
-        console.log("No component-specific failure modes found, getting all failure modes");
+        // Just get all available failure modes as a fallback
+        console.log("Fetching all available failure modes");
         const allResponse = await apiRequest("GET", `/api/rcm/failure-modes`);
-        return allResponse.json();
+        const allData = await allResponse.json();
+        console.log(`Found ${allData.length} total failure modes`);
+        return allData;
       }
       
       return data;
