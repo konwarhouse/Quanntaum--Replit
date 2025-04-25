@@ -521,7 +521,7 @@ export const FmecaAnalysis: React.FC<FmecaAnalysisProps> = ({
                   const criticality = criticalities.find(c => c.failureModeId === mode.id);
                   return (
                     <TableRow key={mode.id}>
-                      <TableCell className="font-medium">{mode.name}</TableCell>
+                      <TableCell className="font-medium">{mode.name || mode.description}</TableCell>
                       <TableCell>{mode.description}</TableCell>
                       <TableCell>{mode.cause || "N/A"}</TableCell>
                       <TableCell>
