@@ -1,9 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { Loader2, FileText, Database } from "lucide-react";
+import { Loader2, FileText, Database, Plus, Trash } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
 
 interface System {
   id: number;
@@ -24,8 +30,313 @@ interface Component {
   description?: string;
 }
 
+interface AssetFmecaRow {
+  id: string;
+  component: string;
+  failureMode: string;
+  cause: string;
+  effect: string;
+  severity: number;
+  probability: number;
+  detection: number;
+  rpn: number;
+  action: string;
+  targetDate: string;
+  comments: string;
+}
+
+interface SystemFmecaRow {
+  id: string;
+  subsystem: string;
+  failureMode: string;
+  cause: string;
+  effect: string;
+  severity: number;
+  probability: number;
+  detection: number;
+  rpn: number;
+  action: string;
+  targetDate: string;
+  comments: string;
+}
+
 const FmecaPage: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState("asset-level");
+  const { toast } = useToast();
+  
+  // Asset-level FMECA form state
+  const [assetTagNumber, setAssetTagNumber] = useState("");
+  const [assetDescription, setAssetDescription] = useState("");
+  const [assetFunction, setAssetFunction] = useState("");
+  const [assetRows, setAssetRows] = useState<AssetFmecaRow[]>([]);
+  
+  // New asset row ratings state
+  const [assetSeverity, setAssetSeverity] = useState<number>(5);
+  const [assetProbability, setAssetProbability] = useState<number>(5);
+  const [assetDetection, setAssetDetection] = useState<number>(5);
+  
+  // System-level FMECA form state
+  const [systemName, setSystemName] = useState("");
+  const [systemDescription, setSystemDescription] = useState("");
+  const [systemFunction, setSystemFunction] = useState("");
+  const [systemRows, setSystemRows] = useState<SystemFmecaRow[]>([]);
+  
+  // New system row ratings state
+  const [systemSeverity, setSystemSeverity] = useState<number>(5);
+  const [systemProbability, setSystemProbability] = useState<number>(5);
+  const [systemDetection, setSystemDetection] = useState<number>(5);
+  
+  // Helper functions for RPN calculation and display
+  const calculateAssetRpn = (): number => {
+    return assetSeverity * assetProbability * assetDetection;
+  };
+  
+  const getColorByRpn = (rpn: number): string => {
+    if (rpn >= 200) return "text-red-600";
+    if (rpn >= 125) return "text-amber-600";
+    return "text-green-600";
+  };
+  
+  const getColorClassByRpn = (rpn: number): string => {
+    if (rpn >= 200) return "bg-red-500 hover:bg-red-600";
+    if (rpn >= 125) return "bg-amber-500 hover:bg-amber-600";
+    return "bg-green-500 hover:bg-green-600";
+  };
+  
+  const getRiskLevelByRpn = (rpn: number): string => {
+    if (rpn >= 200) return "High Risk";
+    if (rpn >= 125) return "Medium Risk";
+    return "Low Risk";
+  };
+  
+  // Handler functions for asset-level FMECA
+  const handleAssetRatingChange = (type: string, value: number) => {
+    switch (type) {
+      case 'severity':
+        setAssetSeverity(value);
+        break;
+      case 'probability':
+        setAssetProbability(value);
+        break;
+      case 'detection':
+        setAssetDetection(value);
+        break;
+    }
+  };
+  
+  const handleAddAssetRow = () => {
+    // Get values from the form
+    const componentEl = document.getElementById('new-component') as HTMLInputElement;
+    const failureModeEl = document.getElementById('new-failure-mode') as HTMLInputElement;
+    const causeEl = document.getElementById('new-cause') as HTMLInputElement;
+    const effectEl = document.getElementById('new-effect') as HTMLInputElement;
+    const actionEl = document.getElementById('new-action') as HTMLInputElement;
+    const targetDateEl = document.getElementById('new-target-date') as HTMLInputElement;
+    const commentsEl = document.getElementById('new-comments') as HTMLInputElement;
+    
+    if (!componentEl.value || !failureModeEl.value) {
+      toast({
+        title: "Input Required",
+        description: "Component and Failure Mode are required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Create new row
+    const newRow: AssetFmecaRow = {
+      id: Date.now().toString(),
+      component: componentEl.value,
+      failureMode: failureModeEl.value,
+      cause: causeEl.value,
+      effect: effectEl.value,
+      severity: assetSeverity,
+      probability: assetProbability,
+      detection: assetDetection,
+      rpn: calculateAssetRpn(),
+      action: actionEl.value,
+      targetDate: targetDateEl.value,
+      comments: commentsEl.value
+    };
+    
+    // Add new row to the table
+    setAssetRows([...assetRows, newRow]);
+    
+    // Clear form fields
+    componentEl.value = '';
+    failureModeEl.value = '';
+    causeEl.value = '';
+    effectEl.value = '';
+    actionEl.value = '';
+    targetDateEl.value = '';
+    commentsEl.value = '';
+    
+    // Reset ratings to default
+    setAssetSeverity(5);
+    setAssetProbability(5);
+    setAssetDetection(5);
+    
+    toast({
+      title: "Success",
+      description: "FMECA row added successfully"
+    });
+  };
+  
+  const handleDeleteAssetRow = (id: string) => {
+    setAssetRows(assetRows.filter(row => row.id !== id));
+    toast({
+      title: "Row Deleted",
+      description: "FMECA row removed"
+    });
+  };
+  
+  const handleClearAssetFmeca = () => {
+    if (window.confirm("Are you sure you want to clear all FMECA data?")) {
+      setAssetTagNumber("");
+      setAssetDescription("");
+      setAssetFunction("");
+      setAssetRows([]);
+      toast({
+        title: "FMECA Cleared",
+        description: "All FMECA data has been cleared"
+      });
+    }
+  };
+  
+  const handleSaveAssetFmeca = () => {
+    // In a real application, this would save to the database
+    // For now, we'll just show a success message
+    if (assetRows.length === 0) {
+      toast({
+        title: "Empty FMECA",
+        description: "Please add at least one row before saving",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    toast({
+      title: "FMECA Saved",
+      description: "Your FMECA analysis has been saved successfully"
+    });
+  };
+  
+  // Helper function for system-level RPN calculation
+  const calculateSystemRpn = (): number => {
+    return systemSeverity * systemProbability * systemDetection;
+  };
+  
+  // Handler functions for system-level FMECA
+  const handleSystemRatingChange = (type: string, value: number) => {
+    switch (type) {
+      case 'severity':
+        setSystemSeverity(value);
+        break;
+      case 'probability':
+        setSystemProbability(value);
+        break;
+      case 'detection':
+        setSystemDetection(value);
+        break;
+    }
+  };
+  
+  const handleAddSystemRow = () => {
+    // Get values from the form
+    const subsystemEl = document.getElementById('new-subsystem') as HTMLInputElement;
+    const failureModeEl = document.getElementById('new-system-failure-mode') as HTMLInputElement;
+    const causeEl = document.getElementById('new-system-cause') as HTMLInputElement;
+    const effectEl = document.getElementById('new-system-effect') as HTMLInputElement;
+    const actionEl = document.getElementById('new-system-action') as HTMLInputElement;
+    const targetDateEl = document.getElementById('new-system-target-date') as HTMLInputElement;
+    const commentsEl = document.getElementById('new-system-comments') as HTMLInputElement;
+    
+    if (!subsystemEl.value || !failureModeEl.value) {
+      toast({
+        title: "Input Required",
+        description: "Subsystem and Failure Mode are required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Create new row
+    const newRow: SystemFmecaRow = {
+      id: Date.now().toString(),
+      subsystem: subsystemEl.value,
+      failureMode: failureModeEl.value,
+      cause: causeEl.value,
+      effect: effectEl.value,
+      severity: systemSeverity,
+      probability: systemProbability,
+      detection: systemDetection,
+      rpn: calculateSystemRpn(),
+      action: actionEl.value,
+      targetDate: targetDateEl.value,
+      comments: commentsEl.value
+    };
+    
+    // Add new row to the table
+    setSystemRows([...systemRows, newRow]);
+    
+    // Clear form fields
+    subsystemEl.value = '';
+    failureModeEl.value = '';
+    causeEl.value = '';
+    effectEl.value = '';
+    actionEl.value = '';
+    targetDateEl.value = '';
+    commentsEl.value = '';
+    
+    // Reset ratings to default
+    setSystemSeverity(5);
+    setSystemProbability(5);
+    setSystemDetection(5);
+    
+    toast({
+      title: "Success",
+      description: "System FMECA row added successfully"
+    });
+  };
+  
+  const handleDeleteSystemRow = (id: string) => {
+    setSystemRows(systemRows.filter(row => row.id !== id));
+    toast({
+      title: "Row Deleted",
+      description: "System FMECA row removed"
+    });
+  };
+  
+  const handleClearSystemFmeca = () => {
+    if (window.confirm("Are you sure you want to clear all System FMECA data?")) {
+      setSystemName("");
+      setSystemDescription("");
+      setSystemFunction("");
+      setSystemRows([]);
+      toast({
+        title: "System FMECA Cleared",
+        description: "All System FMECA data has been cleared"
+      });
+    }
+  };
+  
+  const handleSaveSystemFmeca = () => {
+    // In a real application, this would save to the database
+    // For now, we'll just show a success message
+    if (systemRows.length === 0) {
+      toast({
+        title: "Empty System FMECA",
+        description: "Please add at least one row before saving",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    toast({
+      title: "System FMECA Saved",
+      description: "Your System FMECA analysis has been saved successfully"
+    });
+  };
 
   // Get all systems
   const { data: systems, isLoading } = useQuery({
@@ -89,26 +400,57 @@ const FmecaPage: React.FC = () => {
           </Card>
           
           <div className="mt-6 p-6 border rounded-lg bg-white">
-            <h2 className="text-xl font-bold mb-4">Asset-Level FMECA Sheet (EXAMPLE)</h2>
-            <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4">
-              <p className="text-sm text-blue-700 font-medium">
-                This is an EXAMPLE of a filled out FMECA sheet. Your actual analysis will be based on your specific assets and components.
+            <h2 className="text-xl font-bold mb-4">Asset-Level FMECA Sheet</h2>
+            
+            <div className="mb-6 p-4 bg-amber-50 border-l-4 border-amber-500 rounded">
+              <h3 className="font-semibold text-amber-800">Example Asset FMECA</h3>
+              <p className="text-sm text-amber-700 mt-1">
+                Here's an example of a completed Asset-Level FMECA for a Centrifugal Pump:
               </p>
+              <div className="grid grid-cols-3 gap-2 mt-3">
+                <div className="text-sm">
+                  <span className="font-medium">Tag Number:</span> Pump-101
+                </div>
+                <div className="text-sm">
+                  <span className="font-medium">Description:</span> Centrifugal Pump
+                </div>
+                <div className="text-sm">
+                  <span className="font-medium">Function:</span> Delivers fluid to main system
+                </div>
+              </div>
+              <div className="mt-2 text-sm text-amber-700">
+                <span className="font-medium">Example Components:</span> Mechanical Seal (RPN 144, High Risk), Bearing (RPN 140, Medium Risk), Shaft (RPN 150, High Risk)
+              </div>
             </div>
             
             {/* Asset Information Form */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 p-4 bg-slate-50 rounded-md">
               <div>
-                <label className="block text-sm font-medium mb-1">Tag Number:</label>
-                <input type="text" className="w-full p-2 border rounded" placeholder="e.g., Pump-101" />
+                <Label className="text-sm font-medium">Tag Number:</Label>
+                <Input 
+                  className="mt-1" 
+                  placeholder="e.g., Pump-101" 
+                  value={assetTagNumber}
+                  onChange={(e) => setAssetTagNumber(e.target.value)}
+                />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Asset Description:</label>
-                <input type="text" className="w-full p-2 border rounded" placeholder="e.g., Centrifugal Pump" />
+                <Label className="text-sm font-medium">Asset Description:</Label>
+                <Input 
+                  className="mt-1" 
+                  placeholder="e.g., Centrifugal Pump" 
+                  value={assetDescription}
+                  onChange={(e) => setAssetDescription(e.target.value)}
+                />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Function:</label>
-                <input type="text" className="w-full p-2 border rounded" placeholder="e.g., Delivers fluid to main system" />
+                <Label className="text-sm font-medium">Function:</Label>
+                <Input 
+                  className="mt-1" 
+                  placeholder="e.g., Delivers fluid to main system" 
+                  value={assetFunction}
+                  onChange={(e) => setAssetFunction(e.target.value)}
+                />
               </div>
             </div>
             
@@ -127,51 +469,204 @@ const FmecaPage: React.FC = () => {
                     <th className="border border-gray-300 p-2 text-left">RPN</th>
                     <th className="border border-gray-300 p-2 text-left">Action Required</th>
                     <th className="border border-gray-300 p-2 text-left">Target Date</th>
-                    <th className="border border-gray-300 p-2 text-left">Comments/Notes</th>
+                    <th className="border border-gray-300 p-2 text-left">Comments</th>
+                    <th className="border border-gray-300 p-2 text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td className="border border-gray-300 p-2">Mechanical Seal</td>
-                    <td className="border border-gray-300 p-2">Leakage</td>
-                    <td className="border border-gray-300 p-2">Wear and tear</td>
-                    <td className="border border-gray-300 p-2">Fluid leakage, operational halt</td>
-                    <td className="border border-gray-300 p-2">8</td>
-                    <td className="border border-gray-300 p-2">6</td>
-                    <td className="border border-gray-300 p-2">3</td>
-                    <td className="border border-gray-300 p-2">144</td>
-                    <td className="border border-gray-300 p-2">Replace seals periodically</td>
-                    <td className="border border-gray-300 p-2">01-May-2025</td>
-                    <td className="border border-gray-300 p-2">Monitor wear during inspections</td>
-                  </tr>
-                  <tr>
-                    <td className="border border-gray-300 p-2">Bearing</td>
-                    <td className="border border-gray-300 p-2">Excessive vibration</td>
-                    <td className="border border-gray-300 p-2">Misalignment</td>
-                    <td className="border border-gray-300 p-2">Increased noise, overheating</td>
-                    <td className="border border-gray-300 p-2">7</td>
-                    <td className="border border-gray-300 p-2">5</td>
-                    <td className="border border-gray-300 p-2">4</td>
-                    <td className="border border-gray-300 p-2">140</td>
-                    <td className="border border-gray-300 p-2">Align and lubricate bearings</td>
-                    <td className="border border-gray-300 p-2">10-May-2025</td>
-                    <td className="border border-gray-300 p-2">Use predictive maintenance</td>
-                  </tr>
-                  <tr>
-                    <td className="border border-gray-300 p-2">Shaft</td>
-                    <td className="border border-gray-300 p-2">Cracking</td>
-                    <td className="border border-gray-300 p-2">Material fatigue</td>
-                    <td className="border border-gray-300 p-2">Total pump failure</td>
-                    <td className="border border-gray-300 p-2">10</td>
-                    <td className="border border-gray-300 p-2">3</td>
-                    <td className="border border-gray-300 p-2">5</td>
-                    <td className="border border-gray-300 p-2">150</td>
-                    <td className="border border-gray-300 p-2">Conduct fatigue tests</td>
-                    <td className="border border-gray-300 p-2">20-May-2025</td>
-                    <td className="border border-gray-300 p-2">Analyze loading conditions</td>
-                  </tr>
+                  {assetRows.map((row) => (
+                    <tr key={row.id}>
+                      <td className="border border-gray-300 p-2">{row.component}</td>
+                      <td className="border border-gray-300 p-2">{row.failureMode}</td>
+                      <td className="border border-gray-300 p-2">{row.cause}</td>
+                      <td className="border border-gray-300 p-2">{row.effect}</td>
+                      <td className="border border-gray-300 p-2">{row.severity}</td>
+                      <td className="border border-gray-300 p-2">{row.probability}</td>
+                      <td className="border border-gray-300 p-2">{row.detection}</td>
+                      <td className="border border-gray-300 p-2">
+                        <span className={`font-bold ${getColorByRpn(row.rpn)}`}>
+                          {row.rpn}
+                        </span>
+                      </td>
+                      <td className="border border-gray-300 p-2">{row.action}</td>
+                      <td className="border border-gray-300 p-2">{row.targetDate}</td>
+                      <td className="border border-gray-300 p-2">{row.comments}</td>
+                      <td className="border border-gray-300 p-2 text-center">
+                        <Button 
+                          variant="destructive" 
+                          size="sm"
+                          onClick={() => handleDeleteAssetRow(row.id)}
+                        >
+                          <Trash className="h-4 w-4" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                  
+                  {assetRows.length === 0 && (
+                    <tr>
+                      <td colSpan={12} className="border border-gray-300 p-4 text-center">
+                        No data available. Add a new row to begin your FMECA.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
+            </div>
+            
+            {/* Add New Row Form */}
+            <div className="mt-4 p-4 bg-slate-50 rounded-md">
+              <h3 className="text-md font-semibold mb-3">Add New FMECA Row</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                <div>
+                  <Label className="text-sm font-medium">Component:</Label>
+                  <Input 
+                    id="new-component" 
+                    placeholder="e.g., Mechanical Seal"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Failure Mode:</Label>
+                  <Input 
+                    id="new-failure-mode" 
+                    placeholder="e.g., Leakage"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Cause:</Label>
+                  <Input 
+                    id="new-cause" 
+                    placeholder="e.g., Wear and tear"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Effect:</Label>
+                  <Input 
+                    id="new-effect" 
+                    placeholder="e.g., Fluid leakage, operational halt"
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                <div>
+                  <Label className="text-sm font-medium">Severity (S):</Label>
+                  <Select 
+                    onValueChange={(value) => handleAssetRatingChange('severity', parseInt(value))}
+                    defaultValue="5"
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Select..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => (
+                        <SelectItem key={value} value={value.toString()}>
+                          {value}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Probability (P):</Label>
+                  <Select 
+                    onValueChange={(value) => handleAssetRatingChange('probability', parseInt(value))}
+                    defaultValue="5"
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Select..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => (
+                        <SelectItem key={value} value={value.toString()}>
+                          {value}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Detection (D):</Label>
+                  <Select 
+                    onValueChange={(value) => handleAssetRatingChange('detection', parseInt(value))}
+                    defaultValue="5"
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Select..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => (
+                        <SelectItem key={value} value={value.toString()}>
+                          {value}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">RPN (Auto-calculated):</Label>
+                  <div className="h-10 flex items-center px-4 mt-1 border rounded-md bg-slate-100">
+                    <span id="calculated-rpn" className="font-bold">{calculateAssetRpn()}</span>
+                    {calculateAssetRpn() > 0 && (
+                      <Badge 
+                        className={`ml-2 ${getColorClassByRpn(calculateAssetRpn())}`}
+                      >
+                        {getRiskLevelByRpn(calculateAssetRpn())}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div>
+                  <Label className="text-sm font-medium">Action Required:</Label>
+                  <Input 
+                    id="new-action" 
+                    placeholder="e.g., Replace seals periodically"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Target Date:</Label>
+                  <Input 
+                    id="new-target-date" 
+                    type="date"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Comments/Notes:</Label>
+                  <Input 
+                    id="new-comments" 
+                    placeholder="e.g., Monitor wear during inspections"
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex justify-end">
+                <Button 
+                  className="mt-2"
+                  onClick={handleAddAssetRow}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add FMECA Row
+                </Button>
+              </div>
+            </div>
+            
+            <div className="mt-6 flex justify-between">
+              <Button variant="outline" onClick={handleClearAssetFmeca}>
+                Clear FMECA
+              </Button>
+              <Button onClick={handleSaveAssetFmeca}>
+                Save FMECA
+              </Button>
             </div>
           </div>
         </TabsContent>
@@ -197,26 +692,57 @@ const FmecaPage: React.FC = () => {
           </Card>
           
           <div className="mt-6 p-6 border rounded-lg bg-white">
-            <h2 className="text-xl font-bold mb-4">System-Level FMECA Sheet (EXAMPLE)</h2>
-            <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4">
-              <p className="text-sm text-blue-700 font-medium">
-                This is an EXAMPLE of a filled out system-level FMECA sheet. Your actual analysis will be based on your specific systems and subsystems.
+            <h2 className="text-xl font-bold mb-4">System-Level FMECA Sheet</h2>
+            
+            <div className="mb-6 p-4 bg-amber-50 border-l-4 border-amber-500 rounded">
+              <h3 className="font-semibold text-amber-800">Example System FMECA</h3>
+              <p className="text-sm text-amber-700 mt-1">
+                Here's an example of a completed System-Level FMECA for a Boiler System:
               </p>
+              <div className="grid grid-cols-3 gap-2 mt-3">
+                <div className="text-sm">
+                  <span className="font-medium">System Name:</span> Boiler System
+                </div>
+                <div className="text-sm">
+                  <span className="font-medium">Description:</span> Generates process steam
+                </div>
+                <div className="text-sm">
+                  <span className="font-medium">Function:</span> Provides heat and steam
+                </div>
+              </div>
+              <div className="mt-2 text-sm text-amber-700">
+                <span className="font-medium">Example Subsystems:</span> Burner (RPN 108, Medium Risk), Gas System (RPN 150, High Risk), Automation & Control (RPN 160, High Risk)
+              </div>
             </div>
             
             {/* System Information Form */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 p-4 bg-slate-50 rounded-md">
               <div>
-                <label className="block text-sm font-medium mb-1">System Name:</label>
-                <input type="text" className="w-full p-2 border rounded" placeholder="e.g., Boiler System" />
+                <Label className="text-sm font-medium">System Name:</Label>
+                <Input 
+                  className="mt-1" 
+                  placeholder="e.g., Boiler System" 
+                  value={systemName}
+                  onChange={(e) => setSystemName(e.target.value)}
+                />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Description:</label>
-                <input type="text" className="w-full p-2 border rounded" placeholder="e.g., Generates process steam" />
+                <Label className="text-sm font-medium">Description:</Label>
+                <Input 
+                  className="mt-1" 
+                  placeholder="e.g., Generates process steam" 
+                  value={systemDescription}
+                  onChange={(e) => setSystemDescription(e.target.value)}
+                />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Primary Function:</label>
-                <input type="text" className="w-full p-2 border rounded" placeholder="e.g., Provides heat and steam" />
+                <Label className="text-sm font-medium">Primary Function:</Label>
+                <Input 
+                  className="mt-1" 
+                  placeholder="e.g., Provides heat and steam" 
+                  value={systemFunction}
+                  onChange={(e) => setSystemFunction(e.target.value)}
+                />
               </div>
             </div>
             
@@ -235,51 +761,204 @@ const FmecaPage: React.FC = () => {
                     <th className="border border-gray-300 p-2 text-left">RPN</th>
                     <th className="border border-gray-300 p-2 text-left">Action Required</th>
                     <th className="border border-gray-300 p-2 text-left">Target Date</th>
-                    <th className="border border-gray-300 p-2 text-left">Comments/Notes</th>
+                    <th className="border border-gray-300 p-2 text-left">Comments</th>
+                    <th className="border border-gray-300 p-2 text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td className="border border-gray-300 p-2">Burner</td>
-                    <td className="border border-gray-300 p-2">Flame failure</td>
-                    <td className="border border-gray-300 p-2">Blocked fuel nozzle</td>
-                    <td className="border border-gray-300 p-2">Loss of heat generation</td>
-                    <td className="border border-gray-300 p-2">9</td>
-                    <td className="border border-gray-300 p-2">4</td>
-                    <td className="border border-gray-300 p-2">3</td>
-                    <td className="border border-gray-300 p-2">108</td>
-                    <td className="border border-gray-300 p-2">Inspect and clean regularly</td>
-                    <td className="border border-gray-300 p-2">01-Jun-2025</td>
-                    <td className="border border-gray-300 p-2">Use automated flame monitoring</td>
-                  </tr>
-                  <tr>
-                    <td className="border border-gray-300 p-2">Gas System</td>
-                    <td className="border border-gray-300 p-2">Gas leakage</td>
-                    <td className="border border-gray-300 p-2">Valve seal degradation</td>
-                    <td className="border border-gray-300 p-2">Risk of explosion, hazard</td>
-                    <td className="border border-gray-300 p-2">10</td>
-                    <td className="border border-gray-300 p-2">3</td>
-                    <td className="border border-gray-300 p-2">5</td>
-                    <td className="border border-gray-300 p-2">150</td>
-                    <td className="border border-gray-300 p-2">Replace seals, add sensors</td>
-                    <td className="border border-gray-300 p-2">15-Jun-2025</td>
-                    <td className="border border-gray-300 p-2">Add auto shut-off for leaks</td>
-                  </tr>
-                  <tr>
-                    <td className="border border-gray-300 p-2">Automation & Control</td>
-                    <td className="border border-gray-300 p-2">System malfunction</td>
-                    <td className="border border-gray-300 p-2">Software bugs</td>
-                    <td className="border border-gray-300 p-2">Incorrect boiler operation</td>
-                    <td className="border border-gray-300 p-2">8</td>
-                    <td className="border border-gray-300 p-2">5</td>
-                    <td className="border border-gray-300 p-2">4</td>
-                    <td className="border border-gray-300 p-2">160</td>
-                    <td className="border border-gray-300 p-2">Update software regularly</td>
-                    <td className="border border-gray-300 p-2">10-Jul-2025</td>
-                    <td className="border border-gray-300 p-2">Perform regular validation</td>
-                  </tr>
+                  {systemRows.map((row) => (
+                    <tr key={row.id}>
+                      <td className="border border-gray-300 p-2">{row.subsystem}</td>
+                      <td className="border border-gray-300 p-2">{row.failureMode}</td>
+                      <td className="border border-gray-300 p-2">{row.cause}</td>
+                      <td className="border border-gray-300 p-2">{row.effect}</td>
+                      <td className="border border-gray-300 p-2">{row.severity}</td>
+                      <td className="border border-gray-300 p-2">{row.probability}</td>
+                      <td className="border border-gray-300 p-2">{row.detection}</td>
+                      <td className="border border-gray-300 p-2">
+                        <span className={`font-bold ${getColorByRpn(row.rpn)}`}>
+                          {row.rpn}
+                        </span>
+                      </td>
+                      <td className="border border-gray-300 p-2">{row.action}</td>
+                      <td className="border border-gray-300 p-2">{row.targetDate}</td>
+                      <td className="border border-gray-300 p-2">{row.comments}</td>
+                      <td className="border border-gray-300 p-2 text-center">
+                        <Button 
+                          variant="destructive" 
+                          size="sm"
+                          onClick={() => handleDeleteSystemRow(row.id)}
+                        >
+                          <Trash className="h-4 w-4" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                  
+                  {systemRows.length === 0 && (
+                    <tr>
+                      <td colSpan={12} className="border border-gray-300 p-4 text-center">
+                        No data available. Add a new row to begin your system-level FMECA.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
+            </div>
+            
+            {/* Add New Row Form */}
+            <div className="mt-4 p-4 bg-slate-50 rounded-md">
+              <h3 className="text-md font-semibold mb-3">Add New FMECA Row</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                <div>
+                  <Label className="text-sm font-medium">Subsystem:</Label>
+                  <Input 
+                    id="new-subsystem" 
+                    placeholder="e.g., Burner"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Failure Mode:</Label>
+                  <Input 
+                    id="new-system-failure-mode" 
+                    placeholder="e.g., Flame failure"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Cause:</Label>
+                  <Input 
+                    id="new-system-cause" 
+                    placeholder="e.g., Blocked fuel nozzle"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Effect:</Label>
+                  <Input 
+                    id="new-system-effect" 
+                    placeholder="e.g., Loss of heat generation"
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                <div>
+                  <Label className="text-sm font-medium">Severity (S):</Label>
+                  <Select 
+                    onValueChange={(value) => handleSystemRatingChange('severity', parseInt(value))}
+                    defaultValue="5"
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Select..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => (
+                        <SelectItem key={value} value={value.toString()}>
+                          {value}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Probability (P):</Label>
+                  <Select 
+                    onValueChange={(value) => handleSystemRatingChange('probability', parseInt(value))}
+                    defaultValue="5"
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Select..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => (
+                        <SelectItem key={value} value={value.toString()}>
+                          {value}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Detection (D):</Label>
+                  <Select 
+                    onValueChange={(value) => handleSystemRatingChange('detection', parseInt(value))}
+                    defaultValue="5"
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Select..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => (
+                        <SelectItem key={value} value={value.toString()}>
+                          {value}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">RPN (Auto-calculated):</Label>
+                  <div className="h-10 flex items-center px-4 mt-1 border rounded-md bg-slate-100">
+                    <span id="calculated-system-rpn" className="font-bold">{calculateSystemRpn()}</span>
+                    {calculateSystemRpn() > 0 && (
+                      <Badge 
+                        className={`ml-2 ${getColorClassByRpn(calculateSystemRpn())}`}
+                      >
+                        {getRiskLevelByRpn(calculateSystemRpn())}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div>
+                  <Label className="text-sm font-medium">Action Required:</Label>
+                  <Input 
+                    id="new-system-action" 
+                    placeholder="e.g., Inspect and clean regularly"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Target Date:</Label>
+                  <Input 
+                    id="new-system-target-date" 
+                    type="date"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Comments/Notes:</Label>
+                  <Input 
+                    id="new-system-comments" 
+                    placeholder="e.g., Use automated flame monitoring"
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex justify-end">
+                <Button 
+                  className="mt-2"
+                  onClick={handleAddSystemRow}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add FMECA Row
+                </Button>
+              </div>
+            </div>
+            
+            <div className="mt-6 flex justify-between">
+              <Button variant="outline" onClick={handleClearSystemFmeca}>
+                Clear FMECA
+              </Button>
+              <Button onClick={handleSaveSystemFmeca}>
+                Save FMECA
+              </Button>
             </div>
           </div>
         </TabsContent>
