@@ -1,6 +1,6 @@
 import { Router } from "express";
-import * as rcmController from "./index";
-import { getFmecaEntries, createFmecaEntry, updateFmecaEntry, deleteFmecaEntry, getFmecaAnalysis } from "./fmeca-routes";
+import * as rcmController from "./controllers";
+import fmecaRoutes from "./fmeca-routes";
 import { Request, Response, NextFunction } from "express";
 
 const router = Router();
@@ -32,12 +32,8 @@ router.get("/fmeca-ratings", rcmController.getFmecaRatings);
 router.post("/fmeca-ratings", authenticateUser, rcmController.createFmecaRating);
 router.put("/fmeca-ratings/:id", authenticateUser, rcmController.updateFmecaRating);
 
-// FMECA analysis endpoints
-router.get("/fmeca", getFmecaEntries);
-router.post("/fmeca", authenticateUser, createFmecaEntry);
-router.put("/fmeca/:id", authenticateUser, updateFmecaEntry);
-router.delete("/fmeca/:id", authenticateUser, deleteFmecaEntry);
-router.get("/fmeca/analysis", getFmecaAnalysis);
+// Use FMECA router instead of individual functions
+router.use("/fmeca", fmecaRoutes);
 
 // RCM Consequences endpoints
 router.get("/rcm-consequences", rcmController.getRcmConsequences);

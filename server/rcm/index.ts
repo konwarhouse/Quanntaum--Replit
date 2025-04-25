@@ -1,8 +1,8 @@
 import express from "express";
-import fmecaRoutes from "./fmeca-routes";
+import routes from "./routes";
 
+// Export a router that uses routes from routes.ts
 const router = express.Router();
-
-router.use("/", fmecaRoutes);
+router.use("/", routes);
 
 export default router;

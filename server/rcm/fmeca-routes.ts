@@ -135,7 +135,7 @@ router.post("/criticalities", async (req, res) => {
 });
 
 // Delete criticality
-router.delete("/criticalities/:id", requireRole(UserRole.Analyst), async (req, res) => {
+router.delete("/criticalities/:id", async (req, res) => {
   try {
     const { id } = req.params;
     
