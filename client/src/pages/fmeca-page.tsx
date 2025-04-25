@@ -1487,13 +1487,24 @@ const FmecaPage: React.FC = () => {
                                 <td className="border border-gray-300 p-2">{row.targetDate}</td>
                                 <td className="border border-gray-300 p-2">{row.comments}</td>
                                 <td className="border border-gray-300 p-2 text-center">
-                                  <Button 
-                                    variant="destructive" 
-                                    size="sm"
-                                    onClick={() => handleDeleteAssetRow(row.id)}
-                                  >
-                                    <Trash className="h-4 w-4" />
-                                  </Button>
+                                  <div className="flex gap-2 justify-center">
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      onClick={() => handleEditAssetRow(row)}
+                                    >
+                                      <Edit className="h-4 w-4 mr-1" />
+                                      <span>Edit</span>
+                                    </Button>
+                                    <Button 
+                                      variant="destructive" 
+                                      size="sm"
+                                      onClick={() => handleDeleteAssetRow(row.id)}
+                                    >
+                                      <Trash className="h-4 w-4 mr-1" />
+                                      <span>Delete</span>
+                                    </Button>
+                                  </div>
                                 </td>
                               </tr>
                             ))}
@@ -1868,13 +1879,24 @@ const FmecaPage: React.FC = () => {
                                 <td className="border border-gray-300 p-2">{row.targetDate}</td>
                                 <td className="border border-gray-300 p-2">{row.comments}</td>
                                 <td className="border border-gray-300 p-2 text-center">
-                                  <Button 
-                                    variant="destructive" 
-                                    size="sm"
-                                    onClick={() => handleDeleteSystemRow(row.id)}
-                                  >
-                                    <Trash className="h-4 w-4" />
-                                  </Button>
+                                  <div className="flex gap-2 justify-center">
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      onClick={() => handleEditSystemRow(row)}
+                                    >
+                                      <Edit className="h-4 w-4 mr-1" />
+                                      <span>Edit</span>
+                                    </Button>
+                                    <Button 
+                                      variant="destructive" 
+                                      size="sm"
+                                      onClick={() => handleDeleteSystemRow(row.id)}
+                                    >
+                                      <Trash className="h-4 w-4 mr-1" />
+                                      <span>Delete</span>
+                                    </Button>
+                                  </div>
                                 </td>
                               </tr>
                             ))}
