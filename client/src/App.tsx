@@ -60,13 +60,7 @@ function Router() {
         </Layout>
       </Route>
       
-      <Route path="/fmeca-enhanced">
-        <Layout>
-          <ProtectedRoute>
-            <EnhancedFmecaPage />
-          </ProtectedRoute>
-        </Layout>
-      </Route>
+      {/* Enhanced FMECA is now integrated directly into the regular FMECA page */}
 
       {/* Fallback to 404 */}
       <Route>

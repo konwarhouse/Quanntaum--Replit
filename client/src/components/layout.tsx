@@ -37,13 +37,7 @@ export default function Layout({ children }: LayoutProps) {
       current: location === '/fmeca',
       roles: [UserRole.ADMIN, UserRole.ANALYST, UserRole.TECHNICIAN],
     },
-    {
-      name: 'FMECA Enhanced',
-      href: '/fmeca-enhanced',
-      icon: ClipboardCheck,
-      current: location === '/fmeca-enhanced',
-      roles: [UserRole.ADMIN, UserRole.ANALYST, UserRole.TECHNICIAN],
-    },
+
     {
       name: 'RCM',
       href: '/rcm',
