@@ -125,23 +125,38 @@ export const FmecaAnalysis: React.FC<FmecaAnalysisProps> = ({
   // Get all failure modes for the selected component
   const { data: failureModes, isLoading: failureModesLoading } = useQuery<FailureMode[]>({
     queryKey: ["/api/rcm/failure-modes", selectedComponent],
-    queryFn: () => {
+    queryFn: async () => {
       if (!selectedComponent) return Promise.resolve([]);
-      return apiRequest("GET", `/api/rcm/failure-modes?componentId=${selectedComponent}`)
-        .then(res => res.json());
+      
+      // First attempt to get component-specific failure modes
+      const response = await apiRequest("GET", `/api/rcm/failure-modes?componentId=${selectedComponent}`);
+      const data = await response.json();
+      
+      // If no specific failure modes found, get all failure modes
+      if (data.length === 0) {
+        console.log("No component-specific failure modes found, getting all failure modes");
+        const allResponse = await apiRequest("GET", `/api/rcm/failure-modes`);
+        return allResponse.json();
+      }
+      
+      return data;
     },
     enabled: !!selectedComponent
   });
 
   // Get criticality data for the failure modes
   const { data: criticalities, isLoading: criticalitiesLoading } = useQuery<FailureCriticality[]>({
-    queryKey: ["/api/rcm/criticalities", selectedComponent],
-    queryFn: () => {
-      if (!selectedComponent) return Promise.resolve([]);
-      return apiRequest("GET", `/api/rcm/criticalities?componentId=${selectedComponent}`)
+    queryKey: ["/api/rcm/criticalities", selectedComponent, failureModes],
+    queryFn: async () => {
+      if (!selectedComponent || !failureModes?.length) return Promise.resolve([]);
+      
+      // Get all failure mode IDs
+      const failureModeIds = failureModes.map(mode => mode.id);
+      
+      return apiRequest("GET", `/api/rcm/criticalities?failureModeIds=${JSON.stringify(failureModeIds)}`)
         .then(res => res.json());
     },
-    enabled: !!selectedComponent
+    enabled: !!selectedComponent && !!failureModes?.length
   });
 
   // Form setup

@@ -7,6 +7,7 @@ import {
   failureCriticality,
   insertFailureCriticalitySchema
 } from "../../shared/rcm-schema";
+import { assets } from "../../shared/schema";
 import { storage } from "../storage";
 import { ZodError } from "zod";
 
@@ -32,45 +33,47 @@ router.get("/components", async (req, res) => {
   }
 });
 
-// Get all failure modes for a component
+// Get all failure modes for a component OR get all failure modes by equipment class
 router.get("/failure-modes", async (req, res) => {
   try {
-    const { componentId } = req.query;
+    const { componentId, equipmentClass } = req.query;
     
+    // If equipmentClass is provided directly, use it
+    if (equipmentClass) {
+      const equipmentFailureModes = await db.query.failureModes.findMany({
+        where: eq(failureModes.equipmentClass, equipmentClass as string),
+      });
+      console.log(`Found ${equipmentFailureModes.length} failure modes for equipment class ${equipmentClass}`);
+      return res.status(200).json(equipmentFailureModes);
+    }
+    
+    // Otherwise, require componentId
     if (!componentId) {
-      return res.status(400).json({ error: "Component ID is required" });
+      return res.status(400).json({ error: "Either componentId or equipmentClass is required" });
     }
 
-    // First, get the component to find its system
-    const component = await db.query.components.findFirst({
-      where: eq(components.id, Number(componentId)),
-      with: {
-        system: true
-      }
+    // First check if there are any failure modes directly linked to this component
+    const componentFailureModes = await db.query.failureModes.findMany({
+      where: eq(failureModes.componentId, Number(componentId)),
     });
 
-    if (!component) {
-      return res.status(404).json({ error: "Component not found" });
+    if (componentFailureModes.length > 0) {
+      console.log(`Found ${componentFailureModes.length} failure modes directly linked to component ${componentId}`);
+      return res.status(200).json(componentFailureModes);
     }
 
-    // Get the component's related asset to determine equipment class
-    const asset = await db.query.assets.findFirst({
-      where: eq(assets.name, component.name)
-    });
-
-    // If no specific asset found, return empty array
-    if (!asset || !asset.equipmentClass) {
-      console.log("No asset or equipment class found for component:", component.name);
-      return res.status(200).json([]);
-    }
-
-    // Get all failure modes for this equipment class
-    const equipmentFailureModes = await db.query.failureModes.findMany({
-      where: eq(failureModes.equipmentClass, asset.equipmentClass),
-    });
-
-    console.log(`Found ${equipmentFailureModes.length} failure modes for equipment class ${asset.equipmentClass}`);
-    return res.status(200).json(equipmentFailureModes);
+    // If no failure modes directly linked, use equipment class from assets table
+    // Get all equipment classes from assets table
+    const allEquipmentClasses = await db.select({ equipmentClass: assets.equipmentClass }).from(assets);
+    
+    // Extract unique equipment class values
+    const uniqueEquipmentClasses = Array.from(new Set(allEquipmentClasses.map(ec => ec.equipmentClass))).filter(Boolean);
+    
+    // Get all failure modes for all equipment classes
+    const allFailureModes = await db.query.failureModes.findMany();
+    
+    console.log(`Found ${allFailureModes.length} failure modes across all equipment classes`);
+    return res.status(200).json(allFailureModes);
   } catch (error) {
     console.error("Error fetching failure modes:", error);
     return res.status(500).json({ error: "Failed to fetch failure modes" });
@@ -80,56 +83,59 @@ router.get("/failure-modes", async (req, res) => {
 // Get criticality data for a component's failure modes
 router.get("/criticalities", async (req, res) => {
   try {
-    const { componentId } = req.query;
+    const { componentId, failureModeIds } = req.query;
     
-    if (!componentId) {
-      return res.status(400).json({ error: "Component ID is required" });
-    }
-
-    // First, get the component to find its system
-    const component = await db.query.components.findFirst({
-      where: eq(components.id, Number(componentId)),
-      with: {
-        system: true
+    // If failureModeIds is provided directly, use it
+    if (failureModeIds) {
+      let ids: number[] = [];
+      try {
+        ids = JSON.parse(failureModeIds as string);
+      } catch (e) {
+        return res.status(400).json({ error: "Invalid failureModeIds format. Expecting JSON array." });
       }
-    });
-
-    if (!component) {
-      return res.status(404).json({ error: "Component not found" });
+      
+      if (ids.length === 0) {
+        return res.status(200).json([]);
+      }
+      
+      // Get criticalities for these failure modes
+      const result = await pool.query(
+        `SELECT * FROM failure_criticality WHERE failure_mode_id = ANY($1::int[])`,
+        [ids]
+      );
+      const criticalities = result.rows;
+      
+      console.log(`Found ${criticalities.length} criticalities for specified failure modes`);
+      return res.status(200).json(criticalities);
     }
-
-    // Get the component's related asset to determine equipment class
-    const asset = await db.query.assets.findFirst({
-      where: eq(assets.name, component.name)
-    });
-
-    // If no specific asset found, return empty array
-    if (!asset || !asset.equipmentClass) {
-      console.log("No asset or equipment class found for component:", component.name);
-      return res.status(200).json([]);
-    }
-
-    // Get all failure modes for this equipment class
-    const equipmentFailureModes = await db.query.failureModes.findMany({
-      where: eq(failureModes.equipmentClass, asset.equipmentClass),
-    });
     
-    if (equipmentFailureModes.length === 0) {
-      return res.status(200).json([]);
+    // Otherwise, require componentId
+    if (!componentId) {
+      return res.status(400).json({ error: "Either componentId or failureModeIds is required" });
     }
 
+    // First get all failure modes
+    const response = await fetch(`${req.protocol}://${req.get('host')}/api/rcm/failure-modes?componentId=${componentId}`);
+    if (!response.ok) {
+      return res.status(500).json({ error: "Failed to fetch failure modes" });
+    }
+    
+    const failureModes = await response.json();
+    if (failureModes.length === 0) {
+      return res.status(200).json([]);
+    }
+    
     // Get all failure mode IDs
-    const failureModeIds = equipmentFailureModes.map(mode => mode.id);
+    const ids = failureModes.map(mode => mode.id);
     
     // Get criticalities for these failure modes
-    // Use raw SQL query as a temporary workaround
     const result = await pool.query(
       `SELECT * FROM failure_criticality WHERE failure_mode_id = ANY($1::int[])`,
-      [failureModeIds]
+      [ids]
     );
     const criticalities = result.rows;
 
-    console.log(`Found ${criticalities.length} criticalities for equipment class ${asset.equipmentClass}`);
+    console.log(`Found ${criticalities.length} criticalities for component ${componentId}`);
     return res.status(200).json(criticalities);
   } catch (error) {
     console.error("Error fetching criticalities:", error);
