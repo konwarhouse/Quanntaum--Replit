@@ -7,9 +7,9 @@ import { Loader2 } from "lucide-react";
 const FmecaPage: React.FC = () => {
   // Get all systems to select from
   const { data: systems, isLoading } = useQuery({
-    queryKey: ["/api/systems"],
+    queryKey: ["/api/fmeca/systems"],
     queryFn: async () => {
-      const response = await apiRequest("GET", "/api/systems");
+      const response = await apiRequest("GET", "/api/fmeca/systems");
       if (!response.ok) {
         throw new Error("Failed to fetch systems");
       }

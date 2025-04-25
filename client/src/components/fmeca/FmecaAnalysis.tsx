@@ -94,7 +94,7 @@ interface FmecaAnalysisProps {
   componentId?: number;
 }
 
-export const FmecaAnalysis: React.FC<FmecaAnalysisProps> = ({ 
+const FmecaAnalysis: React.FC<FmecaAnalysisProps> = ({ 
   systemId,
   componentId 
 }) => {
