@@ -233,6 +233,14 @@ const FmecaAnalysis: React.FC<FmecaAnalysisProps> = ({
         const existingCriticality = criticalities?.find(c => c.failureModeId === failureMode.id);
         
         if (existingCriticality) {
+          // Format date for form input (YYYY-MM-DD)
+          let formattedDate = '';
+          if (existingCriticality.completionDate) {
+            const date = new Date(existingCriticality.completionDate);
+            // Format as YYYY-MM-DD for date input
+            formattedDate = date.toISOString().split('T')[0];
+          }
+          
           form.reset({
             failureModeId: failureMode.id,
             severity: existingCriticality.severity,
@@ -243,7 +251,7 @@ const FmecaAnalysis: React.FC<FmecaAnalysisProps> = ({
             detectionJustification: existingCriticality.detectionJustification || '',
             consequenceType: existingCriticality.consequenceType || 'Operational',
             responsibility: existingCriticality.responsibility || '',
-            completionDate: existingCriticality.completionDate || '',
+            completionDate: formattedDate,
             verifiedBy: existingCriticality.verifiedBy || '',
             effectivenessVerification: existingCriticality.effectivenessVerification || '',
           });
@@ -809,6 +817,36 @@ const FmecaAnalysis: React.FC<FmecaAnalysisProps> = ({
                             )}
                           </TableCell>
                           <TableCell>
+                            {criticality?.responsibility || "Not Assigned"}
+                          </TableCell>
+                          <TableCell>
+                            {criticality?.completionDate || criticality?.verifiedBy || criticality?.effectivenessVerification ? (
+                              <div className="space-y-1 text-xs">
+                                {criticality.completionDate && (
+                                  <div><span className="font-semibold">Completed:</span> {new Date(criticality.completionDate).toLocaleDateString()}</div>
+                                )}
+                                {criticality.verifiedBy && (
+                                  <div><span className="font-semibold">Verified by:</span> {criticality.verifiedBy}</div>
+                                )}
+                                {criticality.effectivenessVerification && (
+                                  <div>
+                                    <span className="font-semibold">Status:</span> 
+                                    <Badge variant="outline" className={
+                                      criticality.effectivenessVerification === "Verified" ? "bg-green-100 text-green-800 border-green-300" :
+                                      criticality.effectivenessVerification === "Partially" ? "bg-yellow-100 text-yellow-800 border-yellow-300" :
+                                      criticality.effectivenessVerification === "Not Verified" ? "bg-red-100 text-red-800 border-red-300" :
+                                      "bg-gray-100 text-gray-800 border-gray-300"
+                                    }>
+                                      {criticality.effectivenessVerification}
+                                    </Badge>
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              "Not Verified"
+                            )}
+                          </TableCell>
+                          <TableCell>
                             <div className="flex space-x-2">
                               <Button
                                 variant="outline"
@@ -840,7 +878,7 @@ const FmecaAnalysis: React.FC<FmecaAnalysisProps> = ({
                     })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={10} className="text-center">
+                    <TableCell colSpan={12} className="text-center">
                       {failureModes && failureModes.length > 0 ? 
                         "No FMECA analysis found. Click Add FMECA Analysis to create one." : 
                         "No failure modes found for this component"}
