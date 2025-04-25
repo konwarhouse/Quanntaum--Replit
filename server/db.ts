@@ -13,7 +13,10 @@ if (!process.env.DATABASE_URL) {
 }
 
 export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-export const db = drizzle(pool, { schema });
+
+// Merge the schemas
+const mergedSchema = { ...schema, ...rcmSchema };
+export const db = drizzle(pool, { schema: mergedSchema });
 
 // Helper to check database connection
 export async function testDatabaseConnection() {

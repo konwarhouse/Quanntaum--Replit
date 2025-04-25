@@ -1,5 +1,5 @@
 import express from "express";
-import { db } from "../db";
+import { db, pool } from "../db";
 import { and, eq } from "drizzle-orm";
 import { 
   components, 
@@ -74,11 +74,12 @@ router.get("/criticalities", async (req, res) => {
     const failureModeIds = componentFailureModes.map(mode => mode.id);
     
     // Get criticalities for these failure modes
-    const criticalities = await db.query.failureCriticality.findMany({
-      where: (fields) => {
-        return fields.failureModeId.in(failureModeIds);
-      }
-    });
+    // Use raw SQL query as a temporary workaround
+    const result = await pool.query(
+      `SELECT * FROM failure_criticality WHERE failure_mode_id = ANY($1::int[])`,
+      [failureModeIds]
+    );
+    const criticalities = result.rows;
 
     return res.status(200).json(criticalities);
   } catch (error) {
@@ -104,22 +105,50 @@ router.post("/criticalities", async (req, res) => {
     });
 
     // Check if an entry already exists for this failure mode
-    const existingCriticality = await db.query.failureCriticality.findFirst({
-      where: eq(failureCriticality.failureModeId, failureModeId),
-    });
+    const existingResult = await pool.query(
+      `SELECT * FROM failure_criticality WHERE failure_mode_id = $1 LIMIT 1`,
+      [failureModeId]
+    );
+    const existingCriticality = existingResult.rows[0];
 
     let result;
     if (existingCriticality) {
-      // Update existing record
-      result = await db.update(failureCriticality)
-        .set(validatedData)
-        .where(eq(failureCriticality.id, existingCriticality.id))
-        .returning();
+      // Update existing record using raw SQL
+      const updateResult = await pool.query(
+        `UPDATE failure_criticality 
+         SET severity = $1, occurrence = $2, detection = $3, rpn = $4, 
+             criticality_index = $5, consequence_type = $6, updated_at = NOW()
+         WHERE id = $7
+         RETURNING *`,
+        [
+          validatedData.severity, 
+          validatedData.occurrence, 
+          validatedData.detection,
+          validatedData.rpn,
+          validatedData.criticalityIndex,
+          validatedData.consequenceType,
+          existingCriticality.id
+        ]
+      );
+      result = updateResult.rows;
     } else {
-      // Create new record
-      result = await db.insert(failureCriticality)
-        .values(validatedData)
-        .returning();
+      // Create new record using raw SQL
+      const insertResult = await pool.query(
+        `INSERT INTO failure_criticality 
+         (failure_mode_id, severity, occurrence, detection, rpn, criticality_index, consequence_type, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+         RETURNING *`,
+        [
+          validatedData.failureModeId,
+          validatedData.severity, 
+          validatedData.occurrence, 
+          validatedData.detection,
+          validatedData.rpn,
+          validatedData.criticalityIndex,
+          validatedData.consequenceType
+        ]
+      );
+      result = insertResult.rows;
     }
 
     return res.status(200).json(result[0]);
@@ -140,17 +169,21 @@ router.delete("/criticalities/:id", async (req, res) => {
     const { id } = req.params;
     
     // Check if the record exists
-    const existingCriticality = await db.query.failureCriticality.findFirst({
-      where: eq(failureCriticality.id, Number(id)),
-    });
+    const existingResult = await pool.query(
+      `SELECT * FROM failure_criticality WHERE id = $1 LIMIT 1`,
+      [id]
+    );
+    const existingCriticality = existingResult.rows[0];
     
     if (!existingCriticality) {
       return res.status(404).json({ error: "Criticality not found" });
     }
 
     // Delete the record
-    await db.delete(failureCriticality)
-      .where(eq(failureCriticality.id, Number(id)));
+    await pool.query(
+      `DELETE FROM failure_criticality WHERE id = $1`,
+      [id]
+    );
 
     return res.status(200).json({ success: true });
   } catch (error) {
