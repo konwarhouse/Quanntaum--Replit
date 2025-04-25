@@ -1,7 +1,8 @@
 import { Request, Response } from "express";
 import { db } from "../db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { systems, components } from "../../shared/rcm-schema";
+import { failureModes } from "../../shared/schema";
 
 // Systems controller functions
 export const getSystems = async (req: Request, res: Response) => {
@@ -609,17 +610,13 @@ export const getFailureModesBySystem = async (req: Request, res: Response) => {
     // Get component types or equipment classes to find related failure modes
     const componentTypes = relatedComponents.map(c => c.name.toLowerCase());
     
-    // Fetch failure modes from existing database  
-    const existingFailureModes = await db.query.failureModes.findMany({
-      where: (failureModes, { or, isNull, eq: eqOp }) => {
-        const conditions = componentTypes.map(type => 
-          eqOp(failureModes.equipmentClass, type)
-        );
-        
-        // Also include generic failure modes with null equipment class
-        return or(isNull(failureModes.equipmentClass), ...conditions);
-      }
-    });
+    // Fetch failure modes from existing database using direct query
+    // since we need to match on equipment class
+    const existingFailureModes = await db.execute(sql`
+      SELECT * FROM "failure_modes" 
+      WHERE "equipment_class" IS NULL 
+      OR "equipment_class" IN (${sql.join(componentTypes)})
+    `);
     
     res.json(existingFailureModes);
   } catch (error) {

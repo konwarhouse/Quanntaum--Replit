@@ -50,8 +50,11 @@ router.post("/ram-metrics", authenticateUser, rcmController.createRamMetric);
 router.put("/ram-metrics/:id", authenticateUser, rcmController.updateRamMetric);
 router.delete("/ram-metrics/:id", authenticateUser, rcmController.deleteRamMetric);
 
+// Failure modes by system/component
+router.get("/failure-modes-by-system", rcmController.getFailureModesBySystem);
+
 // Analysis endpoints
-router.get("/analysis/fmeca/:systemId", rcmController.fmecaAnalysis);
+router.post("/analysis/fmeca", rcmController.fmecaAnalysis);
 router.get("/analysis/rcm/:failureModeId", rcmController.rcmAnalysis);
 router.get("/analysis/ram/:systemId", rcmController.ramAnalysis);
 
