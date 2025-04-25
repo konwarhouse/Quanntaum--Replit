@@ -596,7 +596,8 @@ const FmecaManager: React.FC<FmecaManagerProps> = ({
   const { toast } = useToast();
   
   const handleEditRow = (row: AssetFmecaRow | SystemFmecaRow) => {
-    setEditingRow(row);
+    // Create a deep copy of the row to prevent reference issues
+    setEditingRow(JSON.parse(JSON.stringify(row)));
     setIsEditDialogOpen(true);
   };
   
