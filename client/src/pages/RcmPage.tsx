@@ -152,7 +152,7 @@ const RcmPage: React.FC = () => {
   return (
     <div className="container mx-auto p-6">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">Reliability Centered Maintenance</h1>
+        <h1 className="text-3xl font-bold">KPI Dashboard</h1>
         <p className="text-muted-foreground">
           A comprehensive approach to maintenance strategy using FMECA, RCM, and RAM analysis.
         </p>

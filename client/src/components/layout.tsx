@@ -39,7 +39,7 @@ export default function Layout({ children }: LayoutProps) {
     },
 
     {
-      name: 'RCM',
+      name: 'KPI Dashboard',
       href: '/rcm',
       icon: Settings,
       current: location === '/rcm',
