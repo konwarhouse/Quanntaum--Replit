@@ -48,6 +48,7 @@ interface AssetFmecaRow {
   detectionJustification: string; // Justification for detection rating
   rpn: number;
   action: string;
+  responsibility: string; // Person or role responsible for the action
   targetDate: string;
   comments: string;
 }
@@ -69,6 +70,7 @@ interface SystemFmecaRow {
   detectionJustification: string; // Justification for detection rating
   rpn: number;
   action: string;
+  responsibility: string; // Person or role responsible for the action
   targetDate: string;
   comments: string;
 }
@@ -150,6 +152,7 @@ const FmecaPage: React.FC = () => {
     const causeEl = document.getElementById('new-cause') as HTMLInputElement;
     const effectEl = document.getElementById('new-effect') as HTMLInputElement;
     const actionEl = document.getElementById('new-action') as HTMLInputElement;
+    const responsibilityEl = document.getElementById('new-responsibility') as HTMLInputElement;
     const targetDateEl = document.getElementById('new-target-date') as HTMLInputElement;
     const commentsEl = document.getElementById('new-comments') as HTMLInputElement;
     
@@ -200,6 +203,7 @@ const FmecaPage: React.FC = () => {
       detectionJustification: assetDetectionJustification,
       rpn: calculateAssetRpn(),
       action: actionEl.value,
+      responsibility: responsibilityEl.value,
       targetDate: targetDateEl.value,
       comments: commentsEl.value
     };
@@ -213,6 +217,7 @@ const FmecaPage: React.FC = () => {
     causeEl.value = '';
     effectEl.value = '';
     actionEl.value = '';
+    responsibilityEl.value = '';
     targetDateEl.value = '';
     commentsEl.value = '';
     
@@ -302,6 +307,7 @@ const FmecaPage: React.FC = () => {
     const causeEl = document.getElementById('new-system-cause') as HTMLInputElement;
     const effectEl = document.getElementById('new-system-effect') as HTMLInputElement;
     const actionEl = document.getElementById('new-system-action') as HTMLInputElement;
+    const responsibilityEl = document.getElementById('new-system-responsibility') as HTMLInputElement;
     const targetDateEl = document.getElementById('new-system-target-date') as HTMLInputElement;
     const commentsEl = document.getElementById('new-system-comments') as HTMLInputElement;
     
@@ -352,6 +358,7 @@ const FmecaPage: React.FC = () => {
       detectionJustification: systemDetectionJustification,
       rpn: calculateSystemRpn(),
       action: actionEl.value,
+      responsibility: responsibilityEl.value,
       targetDate: targetDateEl.value,
       comments: commentsEl.value
     };
@@ -365,6 +372,7 @@ const FmecaPage: React.FC = () => {
     causeEl.value = '';
     effectEl.value = '';
     actionEl.value = '';
+    responsibilityEl.value = '';
     targetDateEl.value = '';
     commentsEl.value = '';
     
