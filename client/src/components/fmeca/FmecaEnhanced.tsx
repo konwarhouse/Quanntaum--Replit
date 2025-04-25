@@ -83,9 +83,16 @@ export const EditRowDialog: React.FC<EditRowDialogProps> = ({
   onSave,
   rowType 
 }) => {
-  const [editedRow, setEditedRow] = useState<any>(rowData);
+  const [editedRow, setEditedRow] = useState<AssetFmecaRow | SystemFmecaRow | null>(null);
   
-  if (!rowData) return null;
+  // Initialize editedRow when rowData changes or when dialog opens
+  React.useEffect(() => {
+    if (rowData && isOpen) {
+      setEditedRow({...rowData});
+    }
+  }, [rowData, isOpen]);
+  
+  if (!rowData || !editedRow) return null;
   
   const handleChange = (field: string, value: any) => {
     setEditedRow({
