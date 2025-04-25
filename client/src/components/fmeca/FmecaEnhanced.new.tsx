@@ -103,9 +103,6 @@ export const EditRowDialog: React.FC<EditRowDialogProps> = ({
     return null;
   }
   
-  // Get the current row data based on type
-  const currentRow = rowType === 'asset' ? assetRow : systemRow;
-  
   // Generic change handler for both types
   const handleChange = (field: string, value: any) => {
     if (rowType === 'asset' && assetRow) {
@@ -163,7 +160,7 @@ export const EditRowDialog: React.FC<EditRowDialogProps> = ({
         </DialogHeader>
         
         <div className="grid grid-cols-2 gap-4 py-4">
-          {rowType === 'asset' ? (
+          {rowType === 'asset' && assetRow ? (
             <>
               <div className="col-span-2">
                 <Label htmlFor="component" className="text-right">
@@ -171,13 +168,13 @@ export const EditRowDialog: React.FC<EditRowDialogProps> = ({
                 </Label>
                 <Input
                   id="component"
-                  value={assetRow?.component || ''}
+                  value={assetRow.component}
                   onChange={(e) => handleChange('component', e.target.value)}
                   className="mt-1"
                 />
               </div>
             </>
-          ) : (
+          ) : systemRow ? (
             <>
               <div className="col-span-2">
                 <Label htmlFor="subsystem" className="text-right">
@@ -185,13 +182,13 @@ export const EditRowDialog: React.FC<EditRowDialogProps> = ({
                 </Label>
                 <Input
                   id="subsystem"
-                  value={editedRow.subsystem}
+                  value={systemRow.subsystem}
                   onChange={(e) => handleChange('subsystem', e.target.value)}
                   className="mt-1"
                 />
               </div>
             </>
-          )}
+          ) : null}
           
           <div className="col-span-2">
             <Label htmlFor="failureMode" className="text-right">
@@ -199,7 +196,7 @@ export const EditRowDialog: React.FC<EditRowDialogProps> = ({
             </Label>
             <Input
               id="failureMode"
-              value={editedRow.failureMode}
+              value={rowType === 'asset' && assetRow ? assetRow.failureMode : systemRow?.failureMode || ''}
               onChange={(e) => handleChange('failureMode', e.target.value)}
               className="mt-1"
             />
@@ -211,7 +208,7 @@ export const EditRowDialog: React.FC<EditRowDialogProps> = ({
             </Label>
             <Input
               id="cause"
-              value={editedRow.cause}
+              value={rowType === 'asset' && assetRow ? assetRow.cause : systemRow?.cause || ''}
               onChange={(e) => handleChange('cause', e.target.value)}
               className="mt-1"
             />
@@ -223,7 +220,7 @@ export const EditRowDialog: React.FC<EditRowDialogProps> = ({
             </Label>
             <Input
               id="effect"
-              value={editedRow.effect}
+              value={rowType === 'asset' && assetRow ? assetRow.effect : systemRow?.effect || ''}
               onChange={(e) => handleChange('effect', e.target.value)}
               className="mt-1"
             />
@@ -235,7 +232,7 @@ export const EditRowDialog: React.FC<EditRowDialogProps> = ({
             </Label>
             <Select 
               onValueChange={(value) => handleRatingChange('severity', parseInt(value))}
-              value={editedRow.severity.toString()}
+              value={(rowType === 'asset' && assetRow ? assetRow.severity : systemRow?.severity || 1).toString()}
             >
               <SelectTrigger className="mt-1">
                 <SelectValue placeholder="Select..." />
@@ -254,7 +251,7 @@ export const EditRowDialog: React.FC<EditRowDialogProps> = ({
             </Label>
             <Textarea
               id="severityJustification"
-              value={editedRow.severityJustification}
+              value={rowType === 'asset' && assetRow ? assetRow.severityJustification : systemRow?.severityJustification || ''}
               onChange={(e) => handleChange('severityJustification', e.target.value)}
               className="mt-1"
             />
@@ -266,7 +263,7 @@ export const EditRowDialog: React.FC<EditRowDialogProps> = ({
             </Label>
             <Select 
               onValueChange={(value) => handleRatingChange('probability', parseInt(value))}
-              value={editedRow.probability.toString()}
+              value={(rowType === 'asset' && assetRow ? assetRow.probability : systemRow?.probability || 1).toString()}
             >
               <SelectTrigger className="mt-1">
                 <SelectValue placeholder="Select..." />
@@ -285,7 +282,7 @@ export const EditRowDialog: React.FC<EditRowDialogProps> = ({
             </Label>
             <Textarea
               id="probabilityJustification"
-              value={editedRow.probabilityJustification}
+              value={rowType === 'asset' && assetRow ? assetRow.probabilityJustification : systemRow?.probabilityJustification || ''}
               onChange={(e) => handleChange('probabilityJustification', e.target.value)}
               className="mt-1"
             />
@@ -297,7 +294,7 @@ export const EditRowDialog: React.FC<EditRowDialogProps> = ({
             </Label>
             <Select 
               onValueChange={(value) => handleRatingChange('detection', parseInt(value))}
-              value={editedRow.detection.toString()}
+              value={(rowType === 'asset' && assetRow ? assetRow.detection : systemRow?.detection || 1).toString()}
             >
               <SelectTrigger className="mt-1">
                 <SelectValue placeholder="Select..." />
@@ -316,7 +313,7 @@ export const EditRowDialog: React.FC<EditRowDialogProps> = ({
             </Label>
             <Textarea
               id="detectionJustification"
-              value={editedRow.detectionJustification}
+              value={rowType === 'asset' && assetRow ? assetRow.detectionJustification : systemRow?.detectionJustification || ''}
               onChange={(e) => handleChange('detectionJustification', e.target.value)}
               className="mt-1"
             />
@@ -327,7 +324,9 @@ export const EditRowDialog: React.FC<EditRowDialogProps> = ({
               RPN (Auto-calculated)
             </Label>
             <div className="h-10 flex items-center px-4 mt-1 border rounded-md bg-slate-100">
-              <span id="calculated-rpn" className="font-bold">{editedRow.rpn}</span>
+              <span id="calculated-rpn" className="font-bold">
+                {rowType === 'asset' && assetRow ? assetRow.rpn : systemRow?.rpn || 0}
+              </span>
             </div>
           </div>
           
@@ -337,7 +336,7 @@ export const EditRowDialog: React.FC<EditRowDialogProps> = ({
             </Label>
             <Input
               id="action"
-              value={editedRow.action}
+              value={rowType === 'asset' && assetRow ? assetRow.action : systemRow?.action || ''}
               onChange={(e) => handleChange('action', e.target.value)}
               className="mt-1"
             />
@@ -349,7 +348,7 @@ export const EditRowDialog: React.FC<EditRowDialogProps> = ({
             </Label>
             <Input
               id="responsibility"
-              value={editedRow.responsibility}
+              value={rowType === 'asset' && assetRow ? assetRow.responsibility : systemRow?.responsibility || ''}
               onChange={(e) => handleChange('responsibility', e.target.value)}
               className="mt-1"
             />
@@ -362,7 +361,7 @@ export const EditRowDialog: React.FC<EditRowDialogProps> = ({
             <Input
               id="targetDate"
               type="date"
-              value={editedRow.targetDate}
+              value={rowType === 'asset' && assetRow ? assetRow.targetDate : systemRow?.targetDate || ''}
               onChange={(e) => handleChange('targetDate', e.target.value)}
               className="mt-1"
             />
@@ -375,7 +374,7 @@ export const EditRowDialog: React.FC<EditRowDialogProps> = ({
             <Input
               id="completionDate"
               type="date"
-              value={editedRow.completionDate || ''}
+              value={(rowType === 'asset' && assetRow ? assetRow.completionDate : systemRow?.completionDate) || ''}
               onChange={(e) => handleChange('completionDate', e.target.value)}
               className="mt-1"
             />
@@ -387,7 +386,7 @@ export const EditRowDialog: React.FC<EditRowDialogProps> = ({
             </Label>
             <Input
               id="verifiedBy"
-              value={editedRow.verifiedBy || ''}
+              value={(rowType === 'asset' && assetRow ? assetRow.verifiedBy : systemRow?.verifiedBy) || ''}
               onChange={(e) => handleChange('verifiedBy', e.target.value)}
               className="mt-1"
             />
@@ -399,7 +398,7 @@ export const EditRowDialog: React.FC<EditRowDialogProps> = ({
             </Label>
             <Select 
               onValueChange={(value) => handleChange('effectivenessVerified', value)}
-              value={editedRow.effectivenessVerified || ''}
+              value={(rowType === 'asset' && assetRow ? assetRow.effectivenessVerified : systemRow?.effectivenessVerified) || ''}
             >
               <SelectTrigger className="mt-1">
                 <SelectValue placeholder="Select..." />
@@ -419,7 +418,7 @@ export const EditRowDialog: React.FC<EditRowDialogProps> = ({
             </Label>
             <Input
               id="comments"
-              value={editedRow.comments}
+              value={rowType === 'asset' && assetRow ? assetRow.comments : systemRow?.comments || ''}
               onChange={(e) => handleChange('comments', e.target.value)}
               className="mt-1"
             />
@@ -507,31 +506,73 @@ export const ExcelTools: React.FC<ExcelToolsProps> = ({
         if (!isValidData) {
           toast({
             title: "Import Failed",
-            description: "The uploaded file does not contain valid FMECA data",
+            description: "The imported file does not contain valid FMECA data",
             variant: "destructive"
           });
           return;
         }
         
-        // Process imported data
+        // Process the imported data
         const processedData = jsonData.map((item: any) => {
-          // Generate new IDs for imported items
-          return {
-            ...item,
-            id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
-            rpn: (item.severity || 5) * (item.probability || 5) * (item.detection || 5)
-          };
+          if (rowType === 'asset') {
+            return {
+              id: crypto.randomUUID(),
+              tagNumber: headerData?.tagNumber || item.tagNumber || '',
+              assetDescription: headerData?.description || item.assetDescription || '',
+              assetFunction: headerData?.function || item.assetFunction || '',
+              component: item.component || '',
+              failureMode: item.failureMode || '',
+              cause: item.cause || '',
+              effect: item.effect || '',
+              severity: Number(item.severity) || 1,
+              severityJustification: item.severityJustification || '',
+              probability: Number(item.probability) || 1,
+              probabilityJustification: item.probabilityJustification || '',
+              detection: Number(item.detection) || 1,
+              detectionJustification: item.detectionJustification || '',
+              rpn: Number(item.rpn) || 1,
+              action: item.action || '',
+              responsibility: item.responsibility || '',
+              targetDate: item.targetDate || new Date().toISOString().split('T')[0],
+              completionDate: item.completionDate || '',
+              verifiedBy: item.verifiedBy || '',
+              effectivenessVerified: item.effectivenessVerified || '',
+              comments: item.comments || ''
+            };
+          } else {
+            return {
+              id: crypto.randomUUID(),
+              systemId: headerData?.systemId || item.systemId || '',
+              systemName: headerData?.name || item.systemName || '',
+              systemFunction: headerData?.function || item.systemFunction || '',
+              subsystem: item.subsystem || '',
+              failureMode: item.failureMode || '',
+              cause: item.cause || '',
+              effect: item.effect || '',
+              severity: Number(item.severity) || 1,
+              severityJustification: item.severityJustification || '',
+              probability: Number(item.probability) || 1,
+              probabilityJustification: item.probabilityJustification || '',
+              detection: Number(item.detection) || 1,
+              detectionJustification: item.detectionJustification || '',
+              rpn: Number(item.rpn) || 1,
+              action: item.action || '',
+              responsibility: item.responsibility || '',
+              targetDate: item.targetDate || new Date().toISOString().split('T')[0],
+              completionDate: item.completionDate || '',
+              verifiedBy: item.verifiedBy || '',
+              effectivenessVerified: item.effectivenessVerified || '',
+              comments: item.comments || ''
+            };
+          }
         });
         
         onImport(processedData);
         
         toast({
           title: "Import Successful",
-          description: `${processedData.length} FMECA rows imported`,
+          description: `${processedData.length} FMECA rows imported successfully`,
         });
-        
-        // Reset the file input
-        event.target.value = '';
       } catch (error) {
         console.error("Import error:", error);
         toast({
@@ -543,28 +584,37 @@ export const ExcelTools: React.FC<ExcelToolsProps> = ({
     };
     
     reader.readAsArrayBuffer(file);
+    
+    // Reset the input
+    event.target.value = '';
   };
   
   return (
-    <div className="flex space-x-4 my-4">
-      <Button variant="outline" onClick={handleExport}>
+    <div className="flex space-x-2">
+      <Button
+        variant="outline"
+        onClick={handleExport}
+        className="flex items-center"
+        disabled={rows.length === 0}
+      >
         <Download className="h-4 w-4 mr-2" />
-        Export to Excel
+        Export Excel
       </Button>
       
       <div className="relative">
-        <Button variant="outline" onClick={() => document.getElementById('file-upload')?.click()}>
-          <Upload className="h-4 w-4 mr-2" />
-          Import from Excel
-        </Button>
-        <input
-          id="file-upload"
+        <Input
           type="file"
-          accept=".xlsx,.xls"
-          className="hidden"
+          accept=".xlsx, .xls"
           onChange={handleImport}
-          onClick={(e) => (e.currentTarget.value = '')}
+          className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
         />
+        <Button
+          variant="outline"
+          className="flex items-center"
+        >
+          <Upload className="h-4 w-4 mr-2" />
+          Import Excel
+        </Button>
       </div>
     </div>
   );
