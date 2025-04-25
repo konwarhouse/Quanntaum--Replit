@@ -8,6 +8,11 @@ import {
   Asset, InsertAsset, MaintenanceEvent, InsertMaintenanceEvent,
   FailureMode, InsertFailureMode, FailureHistory, InsertFailureHistory
 } from "@shared/schema";
+import {
+  assetFmeca, systemFmeca,
+  AssetFmeca, InsertAssetFmeca,
+  SystemFmeca, InsertSystemFmeca
+} from "@shared/fmeca-schema";
 
 /**
  * Database storage implementation using Drizzle ORM
@@ -228,6 +233,62 @@ export class DatabaseStorage implements IStorage {
   
   async deleteFailureHistory(id: number): Promise<boolean> {
     const result = await db.delete(failureHistory).where(eq(failureHistory.id, id));
+    return true; // Assume success if no error is thrown
+  }
+
+  // Asset FMECA operations
+  async getAssetFmecaByTagNumber(tagNumber: string): Promise<AssetFmeca[]> {
+    return db.select().from(assetFmeca).where(eq(assetFmeca.tagNumber, tagNumber));
+  }
+
+  async getAllAssetFmeca(): Promise<AssetFmeca[]> {
+    return db.select().from(assetFmeca);
+  }
+
+  async createAssetFmeca(insertFmeca: InsertAssetFmeca): Promise<AssetFmeca> {
+    const [record] = await db.insert(assetFmeca).values(insertFmeca).returning();
+    return record;
+  }
+
+  async updateAssetFmeca(id: number, fmecaUpdate: Partial<InsertAssetFmeca>): Promise<AssetFmeca | undefined> {
+    const [updatedRecord] = await db
+      .update(assetFmeca)
+      .set(fmecaUpdate)
+      .where(eq(assetFmeca.id, id))
+      .returning();
+    return updatedRecord;
+  }
+
+  async deleteAssetFmeca(id: number): Promise<boolean> {
+    const result = await db.delete(assetFmeca).where(eq(assetFmeca.id, id));
+    return true; // Assume success if no error is thrown
+  }
+
+  // System FMECA operations
+  async getSystemFmecaBySystemName(systemName: string): Promise<SystemFmeca[]> {
+    return db.select().from(systemFmeca).where(eq(systemFmeca.systemName, systemName));
+  }
+
+  async getAllSystemFmeca(): Promise<SystemFmeca[]> {
+    return db.select().from(systemFmeca);
+  }
+
+  async createSystemFmeca(insertFmeca: InsertSystemFmeca): Promise<SystemFmeca> {
+    const [record] = await db.insert(systemFmeca).values(insertFmeca).returning();
+    return record;
+  }
+
+  async updateSystemFmeca(id: number, fmecaUpdate: Partial<InsertSystemFmeca>): Promise<SystemFmeca | undefined> {
+    const [updatedRecord] = await db
+      .update(systemFmeca)
+      .set(fmecaUpdate)
+      .where(eq(systemFmeca.id, id))
+      .returning();
+    return updatedRecord;
+  }
+
+  async deleteSystemFmeca(id: number): Promise<boolean> {
+    const result = await db.delete(systemFmeca).where(eq(systemFmeca.id, id));
     return true; // Assume success if no error is thrown
   }
 }
