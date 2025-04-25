@@ -124,49 +124,64 @@ export const FmecaAnalysis: React.FC<FmecaAnalysisProps> = ({
     enabled: !!systemId
   });
 
-  // Get all failure modes for the selected component
+  // Get all failure modes regardless of component - since failure modes are defined at equipment class level
   const { data: failureModes, isLoading: failureModesLoading } = useQuery<FailureMode[]>({
-    queryKey: ["/api/rcm/failure-modes", selectedComponent],
+    queryKey: ["/api/rcm/failure-modes"],
     queryFn: async () => {
-      if (!selectedComponent) return Promise.resolve([]);
-      
-      // Get the selected component details to find its equipment class
-      const selectedComponentData = components?.find(c => c.id === selectedComponent);
-      
-      console.log("Selected component:", selectedComponentData);
-      
-      // First attempt to get component-specific failure modes
-      const response = await apiRequest("GET", `/api/rcm/failure-modes?componentId=${selectedComponent}`);
+      // Simply fetch all available failure modes without filtering by component
+      console.log("Fetching all available failure modes");
+      const response = await apiRequest("GET", `/api/rcm/failure-modes`);
       const data = await response.json();
       
-      console.log(`Found ${data.length} component-specific failure modes`);
+      console.log(`Found ${data.length} failure modes`);
       
-      // If no specific failure modes found, try to get by equipment class if available
-      if (data.length === 0) {
-        // Just get all available failure modes as a fallback
-        console.log("Fetching all available failure modes");
-        const allResponse = await apiRequest("GET", `/api/rcm/failure-modes`);
-        const allData = await allResponse.json();
-        console.log(`Found ${allData.length} total failure modes`);
-        return allData;
+      // If we still have no modes, make a second attempt with a clearer error
+      if (!data || data.length === 0) {
+        console.error("No failure modes found in the system");
+        return [];
       }
       
       return data;
     },
-    enabled: !!selectedComponent
+    // Always enabled, we need failure modes regardless of component selection
+    enabled: true
   });
 
-  // Get criticality data for the failure modes
+  // Get criticality data for the failure modes - only those relevant to the selected component
   const { data: criticalities, isLoading: criticalitiesLoading } = useQuery<FailureCriticality[]>({
     queryKey: ["/api/rcm/criticalities", selectedComponent, failureModes],
     queryFn: async () => {
-      if (!selectedComponent || !failureModes?.length) return Promise.resolve([]);
+      if (!selectedComponent) return Promise.resolve([]);
       
-      // Get all failure mode IDs
-      const failureModeIds = failureModes.map(mode => mode.id);
+      if (!failureModes?.length) {
+        console.log("No failure modes available to get criticalities for");
+        return Promise.resolve([]);
+      }
       
-      return apiRequest("GET", `/api/rcm/criticalities?failureModeIds=${JSON.stringify(failureModeIds)}`)
-        .then(res => res.json());
+      console.log(`Getting criticalities for component ID ${selectedComponent}`);
+      
+      // First try to get component-specific criticalities
+      try {
+        const componentResponse = await apiRequest("GET", `/api/rcm/criticalities?componentId=${selectedComponent}`);
+        const componentCriticalities = await componentResponse.json();
+        
+        if (componentCriticalities && componentCriticalities.length > 0) {
+          console.log(`Found ${componentCriticalities.length} criticalities for component ID ${selectedComponent}`);
+          return componentCriticalities;
+        }
+        
+        // If no component-specific criticalities, get for all failure modes
+        console.log("No component-specific criticalities found, fetching by failure modes");
+        const failureModeIds = failureModes.map(mode => mode.id);
+        const response = await apiRequest("GET", `/api/rcm/criticalities?failureModeIds=${JSON.stringify(failureModeIds)}`);
+        const allCriticalities = await response.json();
+        
+        console.log(`Found ${allCriticalities.length} criticalities across all failure modes`);
+        return allCriticalities;
+      } catch (error) {
+        console.error("Error fetching criticalities:", error);
+        return [];
+      }
     },
     enabled: !!selectedComponent && !!failureModes?.length
   });
