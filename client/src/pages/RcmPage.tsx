@@ -14,7 +14,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Loader2, AlertTriangle } from 'lucide-react';
 import SystemManager from '@/components/rcm/SystemManager';
 import ComponentManager from '@/components/rcm/ComponentManager';
-import FmecaAnalysis from '@/components/rcm/FmecaAnalysis';
+import { FmecaAnalysis } from '@/components/rcm/FmecaAnalysis';
 import { Component } from '@shared/rcm-schema';
 
 // Component to display components for a selected system
