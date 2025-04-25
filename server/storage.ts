@@ -7,6 +7,10 @@ import {
   failureModes, type FailureMode, type InsertFailureMode,
   failureHistory, type FailureHistory, type InsertFailureHistory
 } from "@shared/schema";
+import {
+  type AssetFmeca, type InsertAssetFmeca,
+  type SystemFmeca, type InsertSystemFmeca
+} from "@shared/fmeca-schema";
 
 // modify the interface with any CRUD methods
 // you might need
@@ -54,6 +58,20 @@ export interface IStorage {
   createFailureHistory(failureHistory: InsertFailureHistory): Promise<FailureHistory>;
   updateFailureHistory(id: number, failureHistory: Partial<InsertFailureHistory>): Promise<FailureHistory | undefined>;
   deleteFailureHistory(id: number): Promise<boolean>;
+  
+  // Asset FMECA operations
+  getAssetFmecaByTagNumber(tagNumber: string): Promise<AssetFmeca[]>;
+  getAllAssetFmeca(): Promise<AssetFmeca[]>;
+  createAssetFmeca(fmeca: InsertAssetFmeca): Promise<AssetFmeca>;
+  updateAssetFmeca(id: number, fmeca: Partial<InsertAssetFmeca>): Promise<AssetFmeca | undefined>;
+  deleteAssetFmeca(id: number): Promise<boolean>;
+  
+  // System FMECA operations
+  getSystemFmecaBySystemName(systemName: string): Promise<SystemFmeca[]>;
+  getAllSystemFmeca(): Promise<SystemFmeca[]>;
+  createSystemFmeca(fmeca: InsertSystemFmeca): Promise<SystemFmeca>;
+  updateSystemFmeca(id: number, fmeca: Partial<InsertSystemFmeca>): Promise<SystemFmeca | undefined>;
+  deleteSystemFmeca(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -64,6 +82,8 @@ export class MemStorage implements IStorage {
   private maintenanceEventsMap: Map<number, MaintenanceEvent>;
   private failureModesMap: Map<number, FailureMode>;
   private failureHistoryMap: Map<number, FailureHistory>;
+  private assetFmecaMap: Map<number, AssetFmeca>;
+  private systemFmecaMap: Map<number, SystemFmeca>;
   
   private userCurrentId: number;
   private messageCurrentId: number;
@@ -72,6 +92,8 @@ export class MemStorage implements IStorage {
   private maintenanceEventCurrentId: number;
   private failureModeCurrentId: number;
   private failureHistoryCurrentId: number;
+  private assetFmecaCurrentId: number;
+  private systemFmecaCurrentId: number;
 
   constructor() {
     this.users = new Map();
@@ -81,6 +103,8 @@ export class MemStorage implements IStorage {
     this.maintenanceEventsMap = new Map();
     this.failureModesMap = new Map();
     this.failureHistoryMap = new Map();
+    this.assetFmecaMap = new Map();
+    this.systemFmecaMap = new Map();
     
     this.userCurrentId = 1;
     this.messageCurrentId = 1;
@@ -89,6 +113,8 @@ export class MemStorage implements IStorage {
     this.maintenanceEventCurrentId = 1;
     this.failureModeCurrentId = 1;
     this.failureHistoryCurrentId = 1;
+    this.assetFmecaCurrentId = 1;
+    this.systemFmecaCurrentId = 1;
   }
 
   // User operations
@@ -352,6 +378,98 @@ export class MemStorage implements IStorage {
   
   async deleteFailureHistory(id: number): Promise<boolean> {
     return this.failureHistoryMap.delete(id);
+  }
+  
+  // Asset FMECA operations
+  async getAssetFmecaByTagNumber(tagNumber: string): Promise<AssetFmeca[]> {
+    return Array.from(this.assetFmecaMap.values())
+      .filter(record => record.tagNumber === tagNumber);
+  }
+
+  async getAllAssetFmeca(): Promise<AssetFmeca[]> {
+    return Array.from(this.assetFmecaMap.values());
+  }
+
+  async createAssetFmeca(insertFmeca: InsertAssetFmeca): Promise<AssetFmeca> {
+    const id = this.assetFmecaCurrentId++;
+    const createdAt = new Date();
+    const updatedAt = new Date();
+    
+    const assetFmeca: AssetFmeca = {
+      ...insertFmeca,
+      id,
+      createdAt,
+      updatedAt
+    };
+    
+    this.assetFmecaMap.set(id, assetFmeca);
+    return assetFmeca;
+  }
+
+  async updateAssetFmeca(id: number, fmecaUpdate: Partial<InsertAssetFmeca>): Promise<AssetFmeca | undefined> {
+    const existingRecord = this.assetFmecaMap.get(id);
+    if (!existingRecord) return undefined;
+    
+    const updatedAt = new Date();
+    
+    const updatedRecord: AssetFmeca = {
+      ...existingRecord,
+      ...fmecaUpdate,
+      updatedAt
+    };
+    
+    this.assetFmecaMap.set(id, updatedRecord);
+    return updatedRecord;
+  }
+
+  async deleteAssetFmeca(id: number): Promise<boolean> {
+    return this.assetFmecaMap.delete(id);
+  }
+
+  // System FMECA operations
+  async getSystemFmecaBySystemName(systemName: string): Promise<SystemFmeca[]> {
+    return Array.from(this.systemFmecaMap.values())
+      .filter(record => record.systemName === systemName);
+  }
+
+  async getAllSystemFmeca(): Promise<SystemFmeca[]> {
+    return Array.from(this.systemFmecaMap.values());
+  }
+
+  async createSystemFmeca(insertFmeca: InsertSystemFmeca): Promise<SystemFmeca> {
+    const id = this.systemFmecaCurrentId++;
+    const createdAt = new Date();
+    const updatedAt = new Date();
+    
+    const systemFmeca: SystemFmeca = {
+      ...insertFmeca,
+      id,
+      createdAt,
+      updatedAt
+    };
+    
+    this.systemFmecaMap.set(id, systemFmeca);
+    return systemFmeca;
+  }
+
+  async updateSystemFmeca(id: number, fmecaUpdate: Partial<InsertSystemFmeca>): Promise<SystemFmeca | undefined> {
+    const existingRecord = this.systemFmecaMap.get(id);
+    if (!existingRecord) return undefined;
+    
+    const updatedAt = new Date();
+    
+    const updatedRecord: SystemFmeca = {
+      ...existingRecord,
+      ...fmecaUpdate,
+      updatedAt
+    };
+    
+    this.systemFmecaMap.set(id, updatedRecord);
+    return updatedRecord;
+  }
+
+  async deleteSystemFmeca(id: number): Promise<boolean> {
+    return this.systemFmecaMap.delete(id);
   }
 }
 
