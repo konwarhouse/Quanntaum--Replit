@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { db } from "../db";
 import { eq, sql } from "drizzle-orm";
-import { systems, components } from "../../shared/rcm-schema";
+import { systems, components, failureCriticality } from "../../shared/rcm-schema";
 import { failureModes } from "../../shared/schema";
 
 // Systems controller functions

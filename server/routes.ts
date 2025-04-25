@@ -439,8 +439,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Failure Mode endpoints
-  // Get all failure modes
-  app.get("/api/failure-modes", async (req, res) => {
+  // Get failure modes by equipment class
+  app.get("/api/failure-modes-by-class", async (req, res) => {
     try {
       // Get all equipment classes from assets
       const assets = await storage.getAssets();
