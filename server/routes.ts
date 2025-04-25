@@ -28,6 +28,9 @@ import {
   calculateMTBF,
   optimizeMaintenanceInterval
 } from "./reliability/calculations";
+
+// Import our modular routes
+import fmecaRoutes from './fmeca/fmeca-routes';
 import rcmRoutes from "./rcm/routes";
 
 // Initialize OpenAI client
@@ -36,6 +39,9 @@ const openai = new OpenAI({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Register modular routes
+  app.use('/api/fmeca', fmecaRoutes);
+  app.use('/api/rcm', rcmRoutes);
   // Get chat history for a user
   app.get("/api/messages/:username", async (req, res) => {
     try {

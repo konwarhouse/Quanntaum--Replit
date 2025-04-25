@@ -1,9 +1,8 @@
 import express from 'express';
 import { Pool } from 'pg';
-import { db } from '../db';
+import { pool } from '../db';
 
 const router = express.Router();
-const pool = db.client;
 
 // Get all criticalities
 router.get("/criticalities", async (req, res) => {
