@@ -455,8 +455,65 @@ export const ExcelTools: React.FC<ExcelToolsProps> = ({
   
   const handleExport = () => {
     try {
-      const worksheet = XLSX.utils.json_to_sheet(rows);
+      let worksheet;
       const workbook = XLSX.utils.book_new();
+      
+      // Create a template with headers if there are no rows
+      if (rows.length === 0) {
+        const headers = rowType === 'asset' ? 
+          {
+            tagNumber: headerData?.tagNumber || '',
+            assetDescription: headerData?.description || '',
+            assetFunction: headerData?.function || '',
+            component: '',
+            failureMode: '',
+            cause: '',
+            effect: '',
+            severity: '',
+            severityJustification: '',
+            probability: '',
+            probabilityJustification: '',
+            detection: '',
+            detectionJustification: '',
+            rpn: '',
+            action: '',
+            responsibility: '',
+            targetDate: '',
+            completionDate: '',
+            verifiedBy: '',
+            effectivenessVerified: '',
+            comments: ''
+          } :
+          {
+            systemName: headerData?.name || '',
+            systemFunction: headerData?.function || '',
+            subsystem: '',
+            failureMode: '',
+            cause: '',
+            effect: '',
+            severity: '',
+            severityJustification: '',
+            probability: '',
+            probabilityJustification: '',
+            detection: '',
+            detectionJustification: '',
+            rpn: '',
+            action: '',
+            responsibility: '',
+            targetDate: '',
+            completionDate: '',
+            verifiedBy: '',
+            effectivenessVerified: '',
+            comments: ''
+          };
+        
+        // Create a worksheet with just the headers
+        worksheet = XLSX.utils.json_to_sheet([headers]);
+      } else {
+        // Normal case - export existing data
+        worksheet = XLSX.utils.json_to_sheet(rows);
+      }
+      
       XLSX.utils.book_append_sheet(workbook, worksheet, `${rowType}-fmeca`);
       
       // Generate file name with timestamp
@@ -595,7 +652,6 @@ export const ExcelTools: React.FC<ExcelToolsProps> = ({
         variant="outline"
         onClick={handleExport}
         className="flex items-center"
-        disabled={rows.length === 0}
       >
         <Download className="h-4 w-4 mr-2" />
         Export Excel
