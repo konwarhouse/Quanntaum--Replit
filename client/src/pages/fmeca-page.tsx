@@ -1669,7 +1669,7 @@ const FmecaPage: React.FC = () => {
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div>
                   <Label className="text-sm font-medium">Action Required:</Label>
                   <Input 
@@ -1694,14 +1694,50 @@ const FmecaPage: React.FC = () => {
                     className="mt-1"
                   />
                 </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 p-2 bg-green-50 border border-green-100 rounded">
                 <div>
-                  <Label className="text-sm font-medium">Comments/Notes:</Label>
+                  <Label className="text-sm font-medium">Completion Date:</Label>
                   <Input 
-                    id="new-comments" 
-                    placeholder="e.g., Monitor wear during inspections"
+                    id="new-completion-date" 
+                    type="date"
                     className="mt-1"
                   />
                 </div>
+                <div>
+                  <Label className="text-sm font-medium">Verified By:</Label>
+                  <Input 
+                    id="new-verified-by" 
+                    placeholder="e.g., J. Smith"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Effectiveness Verified:</Label>
+                  <Select 
+                    defaultValue=""
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Select..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Not verified</SelectItem>
+                      <SelectItem value="yes">Yes</SelectItem>
+                      <SelectItem value="no">No</SelectItem>
+                      <SelectItem value="partial">Partial</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div className="mb-4">
+                <Label className="text-sm font-medium">Comments/Notes:</Label>
+                <Input 
+                  id="new-comments" 
+                  placeholder="e.g., Monitor wear during inspections"
+                  className="mt-1"
+                />
               </div>
               
               <div className="flex justify-end">
@@ -1862,7 +1898,11 @@ const FmecaPage: React.FC = () => {
                               <th className="border border-gray-300 p-2 text-left">RPN</th>
                               <th className="border border-gray-300 p-2 text-left">Risk Level</th>
                               <th className="border border-gray-300 p-2 text-left">Action Required</th>
+                              <th className="border border-gray-300 p-2 text-left">Responsibility</th>
                               <th className="border border-gray-300 p-2 text-left">Target Date</th>
+                              <th className="border border-gray-300 p-2 text-left bg-green-50">Completion Date</th>
+                              <th className="border border-gray-300 p-2 text-left bg-green-50">Verified By</th>
+                              <th className="border border-gray-300 p-2 text-left bg-green-50">Effectiveness</th>
                               <th className="border border-gray-300 p-2 text-left">Comments</th>
                               <th className="border border-gray-300 p-2 text-center">Actions</th>
                             </tr>
@@ -1888,7 +1928,15 @@ const FmecaPage: React.FC = () => {
                                   </Badge>
                                 </td>
                                 <td className="border border-gray-300 p-2">{row.action}</td>
+                                <td className="border border-gray-300 p-2">{row.responsibility}</td>
                                 <td className="border border-gray-300 p-2">{row.targetDate}</td>
+                                <td className="border border-gray-300 p-2 bg-green-50">{row.completionDate || "Not completed"}</td>
+                                <td className="border border-gray-300 p-2 bg-green-50">{row.verifiedBy || "Not verified"}</td>
+                                <td className="border border-gray-300 p-2 bg-green-50">
+                                  {row.effectivenessVerified === 'yes' ? "Yes" : 
+                                   row.effectivenessVerified === 'no' ? "No" : 
+                                   row.effectivenessVerified === 'partial' ? "Partial" : "Not verified"}
+                                </td>
                                 <td className="border border-gray-300 p-2">{row.comments}</td>
                                 <td className="border border-gray-300 p-2 text-center">
                                   <div className="flex gap-2 justify-center">
@@ -2061,7 +2109,7 @@ const FmecaPage: React.FC = () => {
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div>
                   <Label className="text-sm font-medium">Action Required:</Label>
                   <Input 
@@ -2086,14 +2134,50 @@ const FmecaPage: React.FC = () => {
                     className="mt-1"
                   />
                 </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 p-2 bg-green-50 border border-green-100 rounded">
                 <div>
-                  <Label className="text-sm font-medium">Comments/Notes:</Label>
+                  <Label className="text-sm font-medium">Completion Date:</Label>
                   <Input 
-                    id="new-system-comments" 
-                    placeholder="e.g., Use automated flame monitoring"
+                    id="new-system-completion-date" 
+                    type="date"
                     className="mt-1"
                   />
                 </div>
+                <div>
+                  <Label className="text-sm font-medium">Verified By:</Label>
+                  <Input 
+                    id="new-system-verified-by" 
+                    placeholder="e.g., J. Smith"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Effectiveness Verified:</Label>
+                  <Select 
+                    defaultValue=""
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Select..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Not verified</SelectItem>
+                      <SelectItem value="yes">Yes</SelectItem>
+                      <SelectItem value="no">No</SelectItem>
+                      <SelectItem value="partial">Partial</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div className="mb-4">
+                <Label className="text-sm font-medium">Comments/Notes:</Label>
+                <Input 
+                  id="new-system-comments" 
+                  placeholder="e.g., Use automated flame monitoring"
+                  className="mt-1"
+                />
               </div>
               
               <div className="flex justify-end">
