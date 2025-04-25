@@ -1,5 +1,5 @@
 import React, { useState, useEffect, ChangeEvent } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Loader2, FileText, Database, Plus, Trash, CheckCircle2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import FmecaManager from "@/components/fmeca/FmecaManager";
+import { FmecaManager } from "@/components/fmeca/FmecaManager";
 
 interface System {
   id: number;
@@ -85,6 +85,7 @@ interface SystemFmecaRow {
 const FmecaPage: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState("asset-level");
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   // Asset-level FMECA form state
   const [assetTagNumber, setAssetTagNumber] = useState("");
@@ -242,12 +243,35 @@ const FmecaPage: React.FC = () => {
     });
   };
   
-  const handleDeleteAssetRow = (id: string) => {
-    setAssetRows(assetRows.filter(row => row.id !== id));
-    toast({
-      title: "Row Deleted",
-      description: "FMECA row removed"
-    });
+  const handleDeleteAssetRow = async (id: string) => {
+    try {
+      // If the ID is a number (stored in database), delete from the database
+      if (!isNaN(Number(id))) {
+        const response = await apiRequest(
+          "DELETE", 
+          `/api/enhanced-fmeca/asset/${id}`
+        );
+        
+        if (!response.ok) {
+          throw new Error("Failed to delete FMECA row from database");
+        }
+      }
+      
+      // Remove from local state
+      setAssetRows(assetRows.filter(row => row.id !== id));
+      
+      toast({
+        title: "Row Deleted",
+        description: "FMECA row removed successfully"
+      });
+    } catch (error) {
+      console.error("Error deleting FMECA row:", error);
+      toast({
+        title: "Delete Failed",
+        description: "Failed to delete FMECA row",
+        variant: "destructive"
+      });
+    }
   };
   
   const handleClearAssetFmeca = () => {
@@ -269,9 +293,8 @@ const FmecaPage: React.FC = () => {
     }
   };
   
-  const handleSaveAssetFmeca = () => {
-    // In a real application, this would save to the database
-    // For now, we'll just show a success message
+  const handleSaveAssetFmeca = async () => {
+    // Save FMECA data to the database
     if (assetRows.length === 0) {
       toast({
         title: "Empty FMECA",
@@ -281,10 +304,52 @@ const FmecaPage: React.FC = () => {
       return;
     }
     
-    toast({
-      title: "FMECA Saved",
-      description: "Your FMECA analysis has been saved successfully"
-    });
+    try {
+      // Save each row to the database
+      for (const row of assetRows) {
+        // Convert string IDs to proper format for API
+        // Only send rows that don't have a numeric ID (not yet saved to DB)
+        if (isNaN(Number(row.id))) {
+          const apiRow = {
+            ...row,
+            // Convert string properties to required types
+            severity: Number(row.severity),
+            probability: Number(row.probability),
+            detection: Number(row.detection),
+            rpn: Number(row.rpn),
+            // Set default values for nullable fields
+            completionDate: row.completionDate || null,
+            verifiedBy: row.verifiedBy || null,
+            effectivenessVerified: row.effectivenessVerified || null,
+          };
+          
+          const response = await apiRequest(
+            "POST", 
+            "/api/enhanced-fmeca/asset", 
+            apiRow
+          );
+          
+          if (!response.ok) {
+            throw new Error("Failed to save FMECA row");
+          }
+        }
+      }
+      
+      // After successful save, reload data
+      fetchAssetFmecaData();
+      
+      toast({
+        title: "FMECA Saved",
+        description: "Your FMECA analysis has been saved successfully"
+      });
+    } catch (error) {
+      console.error("Error saving FMECA data:", error);
+      toast({
+        title: "Save Failed",
+        description: "There was an error saving your FMECA data",
+        variant: "destructive"
+      });
+    }
   };
   
   // Helper function for system-level RPN calculation
@@ -424,9 +489,8 @@ const FmecaPage: React.FC = () => {
     }
   };
   
-  const handleSaveSystemFmeca = () => {
-    // In a real application, this would save to the database
-    // For now, we'll just show a success message
+  const handleSaveSystemFmeca = async () => {
+    // Save System FMECA data to the database
     if (systemRows.length === 0) {
       toast({
         title: "Empty System FMECA",
@@ -436,12 +500,122 @@ const FmecaPage: React.FC = () => {
       return;
     }
     
-    toast({
-      title: "System FMECA Saved",
-      description: "Your System FMECA analysis has been saved successfully"
-    });
+    try {
+      // Save each row to the database
+      for (const row of systemRows) {
+        // Convert string IDs to proper format for API
+        // Only send rows that don't have a numeric ID (not yet saved to DB)
+        if (isNaN(Number(row.id))) {
+          const apiRow = {
+            ...row,
+            // Convert string properties to required types
+            severity: Number(row.severity),
+            probability: Number(row.probability),
+            detection: Number(row.detection),
+            rpn: Number(row.rpn),
+            // Set default values for nullable fields
+            completionDate: row.completionDate || null,
+            verifiedBy: row.verifiedBy || null,
+            effectivenessVerified: row.effectivenessVerified || null,
+          };
+          
+          const response = await apiRequest(
+            "POST", 
+            "/api/enhanced-fmeca/system", 
+            apiRow
+          );
+          
+          if (!response.ok) {
+            throw new Error("Failed to save System FMECA row");
+          }
+        }
+      }
+      
+      // After successful save, reload data
+      fetchSystemFmecaData();
+      
+      toast({
+        title: "System FMECA Saved",
+        description: "Your System FMECA analysis has been saved successfully"
+      });
+    } catch (error) {
+      console.error("Error saving System FMECA data:", error);
+      toast({
+        title: "Save Failed",
+        description: "There was an error saving your System FMECA data",
+        variant: "destructive"
+      });
+    }
   };
 
+  // Data fetching functions
+  const fetchAssetFmecaData = async () => {
+    try {
+      const response = await apiRequest("GET", "/api/enhanced-fmeca/asset");
+      if (!response.ok) {
+        throw new Error("Failed to fetch asset FMECA data");
+      }
+      const data = await response.json();
+      // Update state with fetched data
+      setAssetRows(data.map((row: any) => ({
+        ...row,
+        id: row.id.toString()
+      })));
+      
+      // Invalidate the query cache
+      queryClient.invalidateQueries({queryKey: ["/api/enhanced-fmeca/asset"]});
+      
+    } catch (error) {
+      console.error("Error fetching asset FMECA data:", error);
+      toast({
+        title: "Data Fetch Failed",
+        description: "Failed to fetch asset FMECA data from the server",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const fetchSystemFmecaData = async () => {
+    try {
+      const response = await apiRequest("GET", "/api/enhanced-fmeca/system");
+      if (!response.ok) {
+        throw new Error("Failed to fetch system FMECA data");
+      }
+      const data = await response.json();
+      // Update state with fetched data
+      setSystemRows(data.map((row: any) => ({
+        ...row,
+        id: row.id.toString()
+      })));
+      
+      // Invalidate the query cache
+      queryClient.invalidateQueries({queryKey: ["/api/enhanced-fmeca/system"]});
+      
+    } catch (error) {
+      console.error("Error fetching system FMECA data:", error);
+      toast({
+        title: "Data Fetch Failed",
+        description: "Failed to fetch system FMECA data from the server",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  // Load data on component mount
+  useEffect(() => {
+    fetchAssetFmecaData();
+    fetchSystemFmecaData();
+  }, []);
+  
+  // Handle tab changes
+  useEffect(() => {
+    if (selectedTab === "asset-level") {
+      fetchAssetFmecaData();
+    } else if (selectedTab === "system-level") {
+      fetchSystemFmecaData();
+    }
+  }, [selectedTab]);
+  
   // Get all systems
   const { data: systems, isLoading } = useQuery({
     queryKey: ["/api/fmeca/systems"],
