@@ -84,8 +84,11 @@ const FmecaPage: React.FC = () => {
   
   // New asset row ratings state
   const [assetSeverity, setAssetSeverity] = useState<number>(5);
+  const [assetSeverityJustification, setAssetSeverityJustification] = useState<string>("");
   const [assetProbability, setAssetProbability] = useState<number>(5);
+  const [assetProbabilityJustification, setAssetProbabilityJustification] = useState<string>("");
   const [assetDetection, setAssetDetection] = useState<number>(5);
+  const [assetDetectionJustification, setAssetDetectionJustification] = useState<string>("");
   
   // System-level FMECA form state
   const [systemName, setSystemName] = useState("");
@@ -95,8 +98,11 @@ const FmecaPage: React.FC = () => {
   
   // New system row ratings state
   const [systemSeverity, setSystemSeverity] = useState<number>(5);
+  const [systemSeverityJustification, setSystemSeverityJustification] = useState<string>("");
   const [systemProbability, setSystemProbability] = useState<number>(5);
+  const [systemProbabilityJustification, setSystemProbabilityJustification] = useState<string>("");
   const [systemDetection, setSystemDetection] = useState<number>(5);
+  const [systemDetectionJustification, setSystemDetectionJustification] = useState<string>("");
   
   // Helper functions for RPN calculation and display
   const calculateAssetRpn = (): number => {
@@ -165,6 +171,16 @@ const FmecaPage: React.FC = () => {
       return;
     }
     
+    // Validate justification fields
+    if (!assetSeverityJustification || !assetProbabilityJustification || !assetDetectionJustification) {
+      toast({
+        title: "Justification Required",
+        description: "Please provide justification for all severity, probability, and detection ratings",
+        variant: "destructive"
+      });
+      return;
+    }
+
     // Create new row with asset information
     const newRow: AssetFmecaRow = {
       id: Date.now().toString(),
@@ -176,8 +192,11 @@ const FmecaPage: React.FC = () => {
       cause: causeEl.value,
       effect: effectEl.value,
       severity: assetSeverity,
+      severityJustification: assetSeverityJustification,
       probability: assetProbability,
+      probabilityJustification: assetProbabilityJustification,
       detection: assetDetection,
+      detectionJustification: assetDetectionJustification,
       rpn: calculateAssetRpn(),
       action: actionEl.value,
       targetDate: targetDateEl.value,
@@ -295,6 +314,16 @@ const FmecaPage: React.FC = () => {
       return;
     }
     
+    // Validate justification fields
+    if (!systemSeverityJustification || !systemProbabilityJustification || !systemDetectionJustification) {
+      toast({
+        title: "Justification Required",
+        description: "Please provide justification for all severity, probability, and detection ratings",
+        variant: "destructive"
+      });
+      return;
+    }
+
     // Create new row with system information
     const newRow: SystemFmecaRow = {
       id: Date.now().toString(),
@@ -306,8 +335,11 @@ const FmecaPage: React.FC = () => {
       cause: causeEl.value,
       effect: effectEl.value,
       severity: systemSeverity,
+      severityJustification: systemSeverityJustification,
       probability: systemProbability,
+      probabilityJustification: systemProbabilityJustification,
       detection: systemDetection,
+      detectionJustification: systemDetectionJustification,
       rpn: calculateSystemRpn(),
       action: actionEl.value,
       targetDate: targetDateEl.value,
@@ -647,7 +679,7 @@ const FmecaPage: React.FC = () => {
                 </div>
               </div>
               
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div>
                   <Label className="text-sm font-medium">Severity (S):</Label>
                   <Select 
@@ -660,11 +692,20 @@ const FmecaPage: React.FC = () => {
                     <SelectContent>
                       {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => (
                         <SelectItem key={value} value={value.toString()}>
-                          {value}
+                          {value} - {value < 3 ? 'Minor' : value < 6 ? 'Moderate' : value < 9 ? 'Significant' : 'Critical'}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  <Label className="text-sm font-medium mt-2">Severity Justification:</Label>
+                  <Textarea 
+                    id="severity-justification" 
+                    className="mt-1" 
+                    placeholder="e.g., Critical impact on process safety and operations"
+                    value={assetSeverityJustification}
+                    onChange={(e) => setAssetSeverityJustification(e.target.value)}
+                    required
+                  />
                 </div>
                 <div>
                   <Label className="text-sm font-medium">Probability (P):</Label>
@@ -678,11 +719,20 @@ const FmecaPage: React.FC = () => {
                     <SelectContent>
                       {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => (
                         <SelectItem key={value} value={value.toString()}>
-                          {value}
+                          {value} - {value < 3 ? 'Remote' : value < 6 ? 'Occasional' : value < 9 ? 'Likely' : 'Almost Certain'}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  <Label className="text-sm font-medium mt-2">Probability Justification:</Label>
+                  <Textarea 
+                    id="probability-justification" 
+                    className="mt-1" 
+                    placeholder="e.g., Based on historical failure data and MTBF analysis"
+                    value={assetProbabilityJustification}
+                    onChange={(e) => setAssetProbabilityJustification(e.target.value)}
+                    required
+                  />
                 </div>
                 <div>
                   <Label className="text-sm font-medium">Detection (D):</Label>
@@ -696,24 +746,34 @@ const FmecaPage: React.FC = () => {
                     <SelectContent>
                       {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => (
                         <SelectItem key={value} value={value.toString()}>
-                          {value}
+                          {value} - {value < 3 ? 'Almost Certain' : value < 6 ? 'High' : value < 9 ? 'Low' : 'Almost Impossible'}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  <Label className="text-sm font-medium mt-2">Detection Justification:</Label>
+                  <Textarea 
+                    id="detection-justification" 
+                    className="mt-1" 
+                    placeholder="e.g., No sensors or indicators to detect this failure mode"
+                    value={assetDetectionJustification}
+                    onChange={(e) => setAssetDetectionJustification(e.target.value)}
+                    required
+                  />
                 </div>
-                <div>
-                  <Label className="text-sm font-medium">RPN (Auto-calculated):</Label>
-                  <div className="h-10 flex items-center px-4 mt-1 border rounded-md bg-slate-100">
-                    <span id="calculated-rpn" className="font-bold">{calculateAssetRpn()}</span>
-                    {calculateAssetRpn() > 0 && (
-                      <Badge 
-                        className={`ml-2 ${getColorClassByRpn(calculateAssetRpn())}`}
-                      >
-                        {getRiskLevelByRpn(calculateAssetRpn())}
-                      </Badge>
-                    )}
-                  </div>
+              </div>
+              
+              <div className="mb-4">
+                <Label className="text-sm font-medium">RPN (Auto-calculated):</Label>
+                <div className="h-10 flex items-center px-4 mt-1 border rounded-md bg-slate-100">
+                  <span id="calculated-rpn" className="font-bold">{calculateAssetRpn()}</span>
+                  {calculateAssetRpn() > 0 && (
+                    <Badge 
+                      className={`ml-2 ${getColorClassByRpn(calculateAssetRpn())}`}
+                    >
+                      {getRiskLevelByRpn(calculateAssetRpn())}
+                    </Badge>
+                  )}
                 </div>
               </div>
               
