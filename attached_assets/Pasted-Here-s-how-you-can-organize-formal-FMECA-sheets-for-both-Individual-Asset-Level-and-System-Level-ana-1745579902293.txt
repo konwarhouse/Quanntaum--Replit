@@ -1,0 +1,29 @@
+Here’s how you can organize formal FMECA sheets for both Individual Asset-Level and System-Level analyses. I'll outline the suggested structure, ensuring clarity and completeness for your needs:
+Sheet 1: Individual Asset-Level FMECA
+This sheet focuses on a specific asset. Here's the structure:
+Header Information (Top of the Sheet)
+Field	Details
+Tag Number	Unique identifier for the asset (e.g., Pump-101).
+Asset Description	Brief description of the asset (e.g., Centrifugal Pump).
+Function	What the asset does in the process (e.g., Delivers fluid to main system).
+FMECA Table (Bottom of the Sheet)
+Component	Failure Mode	Cause	Effect	Severity	Probability	Detection	RPN	Action Required	Target Date	Comments/Notes
+Mechanical Seal	Leakage	Wear and tear	Fluid leakage, operational halt	8	6	3	144	Replace seals periodically	01-May-2025	Monitor wear during inspections
+Bearing	Excessive vibration	Misalignment	Increased noise, overheating	7	5	4	140	Align and lubricate bearings	10-May-2025	Use predictive maintenance
+Shaft	Cracking	Material fatigue	Total pump failure	10	3	5	150	Conduct fatigue tests	20-May-2025	Analyze loading conditions
+Sheet 2: System-Level FMECA
+This sheet analyzes an entire system, such as a boiler system. The structure is broader, focusing on subsystems.
+Header Information (Top of the Sheet)
+Field	Details
+System Name	The name of the system (e.g., Boiler System).
+Description	A short explanation of the system's purpose (e.g., Generates process steam).
+Primary Function	The main function of the system (e.g., Provides heat and steam).
+FMECA Table (Bottom of the Sheet)
+Subsystem	Failure Mode	Cause	Effect	Severity	Probability	Detection	RPN	Action Required	Target Date	Comments/Notes
+Burner	Flame failure	Blocked fuel nozzle	Loss of heat generation	9	4	3	108	Inspect and clean regularly	01-Jun-2025	Use automated flame monitoring
+Gas System	Gas leakage	Valve seal degradation	Risk of explosion, hazard	10	3	5	150	Replace seals, add sensors	15-Jun-2025	Add auto shut-off for leaks
+Automation & Control	System malfunction	Software bugs	Incorrect boiler operation	8	5	4	160	Update software regularly	10-Jul-2025	Perform regular validation
+Key Points for Implementation
+Tailoring the Columns: These columns can be adjusted to suit your specific needs—e.g., adding "Cost of Mitigation" or "Criticality Index" if required.
+Linking Both Sheets: Ensure there's a clear link between systems and their assets for continuity (e.g., a pump in the boiler system should reference back to the larger system-level FMECA).
+Additional Notes: Encourage stakeholders to use the comments column to capture insights during the analysis process.
