@@ -172,7 +172,25 @@ export const getComponentById = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Component not found" });
     }
     
-    res.json(component);
+    // Find associated failure modes for this component to get equipment class
+    const componentFailureModes = await db.select()
+      .from(failureModes)
+      .where(eq(failureModes.componentId, componentId));
+    
+    // Get the equipment class from the first failure mode if available
+    let equipmentClass = null;
+    if (componentFailureModes.length > 0) {
+      // Use the first failure mode's equipment class as a reference
+      equipmentClass = componentFailureModes[0].equipmentClass;
+    }
+    
+    // Add equipment class to component data
+    const componentWithClass = {
+      ...component,
+      equipmentClass
+    };
+    
+    res.json(componentWithClass);
   } catch (error) {
     console.error("Error fetching component:", error);
     res.status(500).json({ error: "Failed to fetch component" });

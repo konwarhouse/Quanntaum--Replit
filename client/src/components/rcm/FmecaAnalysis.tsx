@@ -124,27 +124,89 @@ export const FmecaAnalysis: React.FC<FmecaAnalysisProps> = ({
     enabled: !!systemId
   });
 
-  // Get all failure modes regardless of component - since failure modes are defined at equipment class level
-  const { data: failureModes, isLoading: failureModesLoading } = useQuery<FailureMode[]>({
-    queryKey: ["/api/rcm/failure-modes"],
+  // Get component's details first to extract equipment class
+  const { data: componentDetails } = useQuery<Component>({
+    queryKey: ["/api/rcm/component-details", selectedComponent],
     queryFn: async () => {
-      // Simply fetch all available failure modes without filtering by component
-      console.log("Fetching all available failure modes");
-      const response = await apiRequest("GET", `/api/rcm/failure-modes`);
-      const data = await response.json();
+      if (!selectedComponent) return null;
       
-      console.log(`Found ${data.length} failure modes`);
-      
-      // If we still have no modes, make a second attempt with a clearer error
-      if (!data || data.length === 0) {
-        console.error("No failure modes found in the system");
-        return [];
+      try {
+        const response = await apiRequest("GET", `/api/rcm/components/${selectedComponent}`);
+        if (!response.ok) {
+          console.error("Failed to fetch component details");
+          return null;
+        }
+        return response.json();
+      } catch (error) {
+        console.error("Error fetching component details:", error);
+        return null;
       }
-      
-      return data;
     },
-    // Always enabled, we need failure modes regardless of component selection
-    enabled: true
+    enabled: !!selectedComponent
+  });
+
+  // Now get failure modes filtered by equipment class when possible
+  const { data: failureModes, isLoading: failureModesLoading } = useQuery<FailureMode[]>({
+    queryKey: ["/api/failure-modes", componentDetails?.equipmentClass, selectedComponent],
+    queryFn: async () => {
+      try {
+        // If we have component details and an equipment class, filter by it
+        if (componentDetails?.equipmentClass) {
+          console.log(`Fetching failure modes for equipment class: ${componentDetails.equipmentClass}`);
+          
+          // First try the RCM API with equipment class filter
+          const response = await apiRequest("GET", `/api/rcm/failure-modes?equipmentClass=${encodeURIComponent(componentDetails.equipmentClass)}`);
+          
+          if (!response.ok) {
+            throw new Error("Failed to fetch from RCM failure modes endpoint");
+          }
+          
+          const data = await response.json();
+          console.log(`Found ${data.length} failure modes for equipment class ${componentDetails.equipmentClass}`);
+          
+          if (data && data.length > 0) {
+            return data;
+          }
+        }
+        
+        // If we have a selected component but no equipment class-specific modes were found,
+        // try to get component-specific modes
+        if (selectedComponent) {
+          console.log(`Fetching failure modes for component ID: ${selectedComponent}`);
+          const componentResponse = await apiRequest("GET", `/api/rcm/failure-modes?componentId=${selectedComponent}`);
+          
+          if (componentResponse.ok) {
+            const componentData = await componentResponse.json();
+            console.log(`Found ${componentData.length} component-specific failure modes`);
+            
+            if (componentData && componentData.length > 0) {
+              return componentData;
+            }
+          }
+        }
+        
+        // As a fallback, get all failure modes but only if we must
+        console.log("No specific failure modes found, fetching all available failure modes");
+        const allResponse = await apiRequest("GET", `/api/failure-modes`);
+        const allData = await allResponse.json();
+        console.log(`Found ${allData.length} total failure modes`);
+        
+        return allData;
+      } catch (error) {
+        console.error("Error fetching failure modes:", error);
+        // Final fallback - try main API
+        try {
+          const fallbackResponse = await apiRequest("GET", `/api/failure-modes`);
+          const fallbackData = await fallbackResponse.json();
+          return fallbackData || [];
+        } catch (fallbackError) {
+          console.error("Final fallback error:", fallbackError);
+          return [];
+        }
+      }
+    },
+    enabled: true, // Always enabled but will use componentDetails when available
+    staleTime: 10000 // Cache for 10 seconds to avoid too many refetches
   });
 
   // Get criticality data for the failure modes - only those relevant to the selected component
