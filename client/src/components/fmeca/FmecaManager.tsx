@@ -188,7 +188,7 @@ export const FmecaManager: React.FC<FmecaManagerProps> = ({
                         <th className="border border-gray-300 p-2 text-left">Risk Level</th>
                         <th className="border border-gray-300 p-2 text-left">Action</th>
                         <th className="border border-gray-300 p-2 text-left">Responsibility</th>
-                        <th className="border border-gray-300 p-2 text-left">Status</th>
+                        <th className="border border-gray-300 p-2 text-left">Verification Status</th>
                         <th className="border border-gray-300 p-2 text-center">Actions</th>
                       </tr>
                     </thead>
@@ -213,21 +213,35 @@ export const FmecaManager: React.FC<FmecaManagerProps> = ({
                           <td className="border border-gray-300 p-2">{row.responsibility}</td>
                           <td className="border border-gray-300 p-2">
                             {row.completionDate ? (
-                              <div className="space-y-2">
-                                <div className="text-xs">
-                                  <span className="font-medium bg-blue-50 text-blue-700 px-2 py-1 rounded">Completed: {row.completionDate}</span>
-                                </div>
-                                {row.verifiedBy && (
-                                  <div className="text-xs">
-                                    <span className="font-medium bg-purple-50 text-purple-700 px-2 py-1 rounded">By: {row.verifiedBy}</span>
+                              <div className="p-2 bg-blue-50 border border-blue-100 rounded-md">
+                                <div className="grid gap-2">
+                                  <div>
+                                    <span className="font-semibold text-sm">Completion Date:</span>
+                                    <div className="text-sm bg-white px-2 py-1 rounded border border-blue-200">
+                                      {row.completionDate}
+                                    </div>
                                   </div>
-                                )}
-                                <Badge className={getEffectivenessColor(row.effectivenessVerified)}>
-                                  {getEffectivenessText(row.effectivenessVerified)}
-                                </Badge>
+                                  
+                                  <div>
+                                    <span className="font-semibold text-sm">Verified By:</span>
+                                    <div className="text-sm bg-white px-2 py-1 rounded border border-blue-200">
+                                      {row.verifiedBy || 'Not specified'}
+                                    </div>
+                                  </div>
+                                  
+                                  <div>
+                                    <span className="font-semibold text-sm">Effectiveness:</span>
+                                    <Badge className={`${getEffectivenessColor(row.effectivenessVerified)} mt-1`}>
+                                      {getEffectivenessText(row.effectivenessVerified)}
+                                    </Badge>
+                                  </div>
+                                </div>
                               </div>
                             ) : (
-                              <Badge variant="outline">Pending</Badge>
+                              <div className="p-2 bg-gray-50 border border-gray-200 rounded-md">
+                                <div className="text-sm text-gray-600 mb-2">No verification data</div>
+                                <Badge variant="outline">Click Edit to Add Verification</Badge>
+                              </div>
                             )}
                           </td>
                           <td className="border border-gray-300 p-2 text-center">
@@ -301,7 +315,7 @@ export const FmecaManager: React.FC<FmecaManagerProps> = ({
                         <th className="border border-gray-300 p-2 text-left">Risk Level</th>
                         <th className="border border-gray-300 p-2 text-left">Action</th>
                         <th className="border border-gray-300 p-2 text-left">Responsibility</th>
-                        <th className="border border-gray-300 p-2 text-left">Status</th>
+                        <th className="border border-gray-300 p-2 text-left">Verification Status</th>
                         <th className="border border-gray-300 p-2 text-center">Actions</th>
                       </tr>
                     </thead>
@@ -326,21 +340,35 @@ export const FmecaManager: React.FC<FmecaManagerProps> = ({
                           <td className="border border-gray-300 p-2">{row.responsibility}</td>
                           <td className="border border-gray-300 p-2">
                             {row.completionDate ? (
-                              <div className="space-y-2">
-                                <div className="text-xs">
-                                  <span className="font-medium bg-blue-50 text-blue-700 px-2 py-1 rounded">Completed: {row.completionDate}</span>
-                                </div>
-                                {row.verifiedBy && (
-                                  <div className="text-xs">
-                                    <span className="font-medium bg-purple-50 text-purple-700 px-2 py-1 rounded">By: {row.verifiedBy}</span>
+                              <div className="p-2 bg-blue-50 border border-blue-100 rounded-md">
+                                <div className="grid gap-2">
+                                  <div>
+                                    <span className="font-semibold text-sm">Completion Date:</span>
+                                    <div className="text-sm bg-white px-2 py-1 rounded border border-blue-200">
+                                      {row.completionDate}
+                                    </div>
                                   </div>
-                                )}
-                                <Badge className={getEffectivenessColor(row.effectivenessVerified)}>
-                                  {getEffectivenessText(row.effectivenessVerified)}
-                                </Badge>
+                                  
+                                  <div>
+                                    <span className="font-semibold text-sm">Verified By:</span>
+                                    <div className="text-sm bg-white px-2 py-1 rounded border border-blue-200">
+                                      {row.verifiedBy || 'Not specified'}
+                                    </div>
+                                  </div>
+                                  
+                                  <div>
+                                    <span className="font-semibold text-sm">Effectiveness:</span>
+                                    <Badge className={`${getEffectivenessColor(row.effectivenessVerified)} mt-1`}>
+                                      {getEffectivenessText(row.effectivenessVerified)}
+                                    </Badge>
+                                  </div>
+                                </div>
                               </div>
                             ) : (
-                              <Badge variant="outline">Pending</Badge>
+                              <div className="p-2 bg-gray-50 border border-gray-200 rounded-md">
+                                <div className="text-sm text-gray-600 mb-2">No verification data</div>
+                                <Badge variant="outline">Click Edit to Add Verification</Badge>
+                              </div>
                             )}
                           </td>
                           <td className="border border-gray-300 p-2 text-center">
@@ -379,36 +407,42 @@ export const FmecaManager: React.FC<FmecaManagerProps> = ({
   };
   
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">
-          {rowType === 'asset' ? 'Asset-Level FMECA' : 'System-Level FMECA'}
-        </h2>
+        <div>
+          <h2 className="text-xl font-bold mb-2">{rowType === 'asset' ? 'Asset FMECA Analysis' : 'System FMECA Analysis'}</h2>
+          <p className="text-gray-600 mb-4">
+            {rowType === 'asset' 
+              ? 'Analyze individual assets for failure modes, effects, and criticality.' 
+              : 'Analyze systems for failure modes, effects, and criticality.'}
+          </p>
+        </div>
         
-        {/* Excel Import/Export Tools */}
-        <ExcelTools
-          rows={rows}
-          rowType={rowType}
+        <ExcelTools 
+          rows={rows} 
           onImport={handleImport}
+          rowType={rowType}
           headerData={headerData}
         />
       </div>
       
-      {/* FMECA Tables */}
-      {renderTable()}
+      {rows.length > 0 ? (
+        renderTable()
+      ) : (
+        <div className="border border-dashed border-gray-300 rounded-md p-6 text-center">
+          <p className="text-gray-500">No FMECA rows added yet. Add rows or import from Excel.</p>
+        </div>
+      )}
       
-      {/* Edit Dialog */}
       {editingRow && (
         <EditRowDialog
           isOpen={isEditDialogOpen}
           onClose={() => setIsEditDialogOpen(false)}
-          row={editingRow}
-          rowType={rowType}
+          rowData={editingRow}
           onSave={handleSaveEdit}
+          rowType={rowType}
         />
       )}
     </div>
   );
 };
-
-export default FmecaManager;
