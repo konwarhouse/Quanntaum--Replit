@@ -1,7 +1,7 @@
 import React, { useState, useEffect, ChangeEvent } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { Loader2, FileText, Database, Plus, Trash, CheckCircle2 } from "lucide-react";
+import { Loader2, FileText, Database, Plus, Trash, CheckCircle2, Edit, Save } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,15 @@ import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { FmecaManager } from "@/components/fmeca/FmecaManager";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface System {
   id: number;
@@ -101,6 +110,10 @@ const FmecaPage: React.FC = () => {
   const [assetDetection, setAssetDetection] = useState<number>(5);
   const [assetDetectionJustification, setAssetDetectionJustification] = useState<string>("");
   
+  // Edit dialog state for asset FMECA rows
+  const [isEditingAsset, setIsEditingAsset] = useState(false);
+  const [editingAssetRow, setEditingAssetRow] = useState<AssetFmecaRow | null>(null);
+  
   // System-level FMECA form state
   const [systemName, setSystemName] = useState("");
   const [systemDescription, setSystemDescription] = useState("");
@@ -114,6 +127,10 @@ const FmecaPage: React.FC = () => {
   const [systemProbabilityJustification, setSystemProbabilityJustification] = useState<string>("");
   const [systemDetection, setSystemDetection] = useState<number>(5);
   const [systemDetectionJustification, setSystemDetectionJustification] = useState<string>("");
+  
+  // Edit dialog state for system FMECA rows
+  const [isEditingSystem, setIsEditingSystem] = useState(false);
+  const [editingSystemRow, setEditingSystemRow] = useState<SystemFmecaRow | null>(null);
   
   // Helper functions for RPN calculation and display
   const calculateAssetRpn = (): number => {
@@ -241,6 +258,70 @@ const FmecaPage: React.FC = () => {
       title: "Success",
       description: "FMECA row added successfully"
     });
+  };
+  
+  const handleEditAssetRow = (row: AssetFmecaRow) => {
+    // Create a deep copy of the row to avoid reference issues
+    const rowCopy: AssetFmecaRow = JSON.parse(JSON.stringify(row));
+    setEditingAssetRow(rowCopy);
+    setIsEditingAsset(true);
+  };
+  
+  const handleUpdateAssetRow = async () => {
+    if (!editingAssetRow) return;
+    
+    try {
+      // If the ID is a number (stored in database), update in the database
+      if (!isNaN(Number(editingAssetRow.id))) {
+        const apiRow = {
+          ...editingAssetRow,
+          // Convert string properties to required types
+          severity: Number(editingAssetRow.severity),
+          probability: Number(editingAssetRow.probability),
+          detection: Number(editingAssetRow.detection),
+          rpn: Number(editingAssetRow.rpn),
+          // Ensure nullable fields are properly handled
+          completionDate: editingAssetRow.completionDate || null,
+          verifiedBy: editingAssetRow.verifiedBy || null,
+          effectivenessVerified: editingAssetRow.effectivenessVerified || null,
+        };
+        
+        const response = await apiRequest(
+          "PUT", 
+          `/api/enhanced-fmeca/asset/${editingAssetRow.id}`, 
+          apiRow
+        );
+        
+        if (!response.ok) {
+          throw new Error("Failed to update FMECA row in database");
+        }
+      }
+      
+      // Update local state
+      setAssetRows(assetRows.map(row => 
+        row.id === editingAssetRow.id ? editingAssetRow : row
+      ));
+      
+      // Close the edit modal
+      setIsEditingAsset(false);
+      setEditingAssetRow(null);
+      
+      toast({
+        title: "Row Updated",
+        description: "FMECA row updated successfully"
+      });
+      
+      // Refresh data to ensure we have the latest state
+      fetchAssetFmecaData();
+      
+    } catch (error) {
+      console.error("Error updating FMECA row:", error);
+      toast({
+        title: "Update Failed",
+        description: "Failed to update FMECA row",
+        variant: "destructive"
+      });
+    }
   };
   
   const handleDeleteAssetRow = async (id: string) => {
@@ -462,12 +543,99 @@ const FmecaPage: React.FC = () => {
     });
   };
   
-  const handleDeleteSystemRow = (id: string) => {
-    setSystemRows(systemRows.filter(row => row.id !== id));
-    toast({
-      title: "Row Deleted",
-      description: "System FMECA row removed"
-    });
+  const handleEditSystemRow = (row: SystemFmecaRow) => {
+    // Create a deep copy of the row to avoid reference issues
+    const rowCopy: SystemFmecaRow = JSON.parse(JSON.stringify(row));
+    setEditingSystemRow(rowCopy);
+    setIsEditingSystem(true);
+  };
+  
+  const handleUpdateSystemRow = async () => {
+    if (!editingSystemRow) return;
+    
+    try {
+      // If the ID is a number (stored in database), update in the database
+      if (!isNaN(Number(editingSystemRow.id))) {
+        const apiRow = {
+          ...editingSystemRow,
+          // Convert string properties to required types
+          severity: Number(editingSystemRow.severity),
+          probability: Number(editingSystemRow.probability),
+          detection: Number(editingSystemRow.detection),
+          rpn: Number(editingSystemRow.rpn),
+          // Ensure nullable fields are properly handled
+          completionDate: editingSystemRow.completionDate || null,
+          verifiedBy: editingSystemRow.verifiedBy || null,
+          effectivenessVerified: editingSystemRow.effectivenessVerified || null,
+        };
+        
+        const response = await apiRequest(
+          "PUT", 
+          `/api/enhanced-fmeca/system/${editingSystemRow.id}`, 
+          apiRow
+        );
+        
+        if (!response.ok) {
+          throw new Error("Failed to update System FMECA row in database");
+        }
+      }
+      
+      // Update local state
+      setSystemRows(systemRows.map(row => 
+        row.id === editingSystemRow.id ? editingSystemRow : row
+      ));
+      
+      // Close the edit modal
+      setIsEditingSystem(false);
+      setEditingSystemRow(null);
+      
+      toast({
+        title: "Row Updated",
+        description: "System FMECA row updated successfully"
+      });
+      
+      // Refresh data to ensure we have the latest state
+      fetchSystemFmecaData();
+      
+    } catch (error) {
+      console.error("Error updating System FMECA row:", error);
+      toast({
+        title: "Update Failed",
+        description: "Failed to update System FMECA row",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const handleDeleteSystemRow = async (id: string) => {
+    try {
+      // If the ID is a number (stored in database), delete from the database
+      if (!isNaN(Number(id))) {
+        const response = await apiRequest(
+          "DELETE", 
+          `/api/enhanced-fmeca/system/${id}`
+        );
+        
+        if (!response.ok) {
+          throw new Error("Failed to delete System FMECA row from database");
+        }
+      }
+      
+      // Remove from local state
+      setSystemRows(systemRows.filter(row => row.id !== id));
+      
+      toast({
+        title: "Row Deleted",
+        description: "System FMECA row removed successfully"
+      });
+    } catch (error) {
+      console.error("Error deleting System FMECA row:", error);
+      toast({
+        title: "Delete Failed",
+        description: "Failed to delete System FMECA row",
+        variant: "destructive"
+      });
+    }
   };
   
   const handleClearSystemFmeca = () => {
@@ -637,8 +805,501 @@ const FmecaPage: React.FC = () => {
     );
   }
 
+  // Edit dialogs
+  const renderAssetEditDialog = () => {
+    if (!editingAssetRow) return null;
+    
+    return (
+      <Dialog open={isEditingAsset} onOpenChange={setIsEditingAsset}>
+        <DialogContent className="sm:max-w-[800px]">
+          <DialogHeader>
+            <DialogTitle>Edit FMECA Row</DialogTitle>
+            <DialogDescription>
+              Make changes to the FMECA row. Click save when you're done.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 gap-4">
+              <div className="col-span-4">
+                <Label htmlFor="edit-component">Component</Label>
+                <Input
+                  id="edit-component"
+                  value={editingAssetRow.component}
+                  onChange={(e) => setEditingAssetRow({...editingAssetRow, component: e.target.value})}
+                />
+              </div>
+              
+              <div className="col-span-4">
+                <Label htmlFor="edit-failure-mode">Failure Mode</Label>
+                <Input
+                  id="edit-failure-mode"
+                  value={editingAssetRow.failureMode}
+                  onChange={(e) => setEditingAssetRow({...editingAssetRow, failureMode: e.target.value})}
+                />
+              </div>
+              
+              <div className="col-span-4">
+                <Label htmlFor="edit-cause">Cause</Label>
+                <Textarea
+                  id="edit-cause"
+                  value={editingAssetRow.cause}
+                  onChange={(e) => setEditingAssetRow({...editingAssetRow, cause: e.target.value})}
+                />
+              </div>
+              
+              <div className="col-span-4">
+                <Label htmlFor="edit-effect">Effect</Label>
+                <Textarea
+                  id="edit-effect"
+                  value={editingAssetRow.effect}
+                  onChange={(e) => setEditingAssetRow({...editingAssetRow, effect: e.target.value})}
+                />
+              </div>
+              
+              <div className="col-span-1">
+                <Label htmlFor="edit-severity">Severity (1-10)</Label>
+                <Select 
+                  value={editingAssetRow.severity.toString()} 
+                  onValueChange={(value) => {
+                    setEditingAssetRow({
+                      ...editingAssetRow, 
+                      severity: Number(value),
+                      rpn: Number(value) * editingAssetRow.probability * editingAssetRow.detection
+                    });
+                  }}
+                >
+                  <SelectTrigger id="edit-severity">
+                    <SelectValue placeholder="Severity" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                      <SelectItem key={num} value={num.toString()}>
+                        {num}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="col-span-3">
+                <Label htmlFor="edit-severity-justification">Severity Justification</Label>
+                <Input
+                  id="edit-severity-justification"
+                  value={editingAssetRow.severityJustification}
+                  onChange={(e) => setEditingAssetRow({...editingAssetRow, severityJustification: e.target.value})}
+                />
+              </div>
+              
+              <div className="col-span-1">
+                <Label htmlFor="edit-probability">Probability (1-10)</Label>
+                <Select 
+                  value={editingAssetRow.probability.toString()} 
+                  onValueChange={(value) => {
+                    setEditingAssetRow({
+                      ...editingAssetRow, 
+                      probability: Number(value),
+                      rpn: editingAssetRow.severity * Number(value) * editingAssetRow.detection
+                    });
+                  }}
+                >
+                  <SelectTrigger id="edit-probability">
+                    <SelectValue placeholder="Probability" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                      <SelectItem key={num} value={num.toString()}>
+                        {num}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="col-span-3">
+                <Label htmlFor="edit-probability-justification">Probability Justification</Label>
+                <Input
+                  id="edit-probability-justification"
+                  value={editingAssetRow.probabilityJustification}
+                  onChange={(e) => setEditingAssetRow({...editingAssetRow, probabilityJustification: e.target.value})}
+                />
+              </div>
+              
+              <div className="col-span-1">
+                <Label htmlFor="edit-detection">Detection (1-10)</Label>
+                <Select 
+                  value={editingAssetRow.detection.toString()} 
+                  onValueChange={(value) => {
+                    setEditingAssetRow({
+                      ...editingAssetRow, 
+                      detection: Number(value),
+                      rpn: editingAssetRow.severity * editingAssetRow.probability * Number(value)
+                    });
+                  }}
+                >
+                  <SelectTrigger id="edit-detection">
+                    <SelectValue placeholder="Detection" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                      <SelectItem key={num} value={num.toString()}>
+                        {num}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="col-span-3">
+                <Label htmlFor="edit-detection-justification">Detection Justification</Label>
+                <Input
+                  id="edit-detection-justification"
+                  value={editingAssetRow.detectionJustification}
+                  onChange={(e) => setEditingAssetRow({...editingAssetRow, detectionJustification: e.target.value})}
+                />
+              </div>
+              
+              <div className="col-span-4">
+                <Label htmlFor="edit-action">Action Required</Label>
+                <Textarea
+                  id="edit-action"
+                  value={editingAssetRow.action}
+                  onChange={(e) => setEditingAssetRow({...editingAssetRow, action: e.target.value})}
+                />
+              </div>
+              
+              <div className="col-span-2">
+                <Label htmlFor="edit-responsibility">Responsibility</Label>
+                <Input
+                  id="edit-responsibility"
+                  value={editingAssetRow.responsibility}
+                  onChange={(e) => setEditingAssetRow({...editingAssetRow, responsibility: e.target.value})}
+                />
+              </div>
+              
+              <div className="col-span-2">
+                <Label htmlFor="edit-target-date">Target Date</Label>
+                <Input
+                  id="edit-target-date"
+                  type="date"
+                  value={editingAssetRow.targetDate}
+                  onChange={(e) => setEditingAssetRow({...editingAssetRow, targetDate: e.target.value})}
+                />
+              </div>
+              
+              <div className="col-span-2">
+                <Label htmlFor="edit-completion-date">Completion Date</Label>
+                <Input
+                  id="edit-completion-date"
+                  type="date"
+                  value={editingAssetRow.completionDate || ''}
+                  onChange={(e) => setEditingAssetRow({...editingAssetRow, completionDate: e.target.value})}
+                />
+              </div>
+              
+              <div className="col-span-2">
+                <Label htmlFor="edit-verified-by">Verified By</Label>
+                <Input
+                  id="edit-verified-by"
+                  value={editingAssetRow.verifiedBy || ''}
+                  onChange={(e) => setEditingAssetRow({...editingAssetRow, verifiedBy: e.target.value})}
+                />
+              </div>
+              
+              <div className="col-span-2">
+                <Label htmlFor="edit-effectiveness">Effectiveness Verified</Label>
+                <Select 
+                  value={editingAssetRow.effectivenessVerified || ''} 
+                  onValueChange={(value) => {
+                    setEditingAssetRow({...editingAssetRow, effectivenessVerified: value as 'yes' | 'no' | 'partial' | ''});
+                  }}
+                >
+                  <SelectTrigger id="edit-effectiveness">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Not verified</SelectItem>
+                    <SelectItem value="yes">Yes</SelectItem>
+                    <SelectItem value="no">No</SelectItem>
+                    <SelectItem value="partial">Partial</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="col-span-2">
+                <Label htmlFor="edit-comments">Comments</Label>
+                <Textarea
+                  id="edit-comments"
+                  value={editingAssetRow.comments}
+                  onChange={(e) => setEditingAssetRow({...editingAssetRow, comments: e.target.value})}
+                />
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditingAsset(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateAssetRow}>
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  };
+  
+  const renderSystemEditDialog = () => {
+    if (!editingSystemRow) return null;
+    
+    return (
+      <Dialog open={isEditingSystem} onOpenChange={setIsEditingSystem}>
+        <DialogContent className="sm:max-w-[800px]">
+          <DialogHeader>
+            <DialogTitle>Edit System FMECA Row</DialogTitle>
+            <DialogDescription>
+              Make changes to the System FMECA row. Click save when you're done.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 gap-4">
+              <div className="col-span-4">
+                <Label htmlFor="edit-subsystem">Subsystem</Label>
+                <Input
+                  id="edit-subsystem"
+                  value={editingSystemRow.subsystem}
+                  onChange={(e) => setEditingSystemRow({...editingSystemRow, subsystem: e.target.value})}
+                />
+              </div>
+              
+              <div className="col-span-4">
+                <Label htmlFor="edit-system-failure-mode">Failure Mode</Label>
+                <Input
+                  id="edit-system-failure-mode"
+                  value={editingSystemRow.failureMode}
+                  onChange={(e) => setEditingSystemRow({...editingSystemRow, failureMode: e.target.value})}
+                />
+              </div>
+              
+              <div className="col-span-4">
+                <Label htmlFor="edit-system-cause">Cause</Label>
+                <Textarea
+                  id="edit-system-cause"
+                  value={editingSystemRow.cause}
+                  onChange={(e) => setEditingSystemRow({...editingSystemRow, cause: e.target.value})}
+                />
+              </div>
+              
+              <div className="col-span-4">
+                <Label htmlFor="edit-system-effect">Effect</Label>
+                <Textarea
+                  id="edit-system-effect"
+                  value={editingSystemRow.effect}
+                  onChange={(e) => setEditingSystemRow({...editingSystemRow, effect: e.target.value})}
+                />
+              </div>
+              
+              <div className="col-span-1">
+                <Label htmlFor="edit-system-severity">Severity (1-10)</Label>
+                <Select 
+                  value={editingSystemRow.severity.toString()} 
+                  onValueChange={(value) => {
+                    setEditingSystemRow({
+                      ...editingSystemRow, 
+                      severity: Number(value),
+                      rpn: Number(value) * editingSystemRow.probability * editingSystemRow.detection
+                    });
+                  }}
+                >
+                  <SelectTrigger id="edit-system-severity">
+                    <SelectValue placeholder="Severity" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                      <SelectItem key={num} value={num.toString()}>
+                        {num}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="col-span-3">
+                <Label htmlFor="edit-system-severity-justification">Severity Justification</Label>
+                <Input
+                  id="edit-system-severity-justification"
+                  value={editingSystemRow.severityJustification}
+                  onChange={(e) => setEditingSystemRow({...editingSystemRow, severityJustification: e.target.value})}
+                />
+              </div>
+              
+              <div className="col-span-1">
+                <Label htmlFor="edit-system-probability">Probability (1-10)</Label>
+                <Select 
+                  value={editingSystemRow.probability.toString()} 
+                  onValueChange={(value) => {
+                    setEditingSystemRow({
+                      ...editingSystemRow, 
+                      probability: Number(value),
+                      rpn: editingSystemRow.severity * Number(value) * editingSystemRow.detection
+                    });
+                  }}
+                >
+                  <SelectTrigger id="edit-system-probability">
+                    <SelectValue placeholder="Probability" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                      <SelectItem key={num} value={num.toString()}>
+                        {num}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="col-span-3">
+                <Label htmlFor="edit-system-probability-justification">Probability Justification</Label>
+                <Input
+                  id="edit-system-probability-justification"
+                  value={editingSystemRow.probabilityJustification}
+                  onChange={(e) => setEditingSystemRow({...editingSystemRow, probabilityJustification: e.target.value})}
+                />
+              </div>
+              
+              <div className="col-span-1">
+                <Label htmlFor="edit-system-detection">Detection (1-10)</Label>
+                <Select 
+                  value={editingSystemRow.detection.toString()} 
+                  onValueChange={(value) => {
+                    setEditingSystemRow({
+                      ...editingSystemRow, 
+                      detection: Number(value),
+                      rpn: editingSystemRow.severity * editingSystemRow.probability * Number(value)
+                    });
+                  }}
+                >
+                  <SelectTrigger id="edit-system-detection">
+                    <SelectValue placeholder="Detection" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                      <SelectItem key={num} value={num.toString()}>
+                        {num}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="col-span-3">
+                <Label htmlFor="edit-system-detection-justification">Detection Justification</Label>
+                <Input
+                  id="edit-system-detection-justification"
+                  value={editingSystemRow.detectionJustification}
+                  onChange={(e) => setEditingSystemRow({...editingSystemRow, detectionJustification: e.target.value})}
+                />
+              </div>
+              
+              <div className="col-span-4">
+                <Label htmlFor="edit-system-action">Action Required</Label>
+                <Textarea
+                  id="edit-system-action"
+                  value={editingSystemRow.action}
+                  onChange={(e) => setEditingSystemRow({...editingSystemRow, action: e.target.value})}
+                />
+              </div>
+              
+              <div className="col-span-2">
+                <Label htmlFor="edit-system-responsibility">Responsibility</Label>
+                <Input
+                  id="edit-system-responsibility"
+                  value={editingSystemRow.responsibility}
+                  onChange={(e) => setEditingSystemRow({...editingSystemRow, responsibility: e.target.value})}
+                />
+              </div>
+              
+              <div className="col-span-2">
+                <Label htmlFor="edit-system-target-date">Target Date</Label>
+                <Input
+                  id="edit-system-target-date"
+                  type="date"
+                  value={editingSystemRow.targetDate}
+                  onChange={(e) => setEditingSystemRow({...editingSystemRow, targetDate: e.target.value})}
+                />
+              </div>
+              
+              <div className="col-span-2">
+                <Label htmlFor="edit-system-completion-date">Completion Date</Label>
+                <Input
+                  id="edit-system-completion-date"
+                  type="date"
+                  value={editingSystemRow.completionDate || ''}
+                  onChange={(e) => setEditingSystemRow({...editingSystemRow, completionDate: e.target.value})}
+                />
+              </div>
+              
+              <div className="col-span-2">
+                <Label htmlFor="edit-system-verified-by">Verified By</Label>
+                <Input
+                  id="edit-system-verified-by"
+                  value={editingSystemRow.verifiedBy || ''}
+                  onChange={(e) => setEditingSystemRow({...editingSystemRow, verifiedBy: e.target.value})}
+                />
+              </div>
+              
+              <div className="col-span-2">
+                <Label htmlFor="edit-system-effectiveness">Effectiveness Verified</Label>
+                <Select 
+                  value={editingSystemRow.effectivenessVerified || ''} 
+                  onValueChange={(value) => {
+                    setEditingSystemRow({...editingSystemRow, effectivenessVerified: value as 'yes' | 'no' | 'partial' | ''});
+                  }}
+                >
+                  <SelectTrigger id="edit-system-effectiveness">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Not verified</SelectItem>
+                    <SelectItem value="yes">Yes</SelectItem>
+                    <SelectItem value="no">No</SelectItem>
+                    <SelectItem value="partial">Partial</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="col-span-2">
+                <Label htmlFor="edit-system-comments">Comments</Label>
+                <Textarea
+                  id="edit-system-comments"
+                  value={editingSystemRow.comments}
+                  onChange={(e) => setEditingSystemRow({...editingSystemRow, comments: e.target.value})}
+                />
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditingSystem(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateSystemRow}>
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  };
+  
   return (
     <div className="container mx-auto py-6 space-y-6">
+      {/* Render the edit dialogs */}
+      {renderAssetEditDialog()}
+      {renderSystemEditDialog()}
+      
       <h1 className="text-3xl font-bold tracking-tight">FMECA Analysis</h1>
       <p className="text-muted-foreground">
         Failure Mode, Effects, and Criticality Analysis is a structured approach to identifying potential
