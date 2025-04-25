@@ -585,10 +585,26 @@ export const createMaintenanceTask = (req: Request, res: Response) => {
 
 export const getFailureModesBySystem = async (req: Request, res: Response) => {
   try {
-    const { systemId, componentId } = req.query;
+    const { systemId, componentId, equipmentClass } = req.query;
     
+    // Equipment class filter takes precedence if provided
+    if (equipmentClass) {
+      console.log(`Filtering failure modes by equipment class: ${equipmentClass}`);
+      
+      // Fetch failure modes that match the given equipment class
+      const failureModesByClass = await db.select()
+        .from(failureModes)
+        .where(eq(failureModes.equipmentClass, equipmentClass.toString()));
+      
+      console.log(`Found ${failureModesByClass.length} failure modes for equipment class ${equipmentClass}`);
+      return res.json(failureModesByClass);
+    }
+    
+    // Otherwise filter by system/component
     if (!systemId && !componentId) {
-      return res.status(400).json({ error: "Either systemId or componentId is required" });
+      // If no filters specified, return all failure modes
+      const allFailureModes = await db.select().from(failureModes);
+      return res.json(allFailureModes);
     }
     
     // Get components for this system

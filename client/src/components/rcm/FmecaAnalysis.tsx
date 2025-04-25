@@ -44,38 +44,8 @@ import { Loader2, Plus, Edit, Trash } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-// Types for FMECA data
-interface FailureMode {
-  id: number;
-  name: string;
-  description: string;
-  cause: string;
-  localEffect: string;
-  systemEffect: string;
-  endEffect: string;
-  currentControl: string;
-  detectMethod: string;
-  consequences: string;
-  componentId?: number;
-  functionalFailureId?: number;
-}
-
-interface FailureCriticality {
-  id: number;
-  failureModeId: number;
-  severity: number;
-  occurrence: number;
-  detection: number;
-  rpn: number;
-  criticalityIndex: string;
-  consequenceType: string;
-}
-
-interface Component {
-  id: number;
-  name: string;
-  systemId: number;
-}
+// Import types from types.ts
+import { Component, FailureMode, FailureCriticality } from "./types";
 
 interface FunctionalFailure {
   id: number;
@@ -95,8 +65,6 @@ const fmecaFormSchema = z.object({
   detection: z.number().min(1).max(10),
   consequenceType: z.string().optional(),
 });
-
-type FmecaFormValues = z.infer<typeof fmecaFormSchema>;
 
 interface FmecaAnalysisProps {
   systemId?: number;
