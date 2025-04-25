@@ -216,10 +216,13 @@ const FmecaPage: React.FC = () => {
     targetDateEl.value = '';
     commentsEl.value = '';
     
-    // Reset ratings to default
+    // Reset ratings and justifications to default
     setAssetSeverity(5);
     setAssetProbability(5);
     setAssetDetection(5);
+    setAssetSeverityJustification("");
+    setAssetProbabilityJustification("");
+    setAssetDetectionJustification("");
     
     toast({
       title: "Success",
@@ -241,6 +244,12 @@ const FmecaPage: React.FC = () => {
       setAssetDescription("");
       setAssetFunction("");
       setAssetRows([]);
+      setAssetSeverity(5);
+      setAssetProbability(5);
+      setAssetDetection(5);
+      setAssetSeverityJustification("");
+      setAssetProbabilityJustification("");
+      setAssetDetectionJustification("");
       toast({
         title: "FMECA Cleared",
         description: "All FMECA data has been cleared"
@@ -359,10 +368,13 @@ const FmecaPage: React.FC = () => {
     targetDateEl.value = '';
     commentsEl.value = '';
     
-    // Reset ratings to default
+    // Reset ratings and justifications to default
     setSystemSeverity(5);
     setSystemProbability(5);
     setSystemDetection(5);
+    setSystemSeverityJustification("");
+    setSystemProbabilityJustification("");
+    setSystemDetectionJustification("");
     
     toast({
       title: "Success",
@@ -384,6 +396,12 @@ const FmecaPage: React.FC = () => {
       setSystemDescription("");
       setSystemFunction("");
       setSystemRows([]);
+      setSystemSeverity(5);
+      setSystemProbability(5);
+      setSystemDetection(5);
+      setSystemSeverityJustification("");
+      setSystemProbabilityJustification("");
+      setSystemDetectionJustification("");
       toast({
         title: "System FMECA Cleared",
         description: "All System FMECA data has been cleared"
@@ -1104,7 +1122,7 @@ const FmecaPage: React.FC = () => {
                     className="mt-1" 
                     placeholder="e.g., Based on system reliability data and maintenance history"
                     value={systemProbabilityJustification}
-                    onChange={(e) => setSystemProbabilityJustification(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setSystemProbabilityJustification(e.target.value)}
                     required
                   />
                 </div>
@@ -1131,7 +1149,7 @@ const FmecaPage: React.FC = () => {
                     className="mt-1" 
                     placeholder="e.g., Limited monitoring capabilities and infrequent inspections"
                     value={systemDetectionJustification}
-                    onChange={(e) => setSystemDetectionJustification(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setSystemDetectionJustification(e.target.value)}
                     required
                   />
                 </div>
