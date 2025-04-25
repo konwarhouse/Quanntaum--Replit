@@ -148,11 +148,18 @@ export const failureCriticality = pgTable("failure_criticality", {
   id: serial("id").primaryKey(),
   failureModeId: integer("failure_mode_id").references(() => failureModes.id, { onDelete: "cascade" }),
   severity: integer("severity").notNull(),
+  severityJustification: text("severity_justification"),
   occurrence: integer("occurrence").notNull(),
+  occurrenceJustification: text("occurrence_justification"),
   detection: integer("detection").notNull(),
+  detectionJustification: text("detection_justification"),
   rpn: integer("rpn"),
   criticalityIndex: varchar("criticality_index", { length: 20 }),
   consequenceType: varchar("consequence_type", { length: 50 }),
+  responsibility: varchar("responsibility", { length: 100 }),
+  completionDate: timestamp("completion_date"),
+  verifiedBy: varchar("verified_by", { length: 100 }),
+  effectivenessVerification: varchar("effectiveness_verification", { length: 50 }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow()
 });
@@ -369,11 +376,18 @@ export const insertFailureCriticalitySchema = createInsertSchema(failureCritical
     message: "Please select a valid failure mode"
   }),
   severity: z.number().int().min(1).max(10),
+  severityJustification: z.string().min(1, "Severity justification is required"),
   occurrence: z.number().int().min(1).max(10),
+  occurrenceJustification: z.string().min(1, "Occurrence justification is required"),
   detection: z.number().int().min(1).max(10),
+  detectionJustification: z.string().min(1, "Detection justification is required"),
   rpn: z.number().int().optional(),
   criticalityIndex: z.string().optional(),
-  consequenceType: z.string().optional()
+  consequenceType: z.string().optional(),
+  responsibility: z.string().optional(),
+  completionDate: z.string().optional(),
+  verifiedBy: z.string().optional(),
+  effectivenessVerification: z.string().optional()
 }).omit({ id: true, createdAt: true, updatedAt: true });
 
 export const insertMaintenanceTaskSchema = createInsertSchema(maintenanceTasks, {
