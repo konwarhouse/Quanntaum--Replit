@@ -188,21 +188,28 @@ router.post("/criticalities", async (req, res) => {
   try {
     const { failureModeId, severity, occurrence, detection, rpn, criticalityIndex, consequenceType } = req.body;
     
-    // Validate input using Zod schema
-    const validatedData = insertFailureCriticalitySchema.parse({
-      failureModeId,
-      severity,
-      occurrence,
-      detection,
-      rpn,
+    console.log("Received criticality data:", { 
+      failureModeId, severity, occurrence, detection, rpn, criticalityIndex, consequenceType 
+    });
+    
+    // Convert numeric strings to actual numbers if needed
+    const normalizedData = {
+      failureModeId: typeof failureModeId === 'string' ? parseInt(failureModeId, 10) : failureModeId,
+      severity: typeof severity === 'string' ? parseInt(severity, 10) : severity,
+      occurrence: typeof occurrence === 'string' ? parseInt(occurrence, 10) : occurrence,
+      detection: typeof detection === 'string' ? parseInt(detection, 10) : detection,
+      rpn: typeof rpn === 'string' ? parseInt(rpn, 10) : rpn,
       criticalityIndex,
       consequenceType
-    });
+    };
+    
+    // Validate input using Zod schema
+    const validatedData = insertFailureCriticalitySchema.parse(normalizedData);
 
     // Check if an entry already exists for this failure mode
     const existingResult = await pool.query(
       `SELECT * FROM failure_criticality WHERE failure_mode_id = $1 LIMIT 1`,
-      [failureModeId]
+      [normalizedData.failureModeId]
     );
     const existingCriticality = existingResult.rows[0];
 

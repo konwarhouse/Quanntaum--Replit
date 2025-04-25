@@ -442,93 +442,107 @@ export const FmecaAnalysis: React.FC<FmecaAnalysisProps> = ({
                             }}
                             value={field.value ? field.value.toString() : undefined}
                           >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select failure mode" />
-                              </SelectTrigger>
-                            </FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a failure mode" />
+                            </SelectTrigger>
                             <SelectContent>
-                              {failureModes && failureModes.length > 0 ? (
-                                failureModes.map((mode) => (
-                                  <SelectItem key={mode.id} value={mode.id.toString()}>
-                                    {mode.name || mode.description}
-                                  </SelectItem>
-                                ))
-                              ) : (
-                                <SelectItem disabled value="none">No failure modes available</SelectItem>
-                              )}
+                              {failureModes?.map((mode) => (
+                                <SelectItem key={mode.id} value={mode.id.toString()}>
+                                  {mode.name || mode.description}
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    
                     <div className="grid grid-cols-3 gap-4">
                       <FormField
                         control={form.control}
                         name="severity"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Severity (1-10)</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                min={1}
-                                max={10}
-                                {...field}
-                                onChange={(e) => field.onChange(Number(e.target.value))}
-                              />
-                            </FormControl>
-                            <FormDescription>Impact of failure</FormDescription>
+                            <FormLabel>Severity (S)</FormLabel>
+                            <Select
+                              onValueChange={(value) => field.onChange(Number(value))}
+                              value={field.value.toString()}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => (
+                                  <SelectItem key={value} value={value.toString()}>
+                                    {value}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormDescription>
+                              Impact of the failure
+                            </FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
-                      
                       <FormField
                         control={form.control}
                         name="occurrence"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Occurrence (1-10)</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                min={1}
-                                max={10}
-                                {...field}
-                                onChange={(e) => field.onChange(Number(e.target.value))}
-                              />
-                            </FormControl>
-                            <FormDescription>Frequency of failure</FormDescription>
+                            <FormLabel>Occurrence (O)</FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              value={field.value.toString()}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => (
+                                  <SelectItem key={value} value={value.toString()}>
+                                    {value}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormDescription>
+                              Frequency of failure
+                            </FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
-                      
                       <FormField
                         control={form.control}
                         name="detection"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Detection (1-10)</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                min={1}
-                                max={10}
-                                {...field}
-                                onChange={(e) => field.onChange(Number(e.target.value))}
-                              />
-                            </FormControl>
-                            <FormDescription>Ability to detect</FormDescription>
+                            <FormLabel>Detection (D)</FormLabel>
+                            <Select
+                              onValueChange={(value) => field.onChange(Number(value))}
+                              value={field.value.toString()}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => (
+                                  <SelectItem key={value} value={value.toString()}>
+                                    {value}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormDescription>
+                              Likelihood of detection
+                            </FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
                     </div>
-                    
                     <FormField
                       control={form.control}
                       name="consequenceType"
@@ -537,17 +551,15 @@ export const FmecaAnalysis: React.FC<FmecaAnalysisProps> = ({
                           <FormLabel>Consequence Type</FormLabel>
                           <Select
                             onValueChange={field.onChange}
-                            defaultValue={field.value}
+                            value={field.value || "Operational"}
                           >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select consequence type" />
-                              </SelectTrigger>
-                            </FormControl>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="Safety">Safety</SelectItem>
-                              <SelectItem value="Environmental">Environmental</SelectItem>
                               <SelectItem value="Operational">Operational</SelectItem>
+                              <SelectItem value="Environmental">Environmental</SelectItem>
                               <SelectItem value="Economic">Economic</SelectItem>
                             </SelectContent>
                           </Select>
@@ -555,9 +567,12 @@ export const FmecaAnalysis: React.FC<FmecaAnalysisProps> = ({
                         </FormItem>
                       )}
                     />
-                    
-                    <div className="flex justify-end gap-2">
-                      <Button type="button" variant="outline" onClick={() => setOpenDialog(false)}>
+                    <div className="flex justify-end space-x-2 pt-4">
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => setOpenDialog(false)}
+                      >
                         Cancel
                       </Button>
                       <Button type="submit" disabled={saveMutation.isPending}>
@@ -572,7 +587,6 @@ export const FmecaAnalysis: React.FC<FmecaAnalysisProps> = ({
           </CardHeader>
           <CardContent>
             <Table>
-              <TableCaption>FMECA Analysis Results</TableCaption>
               <TableHeader>
                 <TableRow>
                   <TableHead>Failure Mode</TableHead>
@@ -588,69 +602,73 @@ export const FmecaAnalysis: React.FC<FmecaAnalysisProps> = ({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {failureModes && criticalities && failureModes.map((mode) => {
-                  const criticality = criticalities.find(c => c.failureModeId === mode.id);
-                  return (
-                    <TableRow key={mode.id}>
-                      <TableCell className="font-medium">{mode.name || mode.description}</TableCell>
-                      <TableCell>{mode.description}</TableCell>
-                      <TableCell>{mode.cause || "N/A"}</TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <div><span className="font-semibold">Local:</span> {mode.localEffect || "N/A"}</div>
-                          <div><span className="font-semibold">System:</span> {mode.systemEffect || "N/A"}</div>
-                          <div><span className="font-semibold">End:</span> {mode.endEffect || "N/A"}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{criticality?.severity || "N/A"}</TableCell>
-                      <TableCell>{criticality?.occurrence || "N/A"}</TableCell>
-                      <TableCell>{criticality?.detection || "N/A"}</TableCell>
-                      <TableCell className={criticality ? getRpnColor(criticality.rpn) : ""}>
-                        {criticality?.rpn || "N/A"}
-                      </TableCell>
-                      <TableCell>
-                        {criticality?.criticalityIndex ? (
-                          <Badge className={getCriticalityColor(criticality.criticalityIndex)}>
-                            {criticality.criticalityIndex}
-                          </Badge>
-                        ) : (
-                          "Not Assessed"
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex space-x-2">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => {
-                              setSelectedFailureMode(mode.id);
-                              setOpenDialog(true);
-                            }}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          {criticality && (
-                            <Button
-                              variant="destructive"
-                              size="icon"
-                              onClick={() => {
-                                if (window.confirm("Are you sure you want to delete this criticality analysis?")) {
-                                  deleteMutation.mutate(criticality.id);
-                                }
-                              }}
-                            >
-                              <Trash className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-                {(!failureModes || failureModes.length === 0) && (
+                {failureModes && criticalities && failureModes.length > 0 ? (
+                  // Filter failure modes to only show those with criticality data
+                  failureModes
+                    .filter(mode => criticalities.some(c => c.failureModeId === mode.id))
+                    .map((mode) => {
+                      const criticality = criticalities.find(c => c.failureModeId === mode.id);
+                      return (
+                        <TableRow key={mode.id}>
+                          <TableCell className="font-medium">{mode.name || mode.description}</TableCell>
+                          <TableCell>{mode.description}</TableCell>
+                          <TableCell>{mode.cause || "N/A"}</TableCell>
+                          <TableCell>
+                            <div className="space-y-1">
+                              <div><span className="font-semibold">Local:</span> {mode.localEffect || "N/A"}</div>
+                              <div><span className="font-semibold">System:</span> {mode.systemEffect || "N/A"}</div>
+                              <div><span className="font-semibold">End:</span> {mode.endEffect || "N/A"}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell>{criticality?.severity || "N/A"}</TableCell>
+                          <TableCell>{criticality?.occurrence || "N/A"}</TableCell>
+                          <TableCell>{criticality?.detection || "N/A"}</TableCell>
+                          <TableCell className={criticality ? getRpnColor(criticality.rpn) : ""}>
+                            {criticality?.rpn || "N/A"}
+                          </TableCell>
+                          <TableCell>
+                            {criticality?.criticalityIndex ? (
+                              <Badge className={getCriticalityColor(criticality.criticalityIndex)}>
+                                {criticality.criticalityIndex}
+                              </Badge>
+                            ) : (
+                              "Not Assessed"
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => {
+                                  setSelectedFailureMode(mode.id);
+                                  setOpenDialog(true);
+                                }}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              {criticality && (
+                                <Button
+                                  variant="destructive"
+                                  size="icon"
+                                  onClick={() => {
+                                    if (window.confirm("Are you sure you want to delete this criticality analysis?")) {
+                                      deleteMutation.mutate(criticality.id);
+                                    }
+                                  }}
+                                >
+                                  <Trash className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                ) : (
                   <TableRow>
                     <TableCell colSpan={10} className="text-center">
-                      No failure modes found for this component
+                      {failureModes && failureModes.length > 0 ? "No FMECA analysis found. Click Add FMECA Analysis to create one." : "No failure modes found for this component"}
                     </TableCell>
                   </TableRow>
                 )}
