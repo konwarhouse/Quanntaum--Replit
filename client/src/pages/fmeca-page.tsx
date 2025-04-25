@@ -50,6 +50,9 @@ interface AssetFmecaRow {
 
 interface SystemFmecaRow {
   id: string;
+  systemId: string;      // Associated with the system ID
+  systemName: string;    // Associated with the system name
+  systemFunction: string; // Associated with the system function
   subsystem: string;
   failureMode: string;
   cause: string;
@@ -267,6 +270,16 @@ const FmecaPage: React.FC = () => {
     const targetDateEl = document.getElementById('new-system-target-date') as HTMLInputElement;
     const commentsEl = document.getElementById('new-system-comments') as HTMLInputElement;
     
+    // Validate system information is provided
+    if (!systemName) {
+      toast({
+        title: "System Information Required",
+        description: "Please enter the System Name before adding subsystems",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     if (!subsystemEl.value || !failureModeEl.value) {
       toast({
         title: "Input Required",
@@ -276,9 +289,12 @@ const FmecaPage: React.FC = () => {
       return;
     }
     
-    // Create new row
+    // Create new row with system information
     const newRow: SystemFmecaRow = {
       id: Date.now().toString(),
+      systemId: Date.now().toString(), // Temporary ID for now
+      systemName: systemName,
+      systemFunction: systemFunction,
       subsystem: subsystemEl.value,
       failureMode: failureModeEl.value,
       cause: causeEl.value,
@@ -793,62 +809,87 @@ const FmecaPage: React.FC = () => {
             
             {/* FMECA Table */}
             <div className="overflow-x-auto">
-              <table className="min-w-full border-collapse border border-gray-300">
-                <thead>
-                  <tr className="bg-slate-100">
-                    <th className="border border-gray-300 p-2 text-left">Subsystem</th>
-                    <th className="border border-gray-300 p-2 text-left">Failure Mode</th>
-                    <th className="border border-gray-300 p-2 text-left">Cause</th>
-                    <th className="border border-gray-300 p-2 text-left">Effect</th>
-                    <th className="border border-gray-300 p-2 text-left">Severity</th>
-                    <th className="border border-gray-300 p-2 text-left">Probability</th>
-                    <th className="border border-gray-300 p-2 text-left">Detection</th>
-                    <th className="border border-gray-300 p-2 text-left">RPN</th>
-                    <th className="border border-gray-300 p-2 text-left">Action Required</th>
-                    <th className="border border-gray-300 p-2 text-left">Target Date</th>
-                    <th className="border border-gray-300 p-2 text-left">Comments</th>
-                    <th className="border border-gray-300 p-2 text-center">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {systemRows.map((row) => (
-                    <tr key={row.id}>
-                      <td className="border border-gray-300 p-2">{row.subsystem}</td>
-                      <td className="border border-gray-300 p-2">{row.failureMode}</td>
-                      <td className="border border-gray-300 p-2">{row.cause}</td>
-                      <td className="border border-gray-300 p-2">{row.effect}</td>
-                      <td className="border border-gray-300 p-2">{row.severity}</td>
-                      <td className="border border-gray-300 p-2">{row.probability}</td>
-                      <td className="border border-gray-300 p-2">{row.detection}</td>
-                      <td className="border border-gray-300 p-2">
-                        <span className={`font-bold ${getColorByRpn(row.rpn)}`}>
-                          {row.rpn}
-                        </span>
-                      </td>
-                      <td className="border border-gray-300 p-2">{row.action}</td>
-                      <td className="border border-gray-300 p-2">{row.targetDate}</td>
-                      <td className="border border-gray-300 p-2">{row.comments}</td>
-                      <td className="border border-gray-300 p-2 text-center">
-                        <Button 
-                          variant="destructive" 
-                          size="sm"
-                          onClick={() => handleDeleteSystemRow(row.id)}
-                        >
-                          <Trash className="h-4 w-4" />
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                  
-                  {systemRows.length === 0 && (
-                    <tr>
-                      <td colSpan={12} className="border border-gray-300 p-4 text-center">
-                        No data available. Add a new row to begin your system-level FMECA.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+              {systemRows.length > 0 ? (
+                <div className="space-y-6">
+                  {/* Group rows by system name */}
+                  {Array.from(new Set(systemRows.map(row => row.systemName))).map(systemName => {
+                    const systemRowsForName = systemRows.filter(row => row.systemName === systemName);
+                    const firstRow = systemRowsForName[0];
+                    
+                    return (
+                      <div key={systemName} className="border rounded-md overflow-hidden">
+                        {/* System Information Header */}
+                        <div className="p-4 bg-green-50 border-b border-green-100">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <h3 className="font-medium text-green-800">System Name:</h3>
+                              <p className="font-bold">{firstRow.systemName}</p>
+                            </div>
+                            <div>
+                              <h3 className="font-medium text-green-800">Function:</h3>
+                              <p>{firstRow.systemFunction}</p>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* System Components Table */}
+                        <table className="min-w-full border-collapse">
+                          <thead>
+                            <tr className="bg-slate-100">
+                              <th className="border border-gray-300 p-2 text-left">Subsystem</th>
+                              <th className="border border-gray-300 p-2 text-left">Failure Mode</th>
+                              <th className="border border-gray-300 p-2 text-left">Cause</th>
+                              <th className="border border-gray-300 p-2 text-left">Effect</th>
+                              <th className="border border-gray-300 p-2 text-left">Severity</th>
+                              <th className="border border-gray-300 p-2 text-left">Probability</th>
+                              <th className="border border-gray-300 p-2 text-left">Detection</th>
+                              <th className="border border-gray-300 p-2 text-left">RPN</th>
+                              <th className="border border-gray-300 p-2 text-left">Action Required</th>
+                              <th className="border border-gray-300 p-2 text-left">Target Date</th>
+                              <th className="border border-gray-300 p-2 text-left">Comments</th>
+                              <th className="border border-gray-300 p-2 text-center">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {systemRowsForName.map((row) => (
+                              <tr key={row.id}>
+                                <td className="border border-gray-300 p-2">{row.subsystem}</td>
+                                <td className="border border-gray-300 p-2">{row.failureMode}</td>
+                                <td className="border border-gray-300 p-2">{row.cause}</td>
+                                <td className="border border-gray-300 p-2">{row.effect}</td>
+                                <td className="border border-gray-300 p-2">{row.severity}</td>
+                                <td className="border border-gray-300 p-2">{row.probability}</td>
+                                <td className="border border-gray-300 p-2">{row.detection}</td>
+                                <td className="border border-gray-300 p-2">
+                                  <span className={`font-bold ${getColorByRpn(row.rpn)}`}>
+                                    {row.rpn}
+                                  </span>
+                                </td>
+                                <td className="border border-gray-300 p-2">{row.action}</td>
+                                <td className="border border-gray-300 p-2">{row.targetDate}</td>
+                                <td className="border border-gray-300 p-2">{row.comments}</td>
+                                <td className="border border-gray-300 p-2 text-center">
+                                  <Button 
+                                    variant="destructive" 
+                                    size="sm"
+                                    onClick={() => handleDeleteSystemRow(row.id)}
+                                  >
+                                    <Trash className="h-4 w-4" />
+                                  </Button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="border border-gray-300 p-6 text-center rounded">
+                  <p className="text-gray-500">No data available. Add a new row to begin your system-level FMECA.</p>
+                </div>
+              )}
             </div>
             
             {/* Add New Row Form */}
