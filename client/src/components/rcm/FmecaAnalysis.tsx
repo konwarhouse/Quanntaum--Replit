@@ -121,7 +121,7 @@ export const FmecaAnalysis: React.FC<FmecaAnalysisProps> = ({
 
   // Now get failure modes filtered by equipment class when possible
   const { data: failureModes, isLoading: failureModesLoading } = useQuery<FailureMode[]>({
-    queryKey: ["/api/failure-modes", componentDetails?.equipmentClass, selectedComponent],
+    queryKey: ["/api/failure-modes-by-class", componentDetails?.equipmentClass, selectedComponent],
     queryFn: async () => {
       try {
         // If we have component details and an equipment class, filter by it
@@ -159,19 +159,20 @@ export const FmecaAnalysis: React.FC<FmecaAnalysisProps> = ({
           }
         }
         
-        // As a fallback, get all failure modes but only if we must
-        console.log("No specific failure modes found, fetching all available failure modes");
-        const allResponse = await apiRequest("GET", `/api/failure-modes`);
+        // As a fallback, get all failure modes by equipment class
+        console.log("No specific failure modes found, fetching all available failure modes by class");
+        const allResponse = await apiRequest("GET", `/api/failure-modes-by-class`);
         const allData = await allResponse.json();
-        console.log(`Found ${allData.length} total failure modes`);
+        console.log(`Found ${allData.length} total failure modes by equipment class`);
         
         return allData;
       } catch (error) {
         console.error("Error fetching failure modes:", error);
-        // Final fallback - try main API
+        // Final fallback - try the generic failure modes endpoint
         try {
           const fallbackResponse = await apiRequest("GET", `/api/failure-modes`);
           const fallbackData = await fallbackResponse.json();
+          console.log("Fallback to main API returned", fallbackData?.length || 0, "failure modes");
           return fallbackData || [];
         } catch (fallbackError) {
           console.error("Final fallback error:", fallbackError);
@@ -296,7 +297,9 @@ export const FmecaAnalysis: React.FC<FmecaAnalysisProps> = ({
         title: "Success",
         description: "FMECA analysis saved successfully",
       });
+      // Invalidate both the criticalities and failure modes queries to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ["/api/rcm/criticalities"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/failure-modes-by-class"] });
       setOpenDialog(false);
     },
     onError: (error: Error) => {
@@ -323,7 +326,9 @@ export const FmecaAnalysis: React.FC<FmecaAnalysisProps> = ({
         title: "Success",
         description: "Criticality deleted successfully",
       });
+      // Invalidate both queries to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ["/api/rcm/criticalities"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/failure-modes-by-class"] });
     },
     onError: (error: Error) => {
       toast({
