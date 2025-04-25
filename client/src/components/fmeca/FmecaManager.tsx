@@ -213,13 +213,13 @@ export const FmecaManager: React.FC<FmecaManagerProps> = ({
                           <td className="border border-gray-300 p-2">{row.responsibility}</td>
                           <td className="border border-gray-300 p-2">
                             {row.completionDate ? (
-                              <div className="space-y-1">
-                                <div>
-                                  <span className="text-xs font-medium">Completed:</span> {row.completionDate}
+                              <div className="space-y-2">
+                                <div className="text-xs">
+                                  <span className="font-medium bg-blue-50 text-blue-700 px-2 py-1 rounded">Completed: {row.completionDate}</span>
                                 </div>
                                 {row.verifiedBy && (
-                                  <div>
-                                    <span className="text-xs font-medium">By:</span> {row.verifiedBy}
+                                  <div className="text-xs">
+                                    <span className="font-medium bg-purple-50 text-purple-700 px-2 py-1 rounded">By: {row.verifiedBy}</span>
                                   </div>
                                 )}
                                 <Badge className={getEffectivenessColor(row.effectivenessVerified)}>
@@ -235,16 +235,20 @@ export const FmecaManager: React.FC<FmecaManagerProps> = ({
                               <Button 
                                 variant="outline" 
                                 size="sm"
+                                className="flex items-center px-2 py-1"
                                 onClick={() => handleEditRow(row)}
                               >
-                                <Pencil className="h-4 w-4" />
+                                <Pencil className="h-4 w-4 mr-1" />
+                                <span>Edit</span>
                               </Button>
                               <Button 
                                 variant="destructive" 
                                 size="sm"
+                                className="flex items-center px-2 py-1"
                                 onClick={() => handleDeleteRow(row.id)}
                               >
-                                <Trash className="h-4 w-4" />
+                                <Trash className="h-4 w-4 mr-1" />
+                                <span>Delete</span>
                               </Button>
                             </div>
                           </td>
@@ -322,13 +326,13 @@ export const FmecaManager: React.FC<FmecaManagerProps> = ({
                           <td className="border border-gray-300 p-2">{row.responsibility}</td>
                           <td className="border border-gray-300 p-2">
                             {row.completionDate ? (
-                              <div className="space-y-1">
-                                <div>
-                                  <span className="text-xs font-medium">Completed:</span> {row.completionDate}
+                              <div className="space-y-2">
+                                <div className="text-xs">
+                                  <span className="font-medium bg-blue-50 text-blue-700 px-2 py-1 rounded">Completed: {row.completionDate}</span>
                                 </div>
                                 {row.verifiedBy && (
-                                  <div>
-                                    <span className="text-xs font-medium">By:</span> {row.verifiedBy}
+                                  <div className="text-xs">
+                                    <span className="font-medium bg-purple-50 text-purple-700 px-2 py-1 rounded">By: {row.verifiedBy}</span>
                                   </div>
                                 )}
                                 <Badge className={getEffectivenessColor(row.effectivenessVerified)}>
@@ -344,16 +348,20 @@ export const FmecaManager: React.FC<FmecaManagerProps> = ({
                               <Button 
                                 variant="outline" 
                                 size="sm"
+                                className="flex items-center px-2 py-1"
                                 onClick={() => handleEditRow(row)}
                               >
-                                <Pencil className="h-4 w-4" />
+                                <Pencil className="h-4 w-4 mr-1" />
+                                <span>Edit</span>
                               </Button>
                               <Button 
                                 variant="destructive" 
                                 size="sm"
+                                className="flex items-center px-2 py-1"
                                 onClick={() => handleDeleteRow(row.id)}
                               >
-                                <Trash className="h-4 w-4" />
+                                <Trash className="h-4 w-4 mr-1" />
+                                <span>Delete</span>
                               </Button>
                             </div>
                           </td>
@@ -371,39 +379,34 @@ export const FmecaManager: React.FC<FmecaManagerProps> = ({
   };
   
   return (
-    <div>
-      {/* Excel Import/Export Tools */}
-      <div className="mb-6">
-        <h3 className="text-lg font-medium mb-2">FMECA Data Tools</h3>
-        <ExcelTools 
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">
+          {rowType === 'asset' ? 'Asset-Level FMECA' : 'System-Level FMECA'}
+        </h2>
+        
+        {/* Excel Import/Export Tools */}
+        <ExcelTools
           rows={rows}
-          onImport={handleImport}
           rowType={rowType}
+          onImport={handleImport}
           headerData={headerData}
         />
       </div>
       
-      {/* FMECA Table */}
-      {rows.length > 0 ? (
-        renderTable()
-      ) : (
-        <div className="text-center p-8 border border-dashed rounded-md">
-          <FileSpreadsheet className="h-12 w-12 mx-auto text-muted-foreground" />
-          <h3 className="mt-2 text-lg font-medium">No FMECA Rows</h3>
-          <p className="text-muted-foreground">
-            Add rows or import from Excel to get started.
-          </p>
-        </div>
-      )}
+      {/* FMECA Tables */}
+      {renderTable()}
       
       {/* Edit Dialog */}
-      <EditRowDialog 
-        isOpen={isEditDialogOpen}
-        onClose={() => setIsEditDialogOpen(false)}
-        rowData={editingRow}
-        onSave={handleSaveEdit}
-        rowType={rowType}
-      />
+      {editingRow && (
+        <EditRowDialog
+          isOpen={isEditDialogOpen}
+          onClose={() => setIsEditDialogOpen(false)}
+          row={editingRow}
+          rowType={rowType}
+          onSave={handleSaveEdit}
+        />
+      )}
     </div>
   );
 };
