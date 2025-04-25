@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, ChangeEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Loader2, FileText, Database, Plus, Trash } from "lucide-react";
@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 
 interface System {
   id: number;
@@ -703,7 +704,7 @@ const FmecaPage: React.FC = () => {
                     className="mt-1" 
                     placeholder="e.g., Critical impact on process safety and operations"
                     value={assetSeverityJustification}
-                    onChange={(e) => setAssetSeverityJustification(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setAssetSeverityJustification(e.target.value)}
                     required
                   />
                 </div>
@@ -730,7 +731,7 @@ const FmecaPage: React.FC = () => {
                     className="mt-1" 
                     placeholder="e.g., Based on historical failure data and MTBF analysis"
                     value={assetProbabilityJustification}
-                    onChange={(e) => setAssetProbabilityJustification(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setAssetProbabilityJustification(e.target.value)}
                     required
                   />
                 </div>
@@ -757,7 +758,7 @@ const FmecaPage: React.FC = () => {
                     className="mt-1" 
                     placeholder="e.g., No sensors or indicators to detect this failure mode"
                     value={assetDetectionJustification}
-                    onChange={(e) => setAssetDetectionJustification(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setAssetDetectionJustification(e.target.value)}
                     required
                   />
                 </div>
@@ -1052,7 +1053,7 @@ const FmecaPage: React.FC = () => {
                 </div>
               </div>
               
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div>
                   <Label className="text-sm font-medium">Severity (S):</Label>
                   <Select 
@@ -1065,11 +1066,20 @@ const FmecaPage: React.FC = () => {
                     <SelectContent>
                       {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => (
                         <SelectItem key={value} value={value.toString()}>
-                          {value}
+                          {value} - {value < 3 ? 'Minor' : value < 6 ? 'Moderate' : value < 9 ? 'Significant' : 'Critical'}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  <Label className="text-sm font-medium mt-2">Severity Justification:</Label>
+                  <Textarea 
+                    id="system-severity-justification" 
+                    className="mt-1" 
+                    placeholder="e.g., Complete system shutdown with significant safety implications"
+                    value={systemSeverityJustification}
+                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setSystemSeverityJustification(e.target.value)}
+                    required
+                  />
                 </div>
                 <div>
                   <Label className="text-sm font-medium">Probability (P):</Label>
@@ -1083,11 +1093,20 @@ const FmecaPage: React.FC = () => {
                     <SelectContent>
                       {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => (
                         <SelectItem key={value} value={value.toString()}>
-                          {value}
+                          {value} - {value < 3 ? 'Remote' : value < 6 ? 'Occasional' : value < 9 ? 'Likely' : 'Almost Certain'}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  <Label className="text-sm font-medium mt-2">Probability Justification:</Label>
+                  <Textarea 
+                    id="system-probability-justification" 
+                    className="mt-1" 
+                    placeholder="e.g., Based on system reliability data and maintenance history"
+                    value={systemProbabilityJustification}
+                    onChange={(e) => setSystemProbabilityJustification(e.target.value)}
+                    required
+                  />
                 </div>
                 <div>
                   <Label className="text-sm font-medium">Detection (D):</Label>
@@ -1101,24 +1120,34 @@ const FmecaPage: React.FC = () => {
                     <SelectContent>
                       {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => (
                         <SelectItem key={value} value={value.toString()}>
-                          {value}
+                          {value} - {value < 3 ? 'Almost Certain' : value < 6 ? 'High' : value < 9 ? 'Low' : 'Almost Impossible'}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  <Label className="text-sm font-medium mt-2">Detection Justification:</Label>
+                  <Textarea 
+                    id="system-detection-justification" 
+                    className="mt-1" 
+                    placeholder="e.g., Limited monitoring capabilities and infrequent inspections"
+                    value={systemDetectionJustification}
+                    onChange={(e) => setSystemDetectionJustification(e.target.value)}
+                    required
+                  />
                 </div>
-                <div>
-                  <Label className="text-sm font-medium">RPN (Auto-calculated):</Label>
-                  <div className="h-10 flex items-center px-4 mt-1 border rounded-md bg-slate-100">
-                    <span id="calculated-system-rpn" className="font-bold">{calculateSystemRpn()}</span>
-                    {calculateSystemRpn() > 0 && (
-                      <Badge 
-                        className={`ml-2 ${getColorClassByRpn(calculateSystemRpn())}`}
-                      >
-                        {getRiskLevelByRpn(calculateSystemRpn())}
-                      </Badge>
-                    )}
-                  </div>
+              </div>
+              
+              <div className="mb-4">
+                <Label className="text-sm font-medium">RPN (Auto-calculated):</Label>
+                <div className="h-10 flex items-center px-4 mt-1 border rounded-md bg-slate-100">
+                  <span id="calculated-system-rpn" className="font-bold">{calculateSystemRpn()}</span>
+                  {calculateSystemRpn() > 0 && (
+                    <Badge 
+                      className={`ml-2 ${getColorClassByRpn(calculateSystemRpn())}`}
+                    >
+                      {getRiskLevelByRpn(calculateSystemRpn())}
+                    </Badge>
+                  )}
                 </div>
               </div>
               
