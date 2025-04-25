@@ -804,12 +804,20 @@ const FmecaPage: React.FC = () => {
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                 <div>
                   <Label className="text-sm font-medium">Action Required:</Label>
                   <Input 
                     id="new-action" 
                     placeholder="e.g., Replace seals periodically"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Responsibility:</Label>
+                  <Input 
+                    id="new-responsibility" 
+                    placeholder="e.g., Maintenance Team"
                     className="mt-1"
                   />
                 </div>
@@ -1177,12 +1185,20 @@ const FmecaPage: React.FC = () => {
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                 <div>
                   <Label className="text-sm font-medium">Action Required:</Label>
                   <Input 
                     id="new-system-action" 
                     placeholder="e.g., Inspect and clean regularly"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Responsibility:</Label>
+                  <Input 
+                    id="new-system-responsibility" 
+                    placeholder="e.g., Engineering Team"
                     className="mt-1"
                   />
                 </div>
