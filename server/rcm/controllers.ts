@@ -206,20 +206,40 @@ export const createComponent = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "System not found" });
     }
     
-    // Check if parent component exists (if parentId is provided)
-    if (parentId) {
-      const [parentComponent] = await db.select()
-        .from(components)
-        .where(eq(components.id, parentId));
-      
-      if (!parentComponent) {
-        return res.status(404).json({ error: "Parent component not found" });
+    // Check if parent component exists (if parentId is provided and not "_none")
+    let finalParentId = null; // Use a different variable to store the processed parent ID
+    
+    if (parentId && parentId !== "_none") {
+      // Convert string "_none" to null
+      if (parentId === "_none") {
+        finalParentId = null;
+      } else {
+        const parentIdNum = parseInt(parentId.toString(), 10);
+        
+        if (!isNaN(parentIdNum)) {
+          const [parentComponent] = await db.select()
+            .from(components)
+            .where(eq(components.id, parentIdNum));
+          
+          if (!parentComponent) {
+            return res.status(404).json({ error: "Parent component not found" });
+          }
+          
+          // Ensure parent component belongs to the same system
+          if (parentComponent.systemId !== systemId) {
+            return res.status(400).json({ error: "Parent component must belong to the same system" });
+          }
+          
+          // Use the numeric parentId
+          finalParentId = parentIdNum;
+        } else {
+          // If parentId is invalid, set it to null
+          finalParentId = null;
+        }
       }
-      
-      // Ensure parent component belongs to the same system
-      if (parentComponent.systemId !== systemId) {
-        return res.status(400).json({ error: "Parent component must belong to the same system" });
-      }
+    } else {
+      // If no parentId or "_none", set to null
+      finalParentId = null;
     }
     
     const [newComponent] = await db.insert(components).values({
@@ -228,7 +248,7 @@ export const createComponent = async (req: Request, res: Response) => {
       description: description || null,
       function: componentFunction || null,
       criticality: criticality || 'Medium',
-      parentId: parentId || null,
+      parentId: finalParentId,
       createdBy: req.user?.id || null
       // Let the database handle createdAt with its default value
     }).returning();
@@ -275,25 +295,45 @@ export const updateComponent = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "System not found" });
     }
     
-    // Check if parent component exists (if parentId is provided)
-    if (parentId) {
-      // Prevent component from being its own parent
-      if (parentId === componentId) {
-        return res.status(400).json({ error: "Component cannot be its own parent" });
+    // Check if parent component exists (if parentId is provided and not "_none")
+    let finalParentId = null; // Use a different variable to store the processed parent ID
+    
+    if (parentId && parentId !== "_none") {
+      // Convert string "_none" to null
+      if (parentId === "_none") {
+        finalParentId = null;
+      } else {
+        const parentIdNum = parseInt(parentId.toString(), 10);
+        
+        if (!isNaN(parentIdNum)) {
+          // Prevent component from being its own parent
+          if (parentIdNum === componentId) {
+            return res.status(400).json({ error: "Component cannot be its own parent" });
+          }
+          
+          const [parentComponent] = await db.select()
+            .from(components)
+            .where(eq(components.id, parentIdNum));
+          
+          if (!parentComponent) {
+            return res.status(404).json({ error: "Parent component not found" });
+          }
+          
+          // Ensure parent component belongs to the same system
+          if (parentComponent.systemId !== systemId) {
+            return res.status(400).json({ error: "Parent component must belong to the same system" });
+          }
+          
+          // Use the numeric parentId
+          finalParentId = parentIdNum;
+        } else {
+          // If parentId is invalid, set it to null
+          finalParentId = null;
+        }
       }
-      
-      const [parentComponent] = await db.select()
-        .from(components)
-        .where(eq(components.id, parentId));
-      
-      if (!parentComponent) {
-        return res.status(404).json({ error: "Parent component not found" });
-      }
-      
-      // Ensure parent component belongs to the same system
-      if (parentComponent.systemId !== systemId) {
-        return res.status(400).json({ error: "Parent component must belong to the same system" });
-      }
+    } else {
+      // If no parentId or "_none", set to null
+      finalParentId = null;
     }
     
     const [updatedComponent] = await db.update(components)
@@ -303,7 +343,7 @@ export const updateComponent = async (req: Request, res: Response) => {
         description: description || null,
         function: componentFunction || null,
         criticality: criticality || 'Medium',
-        parentId: parentId || null,
+        parentId: finalParentId,
         updatedBy: req.user?.id || null
         // Let the database handle updatedAt with its default value
       })
@@ -356,16 +396,156 @@ export const deleteComponent = async (req: Request, res: Response) => {
   }
 };
 
-export const getFmecaRatings = (req: Request, res: Response) => {
-  res.json([]);
+export const getFmecaRatings = async (req: Request, res: Response) => {
+  try {
+    const { failureModeId } = req.query;
+    
+    if (failureModeId) {
+      const ratings = await db.select()
+        .from(failureCriticality)
+        .where(eq(failureCriticality.failureModeId, Number(failureModeId)));
+      
+      return res.json(ratings);
+    }
+    
+    const allRatings = await db.select().from(failureCriticality);
+    res.json(allRatings);
+  } catch (error) {
+    console.error("Error fetching FMECA ratings:", error);
+    res.status(500).json({ error: "Failed to fetch FMECA ratings" });
+  }
 };
 
-export const createFmecaRating = (req: Request, res: Response) => {
-  res.status(201).json({});
+export const createFmecaRating = async (req: Request, res: Response) => {
+  try {
+    const { 
+      failureModeId, 
+      severity, 
+      occurrence, 
+      detection, 
+      consequenceType
+    } = req.body;
+    
+    if (!failureModeId) {
+      return res.status(400).json({ error: "Failure mode ID is required" });
+    }
+    
+    if (!severity || !occurrence || !detection) {
+      return res.status(400).json({ 
+        error: "Severity, occurrence, and detection ratings are required" 
+      });
+    }
+    
+    // Check if failure mode exists
+    const [failureMode] = await db.select()
+      .from(failureModes)
+      .where(eq(failureModes.id, failureModeId));
+    
+    if (!failureMode) {
+      return res.status(404).json({ error: "Failure mode not found" });
+    }
+    
+    // Calculate RPN
+    const rpn = severity * occurrence * detection;
+    
+    // Determine criticality index
+    let criticalityIndex = "Low";
+    if (rpn >= 200) {
+      criticalityIndex = "Critical";
+    } else if (rpn >= 100) {
+      criticalityIndex = "High";
+    } else if (rpn >= 50) {
+      criticalityIndex = "Medium";
+    }
+    
+    const [newRating] = await db.insert(failureCriticality).values({
+      failureModeId,
+      severity,
+      occurrence,
+      detection,
+      rpn,
+      criticalityIndex,
+      consequenceType: consequenceType || null
+    }).returning();
+    
+    res.status(201).json(newRating);
+  } catch (error) {
+    console.error("Error creating FMECA rating:", error);
+    res.status(500).json({ error: "Failed to create FMECA rating" });
+  }
 };
 
-export const updateFmecaRating = (req: Request, res: Response) => {
-  res.json({});
+export const updateFmecaRating = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const ratingId = parseInt(id, 10);
+    
+    if (isNaN(ratingId)) {
+      return res.status(400).json({ error: "Invalid rating ID" });
+    }
+    
+    const { 
+      failureModeId, 
+      severity, 
+      occurrence, 
+      detection, 
+      consequenceType
+    } = req.body;
+    
+    if (!failureModeId) {
+      return res.status(400).json({ error: "Failure mode ID is required" });
+    }
+    
+    if (!severity || !occurrence || !detection) {
+      return res.status(400).json({ 
+        error: "Severity, occurrence, and detection ratings are required" 
+      });
+    }
+    
+    // Check if failure mode exists
+    const [failureMode] = await db.select()
+      .from(failureModes)
+      .where(eq(failureModes.id, failureModeId));
+    
+    if (!failureMode) {
+      return res.status(404).json({ error: "Failure mode not found" });
+    }
+    
+    // Calculate RPN
+    const rpn = severity * occurrence * detection;
+    
+    // Determine criticality index
+    let criticalityIndex = "Low";
+    if (rpn >= 200) {
+      criticalityIndex = "Critical";
+    } else if (rpn >= 100) {
+      criticalityIndex = "High";
+    } else if (rpn >= 50) {
+      criticalityIndex = "Medium";
+    }
+    
+    const [updatedRating] = await db.update(failureCriticality)
+      .set({
+        failureModeId,
+        severity,
+        occurrence,
+        detection,
+        rpn,
+        criticalityIndex,
+        consequenceType: consequenceType || null
+      })
+      .where(eq(failureCriticality.id, ratingId))
+      .returning();
+    
+    if (!updatedRating) {
+      return res.status(404).json({ error: "FMECA rating not found" });
+    }
+    
+    res.json(updatedRating);
+  } catch (error) {
+    console.error("Error updating FMECA rating:", error);
+    res.status(500).json({ error: "Failed to update FMECA rating" });
+  }
 };
 
 export const getRcmConsequences = (req: Request, res: Response) => {
@@ -384,8 +564,103 @@ export const createMaintenanceTask = (req: Request, res: Response) => {
   res.status(201).json({});
 };
 
-export const fmecaAnalysis = (req: Request, res: Response) => {
-  res.json({});
+export const getFailureModesBySystem = async (req: Request, res: Response) => {
+  try {
+    const { systemId, componentId } = req.query;
+    
+    if (!systemId && !componentId) {
+      return res.status(400).json({ error: "Either systemId or componentId is required" });
+    }
+    
+    // Get components for this system
+    let relatedComponents = [];
+    
+    if (systemId) {
+      const systemIdNum = parseInt(systemId.toString(), 10);
+      
+      if (isNaN(systemIdNum)) {
+        return res.status(400).json({ error: "Invalid system ID" });
+      }
+      
+      // Get all components for this system
+      relatedComponents = await db.select()
+        .from(components)
+        .where(eq(components.systemId, systemIdNum));
+      
+    } else if (componentId) {
+      const componentIdNum = parseInt(componentId.toString(), 10);
+      
+      if (isNaN(componentIdNum)) {
+        return res.status(400).json({ error: "Invalid component ID" });
+      }
+      
+      // Get just this specific component
+      const component = await db.select()
+        .from(components)
+        .where(eq(components.id, componentIdNum));
+        
+      relatedComponents = component;
+    }
+    
+    if (relatedComponents.length === 0) {
+      return res.json([]);
+    }
+    
+    // Get component types or equipment classes to find related failure modes
+    const componentTypes = relatedComponents.map(c => c.name.toLowerCase());
+    
+    // Fetch failure modes from existing database  
+    const existingFailureModes = await db.query.failureModes.findMany({
+      where: (failureModes, { or, isNull, eq: eqOp }) => {
+        const conditions = componentTypes.map(type => 
+          eqOp(failureModes.equipmentClass, type)
+        );
+        
+        // Also include generic failure modes with null equipment class
+        return or(isNull(failureModes.equipmentClass), ...conditions);
+      }
+    });
+    
+    res.json(existingFailureModes);
+  } catch (error) {
+    console.error("Error fetching failure modes by system:", error);
+    res.status(500).json({ error: "Failed to fetch failure modes" });
+  }
+};
+
+export const fmecaAnalysis = async (req: Request, res: Response) => {
+  try {
+    const { systemId, componentId, failureModes } = req.body;
+    
+    if (!systemId || !componentId) {
+      return res.status(400).json({ error: "System ID and Component ID are required" });
+    }
+    
+    // Placeholder for actual FMECA analysis
+    // This would typically involve calculating criticality and risk metrics
+    // based on the provided failure modes
+    
+    // For now, let's just return the received data with some calculated fields
+    const analysis = {
+      systemId,
+      componentId,
+      analysisDate: new Date().toISOString(),
+      results: Array.isArray(failureModes) ? failureModes.map(fm => ({
+        failureModeId: fm.id,
+        description: fm.description,
+        failureEffect: fm.effect || "N/A",
+        severity: fm.severity || 5,
+        occurrence: fm.occurrence || 5,
+        detection: fm.detection || 5,
+        rpn: (fm.severity || 5) * (fm.occurrence || 5) * (fm.detection || 5)
+      })) : []
+    };
+    
+    res.json(analysis);
+  } catch (error) {
+    console.error("Error creating FMECA analysis:", error);
+    res.status(500).json({ error: "Failed to create FMECA analysis" });
+  }
 };
 
 export const rcmAnalysis = (req: Request, res: Response) => {
