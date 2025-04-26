@@ -8,6 +8,17 @@ import {
 
 const router = express.Router();
 
+// Authentication middleware
+const authenticateUser = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+  next();
+};
+
+// Apply authentication middleware to all routes
+router.use(authenticateUser);
+
 // Asset FMECA Routes
 
 // Get all asset FMECA records

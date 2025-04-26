@@ -3,6 +3,7 @@ import { drizzle } from 'drizzle-orm/neon-serverless';
 import ws from "ws";
 import * as schema from "@shared/schema";
 import * as rcmSchema from "@shared/rcm-schema";
+import * as fmecaSchema from "@shared/fmeca-schema";
 
 // Configure Neon for serverless environment
 neonConfig.webSocketConstructor = ws;
@@ -33,7 +34,7 @@ pool.on('error', (err) => {
 });
 
 // Merge the schemas
-const mergedSchema = { ...schema, ...rcmSchema };
+const mergedSchema = { ...schema, ...rcmSchema, ...fmecaSchema };
 export const db = drizzle(pool, { schema: mergedSchema });
 
 // Helper to check database connection
