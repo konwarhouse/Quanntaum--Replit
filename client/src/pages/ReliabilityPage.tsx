@@ -162,7 +162,14 @@ const ReliabilityPage = () => {
                 Please contact our support team for licensing information and early access to these features.
               </p>
             </div>
-            <RCMAnalysisForm />
+            <div className="opacity-50 pointer-events-none filter grayscale relative">
+              <div className="absolute inset-0 z-10 flex items-center justify-center">
+                <div className="bg-white bg-opacity-75 p-6 rounded-lg shadow-lg">
+                  <span className="text-lg font-semibold">Licensed Users Only</span>
+                </div>
+              </div>
+              <RCMAnalysisForm />
+            </div>
           </TabsContent>
 
           <TabsContent value="simulation" className="focus-visible:outline-none focus-visible:ring-0">
@@ -186,7 +193,14 @@ const ReliabilityPage = () => {
                 Please contact our support team for licensing information and early access to these features.
               </p>
             </div>
-            <SimulationForm />
+            <div className="opacity-50 pointer-events-none filter grayscale relative">
+              <div className="absolute inset-0 z-10 flex items-center justify-center">
+                <div className="bg-white bg-opacity-75 p-6 rounded-lg shadow-lg">
+                  <span className="text-lg font-semibold">Licensed Users Only</span>
+                </div>
+              </div>
+              <SimulationForm />
+            </div>
           </TabsContent>
         </div>
       </Tabs>
