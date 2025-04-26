@@ -20,10 +20,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Pencil, History, FileSpreadsheet, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import * as XLSX from 'xlsx';
+import { ensureSafeId } from "@/lib/idUtils";
 
 // Types
 interface AssetFmecaRecord {
-  id: number;
+  id: number | string;  // Support both number and string IDs
   tagNumber: string;
   assetDescription: string;
   assetFunction: string;
@@ -45,10 +46,12 @@ interface AssetFmecaRecord {
   verifiedBy?: string;
   effectivenessVerified?: string;
   comments?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface SystemFmecaRecord {
-  id: number;
+  id: number | string;  // Support both number and string IDs
   systemId: string;
   systemName: string;
   systemFunction: string;
@@ -70,6 +73,8 @@ interface SystemFmecaRecord {
   verifiedBy?: string;
   effectivenessVerified?: string;
   comments?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 type FmecaRecord = AssetFmecaRecord | SystemFmecaRecord;

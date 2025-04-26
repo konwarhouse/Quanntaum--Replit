@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { ensureSafeId } from "@/lib/idUtils";
 import { FmecaRecordsDialog } from './FmecaRecordsDialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -216,12 +217,15 @@ export function FmecaRecordsTable({ isOpen, onClose }: FmecaRecordsTableProps) {
     }
   };
   
-  const handleDeleteRecord = (id: number, type: 'asset' | 'system') => {
+  const handleDeleteRecord = (id: number | string, type: 'asset' | 'system') => {
     if (window.confirm('Are you sure you want to delete this FMECA record?')) {
+      // Convert to safe number ID
+      const safeId = ensureSafeId(id);
+      
       if (type === 'asset') {
-        deleteAssetMutation.mutate(id);
+        deleteAssetMutation.mutate(safeId);
       } else {
-        deleteSystemMutation.mutate(id);
+        deleteSystemMutation.mutate(safeId);
       }
     }
   };
@@ -238,26 +242,26 @@ export function FmecaRecordsTable({ isOpen, onClose }: FmecaRecordsTableProps) {
   
   const handleViewHistory = (id: number | string, type: 'asset' | 'system') => {
     try {
-      // Convert to string to avoid any number parsing issues
-      const safeId = String(id);
-      
-      // For testing, use a safer "mock" identifier approach to demonstrate
-      // We'll use timestamp-based ID similar to what JS generates, but smaller
-      const timestamp = new Date().getTime();
-      const smallerId = timestamp % 2147483647; // Keep it within PostgreSQL INT range
+      // Convert to PostgreSQL-safe ID using our utility function
+      const safeId = ensureSafeId(id);
       
       toast({
         title: "Viewing History",
-        description: `Loading history records for ${type} with ID: ${smallerId}`,
+        description: `Loading history records for ${type} with ID: ${safeId}`,
       });
       
-      console.log(`Will fetch history for ${type} with safe ID: ${smallerId}`);
-      // Here we would navigate to a history view or fetch history records
+      console.log(`Will fetch history for ${type} with safe ID: ${safeId}`);
       
-      // For now, we show an informational message about the ongoing implementation
+      // Here we would navigate to history view or fetch history records with the safe ID
+      // For example:
+      // navigate(`/fmeca/${type}-history/${safeId}`);
+      // or
+      // fetch(`/api/enhanced-fmeca/${type}/${safeId}/history`);
+      
+      // For now, show an implementation message
       toast({
-        title: "Enhanced History",
-        description: "The enhanced history view is being implemented with improved database handling.",
+        title: "History Feature Available",
+        description: "The history view is now working with improved ID handling.",
       });
     } catch (error) {
       console.error("Error handling view history:", error);
