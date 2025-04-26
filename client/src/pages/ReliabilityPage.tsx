@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ColorfulTabs, ColorfulTabsList, ColorfulTabsTrigger } from "@/components/ui/colorful-tabs";
+import { TabsContent } from "@/components/ui/tabs";
+import { ColorfulTabs, ColorfulTabsList, ColorfulTabsTrigger, ColorfulTabsContent } from "@/components/ui/colorful-tabs";
 import WeibullAnalysisForm from "@/components/reliability/WeibullAnalysisForm";
 import DataDrivenWeibullAnalysis from "@/components/reliability/DataDrivenWeibullAnalysis";
 import MaintenanceOptimizationForm from "@/components/reliability/MaintenanceOptimizationForm";
@@ -67,27 +67,27 @@ const ReliabilityPage = () => {
         </ColorfulTabsList>
 
         <div className="mt-6">
-          <TabsContent value="assets" className="focus-visible:outline-none focus-visible:ring-0">
+          <ColorfulTabsContent value="assets" className="focus-visible:outline-none focus-visible:ring-0">
             <AssetMaster />
-          </TabsContent>
+          </ColorfulTabsContent>
 
-          <TabsContent value="failures" className="focus-visible:outline-none focus-visible:ring-0">
+          <ColorfulTabsContent value="failures" className="focus-visible:outline-none focus-visible:ring-0">
             <FailureHistory />
-          </TabsContent>
+          </ColorfulTabsContent>
 
-          <TabsContent value="criticality" className="focus-visible:outline-none focus-visible:ring-0">
+          <ColorfulTabsContent value="criticality" className="focus-visible:outline-none focus-visible:ring-0">
             <CriticalityAssessment />
-          </TabsContent>
+          </ColorfulTabsContent>
           
-          <TabsContent value="failureModes" className="focus-visible:outline-none focus-visible:ring-0">
+          <ColorfulTabsContent value="failureModes" className="focus-visible:outline-none focus-visible:ring-0">
             <FailureModeManager currentUserRole={currentUserRole} />
-          </TabsContent>
+          </ColorfulTabsContent>
           
-          <TabsContent value="equipmentClasses" className="focus-visible:outline-none focus-visible:ring-0">
+          <ColorfulTabsContent value="equipmentClasses" className="focus-visible:outline-none focus-visible:ring-0">
             <EquipmentClassManager currentUserRole={currentUserRole} />
-          </TabsContent>
+          </ColorfulTabsContent>
 
-          <TabsContent value="weibull" className="focus-visible:outline-none focus-visible:ring-0">
+          <ColorfulTabsContent value="weibull" className="focus-visible:outline-none focus-visible:ring-0">
             <div className="mb-4">
               <h2 className="text-3xl font-bold tracking-tight">Weibull Reliability Analysis</h2>
               <p className="text-muted-foreground">
@@ -95,12 +95,12 @@ const ReliabilityPage = () => {
               </p>
             </div>
             
-            <Tabs defaultValue="data-driven">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="data-driven">Data-Driven Analysis</TabsTrigger>
-                <TabsTrigger value="manual">Manual Parameters</TabsTrigger>
-              </TabsList>
-              <TabsContent value="data-driven" className="py-4">
+            <ColorfulTabs defaultValue="data-driven">
+              <ColorfulTabsList className="grid w-full grid-cols-2">
+                <ColorfulTabsTrigger value="data-driven" color="blue">Data-Driven Analysis</ColorfulTabsTrigger>
+                <ColorfulTabsTrigger value="manual" color="indigo">Manual Parameters</ColorfulTabsTrigger>
+              </ColorfulTabsList>
+              <ColorfulTabsContent value="data-driven" className="py-4">
                 <div className="mb-4">
                   <h3 className="text-lg font-semibold">Data-Driven Weibull Analysis</h3>
                   <p className="text-muted-foreground text-sm">
@@ -117,8 +117,8 @@ const ReliabilityPage = () => {
                   useOperatingHours={useOperatingHours}
                   setUseOperatingHours={setUseOperatingHours}
                 />
-              </TabsContent>
-              <TabsContent value="manual" className="py-4">
+              </ColorfulTabsContent>
+              <ColorfulTabsContent value="manual" className="py-4">
                 <div className="mb-4">
                   <h3 className="text-lg font-semibold">Manual Weibull Parameters</h3>
                   <p className="text-muted-foreground text-sm">
@@ -128,11 +128,11 @@ const ReliabilityPage = () => {
                 <WeibullAnalysisForm 
                   selectedAssetId={selectedWeibullAssetId}
                 />
-              </TabsContent>
-            </Tabs>
-          </TabsContent>
+              </ColorfulTabsContent>
+            </ColorfulTabs>
+          </ColorfulTabsContent>
 
-          <TabsContent value="maintenance" className="focus-visible:outline-none focus-visible:ring-0">
+          <ColorfulTabsContent value="maintenance" className="focus-visible:outline-none focus-visible:ring-0">
             <div className="mb-4">
               <h2 className="text-3xl font-bold tracking-tight">Maintenance Interval Optimization</h2>
               <p className="text-muted-foreground">
@@ -140,9 +140,9 @@ const ReliabilityPage = () => {
               </p>
             </div>
             <MaintenanceOptimizationForm />
-          </TabsContent>
+          </ColorfulTabsContent>
 
-          <TabsContent value="rcm" className="focus-visible:outline-none focus-visible:ring-0">
+          <ColorfulTabsContent value="rcm" className="focus-visible:outline-none focus-visible:ring-0">
             <div className="mb-4">
               <h2 className="text-3xl font-bold tracking-tight">Reliability-Centered Maintenance</h2>
               <p className="text-muted-foreground">
@@ -171,9 +171,9 @@ const ReliabilityPage = () => {
               </div>
               <RCMAnalysisForm />
             </div>
-          </TabsContent>
+          </ColorfulTabsContent>
 
-          <TabsContent value="simulation" className="focus-visible:outline-none focus-visible:ring-0">
+          <ColorfulTabsContent value="simulation" className="focus-visible:outline-none focus-visible:ring-0">
             <div className="mb-4">
               <h2 className="text-3xl font-bold tracking-tight">Monte Carlo Simulation</h2>
               <p className="text-muted-foreground">
@@ -202,7 +202,7 @@ const ReliabilityPage = () => {
               </div>
               <SimulationForm />
             </div>
-          </TabsContent>
+          </ColorfulTabsContent>
         </div>
       </ColorfulTabs>
     </div>
