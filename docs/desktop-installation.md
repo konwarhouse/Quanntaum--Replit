@@ -1,120 +1,115 @@
 # Quanntaum Predict Desktop Installation Guide
 
-This guide explains how to install and use the Quanntaum Predict application as a desktop application. The desktop version is designed for testing and evaluation purposes, with sample data included and no database setup required.
+This guide will help you install and run the Quanntaum Predict desktop application on Windows, macOS, or Linux.
 
 ## System Requirements
 
 ### Windows
-- Windows 10 or 11 (64-bit recommended)
+- Windows 10 or later (64-bit)
 - 4GB RAM minimum (8GB recommended)
-- 500MB disk space
-- Administrator privileges for installation
+- 500MB free disk space
 
 ### macOS
-- macOS Monterey (12.0) or newer
-- Compatible with both Apple Silicon (M1/M2) and Intel processors
+- macOS 10.13 (High Sierra) or later
+- Intel or Apple Silicon processor
 - 4GB RAM minimum (8GB recommended)
-- 500MB disk space
+- 500MB free disk space
 
 ### Linux
-- Ubuntu 20.04 LTS or newer (or equivalent)
+- Ubuntu 18.04 or later, Fedora 30 or later, or compatible distribution
 - 4GB RAM minimum (8GB recommended)
-- 500MB disk space
+- 500MB free disk space
 
 ## Installation Instructions
 
-### Windows Installation
+### Windows
 
-1. Download the Quanntaum Predict installer (`Quanntaum-Predict-Setup-x.x.x.exe`) from the provided source.
+1. Download the installer package (`Quanntaum-Predict-Setup-x.x.x.exe`) from the official website or distribution point.
 2. Double-click the installer file to start the installation process.
-3. If you see a security warning, click "More info" and then "Run anyway" (this occurs because the app may not be signed with a trusted certificate).
-4. Follow the on-screen instructions to complete the installation.
-5. The application will be installed in your Program Files directory and a shortcut will be created on your desktop and in the Start menu.
+3. Follow the on-screen instructions to complete the installation.
+4. The application will be installed in your Program Files directory by default.
+5. A desktop shortcut will be created for easy access.
 
-### macOS Installation
+### macOS
 
-1. Download the Quanntaum Predict disk image (`Quanntaum-Predict-x.x.x.dmg`) from the provided source.
-2. Double-click the .dmg file to open it.
-3. Drag the Quanntaum Predict icon to the Applications folder.
-4. When opening for the first time, right-click (or Control+click) on the app in the Applications folder and select "Open".
-5. Click "Open" in the security dialog that appears (this only needs to be done the first time).
+#### Intel Macs
+1. Download the macOS Intel installer package (`Quanntaum-Predict-x.x.x-intel.dmg`) from the official website or distribution point.
+2. Double-click the DMG file to mount it.
+3. Drag the Quanntaum Predict application to your Applications folder.
+4. Eject the DMG.
+5. Open the application from your Applications folder.
 
-### Linux Installation
+#### Apple Silicon Macs (M1/M2)
+1. Download the macOS Apple Silicon installer package (`Quanntaum-Predict-x.x.x-arm64.dmg`) from the official website or distribution point.
+2. Double-click the DMG file to mount it.
+3. Drag the Quanntaum Predict application to your Applications folder.
+4. Eject the DMG.
+5. Open the application from your Applications folder.
 
-1. Download the appropriate package for your distribution:
-   - `.AppImage`: Universal Linux package
-   - `.deb`: For Debian/Ubuntu-based distributions
-   - `.rpm`: For Red Hat/Fedora-based distributions
-2. For .AppImage:
-   - Make it executable: `chmod +x Quanntaum-Predict-x.x.x.AppImage`
-   - Run it directly: `./Quanntaum-Predict-x.x.x.AppImage`
-3. For .deb:
-   - Install with: `sudo dpkg -i Quanntaum-Predict-x.x.x.deb`
-   - Or double-click to open with your package manager
-4. For .rpm:
-   - Install with: `sudo rpm -i Quanntaum-Predict-x.x.x.rpm`
-   - Or double-click to open with your package manager
+### Linux
 
-## Using the Desktop Application
+#### Debian/Ubuntu-based distributions
+1. Download the DEB package (`quanntaum-predict_x.x.x_amd64.deb`) from the official website or distribution point.
+2. Install using your package manager or run:
+   ```
+   sudo dpkg -i quanntaum-predict_x.x.x_amd64.deb
+   sudo apt-get install -f
+   ```
+3. Launch from your applications menu or run `quanntaum-predict` from the terminal.
 
-### Login Information
+#### Fedora/RHEL-based distributions
+1. Download the RPM package (`quanntaum-predict-x.x.x.x86_64.rpm`) from the official website or distribution point.
+2. Install using your package manager or run:
+   ```
+   sudo rpm -i quanntaum-predict-x.x.x.x86_64.rpm
+   ```
+3. Launch from your applications menu or run `quanntaum-predict` from the terminal.
 
-The desktop application comes pre-configured with sample data and a default admin account:
+#### AppImage
+1. Download the AppImage file (`Quanntaum-Predict-x.x.x.AppImage`) from the official website or distribution point.
+2. Make the AppImage executable:
+   ```
+   chmod +x Quanntaum-Predict-x.x.x.AppImage
+   ```
+3. Run the AppImage by double-clicking it or executing it from the terminal.
 
-- Username: `admin`
-- Password: `adminpassword`
+## First-time Setup
 
-### Features Available in Desktop Mode
+When you first launch Quanntaum Predict, you'll need to log in with your credentials:
 
-The desktop version includes all features of the web application, including:
+- Default admin username: `admin`
+- Default admin password: `adminpassword`
 
-- Asset management and reliability analysis
-- Weibull analysis for failure prediction
-- FMECA (Failure Mode, Effects, and Criticality Analysis)
-- RCM (Reliability Centered Maintenance) planning
-- AI-powered chat assistant
-
-### Important Notes
-
-1. **Sample Data**: The desktop application uses pre-populated sample data for demonstration purposes. This data is stored in-memory and will reset when the application is restarted.
-
-2. **No Database Required**: Unlike the server version, the desktop application doesn't require a separate database setup.
-
-3. **File Import/Export**: You can import and export data files from the desktop version, but permanent data storage requires the server version with a proper database.
+It's strongly recommended to change the default password after your first login.
 
 ## Troubleshooting
 
-### Application Won't Start
+### Common Issues
 
-- **Windows**: Check the Event Viewer for details about application crashes
-- **macOS**: Check Console.app for error messages
-- **Linux**: Try running from terminal to see error output
+#### Application won't start
+- Ensure your operating system meets the minimum requirements.
+- Check if you have sufficient disk space and system memory.
+- Verify that your user account has adequate permissions.
 
-### Security Warnings
+#### MacOS security warning
+If you receive a warning that the app cannot be opened because it is from an unidentified developer:
+1. Right-click (or Control-click) the app icon.
+2. Select "Open" from the shortcut menu.
+3. Click "Open" in the dialog that appears.
 
-- **Windows**: The application may trigger SmartScreen warnings if it's not signed with a trusted certificate
-- **macOS**: You may need to authorize the app in System Preferences > Security & Privacy
-- **Linux**: Make sure .AppImage files have execute permissions
+#### Windows SmartScreen warning
+If Windows SmartScreen prevents the app from starting:
+1. Click "More info".
+2. Click "Run anyway" to proceed with the installation.
 
-### Other Issues
+## Support
 
-For any other issues or questions about the desktop application, please contact support with the following information:
+For additional assistance, please contact:
+- Email: support@quanntaum.com
+- Website: https://www.quanntaum.com/support
 
-1. Your operating system and version
-2. Steps to reproduce the issue
-3. Any error messages displayed
+## Data Storage
 
-## Uninstallation
+The desktop version of Quanntaum Predict uses a local in-memory database for storing application data. No additional database setup is required. All data is stored in memory and will be reset when the application is closed.
 
-### Windows
-- Use the "Add or Remove Programs" feature in Windows Settings
-- Or use the uninstaller in the installation directory
-
-### macOS
-- Drag the application from the Applications folder to the Trash
-- Optionally, clean preferences with: `rm ~/Library/Preferences/com.quanntaum.predict.plist`
-
-### Linux
-- For .deb packages: `sudo apt remove quanntaum-predict`
-- For .rpm packages: `sudo rpm -e quanntaum-predict`
-- For .AppImage: Simply delete the .AppImage file
+For a persistent database setup, please use the web-based deployment option of Quanntaum Predict.

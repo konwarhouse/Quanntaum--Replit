@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Gradient background -->
+  <rect width="512" height="512" rx="64" fill="url(#paint0_linear)" />
+  
+  <!-- Inner circle / orbit -->
+  <circle cx="256" cy="256" r="180" stroke="white" stroke-width="4" stroke-opacity="0.3" />
+  
+  <!-- Main Q letter -->
+  <path d="M184 180C184 153.49 205.49 132 232 132H280C306.51 132 328 153.49 328 180V280C328 306.51 306.51 328 280 328H276L312 364L280 380L236 336H232C205.49 336 184 314.51 184 288V180Z" 
+        fill="white" />
+  
+  <!-- Cutout of the Q to make the tail -->
+  <path d="M232 172C227.582 172 224 175.582 224 180V288C224 292.418 227.582 296 232 296H280C284.418 296 288 292.418 288 288V180C288 175.582 284.418 172 280 172H232Z" 
+        fill="url(#paint0_linear)" />
+  
+  <!-- Atoms/Particles -->
+  <circle cx="384" cy="128" r="24" fill="#4facfe" />
+  <circle cx="128" cy="384" r="24" fill="#00f2fe" />
+  <circle cx="384" cy="384" r="16" fill="white" />
+  <circle cx="128" cy="128" r="16" fill="white" />
+  
+  <!-- Orbit lines -->
+  <path d="M128 128L384 384" stroke="white" stroke-width="3" stroke-opacity="0.5" />
+  <path d="M384 128L128 384" stroke="white" stroke-width="3" stroke-opacity="0.5" />
+  
+  <!-- Small central dot -->
+  <circle cx="256" cy="256" r="12" fill="white" />
+  
+  <!-- Linear gradient definition -->
+  <defs>
+    <linearGradient id="paint0_linear" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0f2027" />
+      <stop offset="0.5" stop-color="#203a43" />
+      <stop offset="1" stop-color="#2c5364" />
+    </linearGradient>
+  </defs>
+</svg>

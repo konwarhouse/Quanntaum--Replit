@@ -112,7 +112,8 @@ export async function setupElectronDemoData(storage: IStorage): Promise<void> {
     // Add failure history if we have failure modes
     // We can now directly pass the equipment class to the method
     // The method will handle string or number
-    const failureModes = await storage.getFailureModesByEquipmentClass(asset.equipmentClass || 0);
+    const equipmentClass = asset.equipmentClass || '';
+    const failureModes = await storage.getFailureModesByEquipmentClass(equipmentClass);
     if (failureModes.length > 0) {
       await storage.createFailureHistory(insertFailureHistorySchema.parse({
         assetId: asset.id,
