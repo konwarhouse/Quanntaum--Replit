@@ -439,6 +439,117 @@ export function FmecaRecordsTable({ isOpen, onClose }: FmecaRecordsTableProps) {
                 />
               </div>
               
+              {/* RPN Calculation Fields */}
+              <div>
+                <Label htmlFor="edit-severity">Severity (1-10)</Label>
+                <Input
+                  id="edit-severity"
+                  type="number"
+                  min="1"
+                  max="10"
+                  value={editRow.severity || 1}
+                  onChange={(e) => {
+                    const severityValue = parseInt(e.target.value, 10);
+                    const probabilityValue = editRow.probability || 1;
+                    const detectionValue = editRow.detection || 1;
+                    setEditRow({ 
+                      ...editRow, 
+                      severity: severityValue,
+                      rpn: severityValue * probabilityValue * detectionValue
+                    });
+                  }}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="edit-probability">Probability (1-10)</Label>
+                <Input
+                  id="edit-probability"
+                  type="number"
+                  min="1"
+                  max="10"
+                  value={editRow.probability || 1}
+                  onChange={(e) => {
+                    const probabilityValue = parseInt(e.target.value, 10);
+                    const severityValue = editRow.severity || 1;
+                    const detectionValue = editRow.detection || 1;
+                    setEditRow({ 
+                      ...editRow, 
+                      probability: probabilityValue,
+                      rpn: severityValue * probabilityValue * detectionValue
+                    });
+                  }}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="edit-detection">Detection (1-10)</Label>
+                <Input
+                  id="edit-detection"
+                  type="number"
+                  min="1"
+                  max="10"
+                  value={editRow.detection || 1}
+                  onChange={(e) => {
+                    const detectionValue = parseInt(e.target.value, 10);
+                    const severityValue = editRow.severity || 1;
+                    const probabilityValue = editRow.probability || 1;
+                    setEditRow({ 
+                      ...editRow, 
+                      detection: detectionValue,
+                      rpn: severityValue * probabilityValue * detectionValue
+                    });
+                  }}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="edit-rpn" className="flex justify-between">
+                  <span>RPN</span>
+                  <span className={
+                    (editRow.rpn || 0) >= 200 ? "text-red-500 font-bold" :
+                    (editRow.rpn || 0) >= 125 ? "text-amber-500 font-bold" :
+                    "text-green-500 font-bold"
+                  }>
+                    {(editRow.rpn || 0) >= 200 ? "High Risk" : 
+                     (editRow.rpn || 0) >= 125 ? "Medium Risk" : "Low Risk"}
+                  </span>
+                </Label>
+                <Input
+                  id="edit-rpn"
+                  value={editRow.rpn || 0}
+                  readOnly
+                  className="bg-muted"
+                />
+              </div>
+              
+              <div className="col-span-2">
+                <Label htmlFor="edit-severity-justification">Severity Justification</Label>
+                <Textarea
+                  id="edit-severity-justification"
+                  value={editRow.severityJustification || ''}
+                  onChange={(e) => setEditRow({ ...editRow, severityJustification: e.target.value })}
+                />
+              </div>
+              
+              <div className="col-span-2">
+                <Label htmlFor="edit-probability-justification">Probability Justification</Label>
+                <Textarea
+                  id="edit-probability-justification"
+                  value={editRow.probabilityJustification || ''}
+                  onChange={(e) => setEditRow({ ...editRow, probabilityJustification: e.target.value })}
+                />
+              </div>
+              
+              <div className="col-span-2">
+                <Label htmlFor="edit-detection-justification">Detection Justification</Label>
+                <Textarea
+                  id="edit-detection-justification"
+                  value={editRow.detectionJustification || ''}
+                  onChange={(e) => setEditRow({ ...editRow, detectionJustification: e.target.value })}
+                />
+              </div>
+              
               <div>
                 <Label htmlFor="edit-action">Action</Label>
                 <Input
@@ -489,17 +600,17 @@ export function FmecaRecordsTable({ isOpen, onClose }: FmecaRecordsTableProps) {
               <div>
                 <Label htmlFor="edit-effectiveness">Effectiveness</Label>
                 <Select
-                  value={editRow.effectivenessVerified || 'none'}
-                  onValueChange={(value) => setEditRow({ ...editRow, effectivenessVerified: value })}
+                  value={editRow.effectivenessVerified || ''}
+                  onValueChange={(value) => setEditRow({ ...editRow, effectivenessVerified: value === '' ? null : value })}
                 >
                   <SelectTrigger id="edit-effectiveness">
                     <SelectValue placeholder="Select..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">Not Verified</SelectItem>
-                    <SelectItem value="yes">Fully Effective</SelectItem>
-                    <SelectItem value="partial">Partially Effective</SelectItem>
-                    <SelectItem value="no">Not Effective</SelectItem>
+                    <SelectItem value="">Not Verified</SelectItem>
+                    <SelectItem value="Fully Effective">Fully Effective</SelectItem>
+                    <SelectItem value="Partially Effective">Partially Effective</SelectItem>
+                    <SelectItem value="Not Effective">Not Effective</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -524,12 +635,27 @@ export function FmecaRecordsTable({ isOpen, onClose }: FmecaRecordsTableProps) {
                   const recordType = 'tagNumber' in editRow ? 'asset' : 'system';
                   const endpoint = `/api/enhanced-fmeca/${recordType}/${editRow.id}`;
                   
+                  // Prepare data - ensure numeric fields are properly formatted as numbers
+                  const processedData = {
+                    ...editRow,
+                    // Ensure numeric values are sent as numbers, not strings
+                    severity: parseInt(editRow.severity, 10),
+                    probability: parseInt(editRow.probability, 10),
+                    detection: parseInt(editRow.detection, 10),
+                    rpn: parseInt(editRow.rpn, 10),
+                    // Ensure empty strings are sent as null
+                    completionDate: editRow.completionDate || null,
+                    verifiedBy: editRow.verifiedBy || null,
+                    effectivenessVerified: editRow.effectivenessVerified || null,
+                    comments: editRow.comments || null
+                  };
+                  
                   fetch(endpoint, {
                     method: 'PATCH',
                     headers: {
                       'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify(editRow),
+                    body: JSON.stringify(processedData),
                   })
                     .then(response => {
                       if (!response.ok) {
