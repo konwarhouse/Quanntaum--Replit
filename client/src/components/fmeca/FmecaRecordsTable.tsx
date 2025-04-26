@@ -15,13 +15,20 @@ import { Loader2, AlertCircle } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface FmecaRecord {
   id: number;
   // Common fields
   severity: number;
+  severityJustification: string;
   probability: number;
+  probabilityJustification: string;
   detection: number;
+  detectionJustification: string;
   rpn: number;
   failureMode: string;
   cause: string;
@@ -56,6 +63,8 @@ export function FmecaRecordsTable({ isOpen, onClose }: FmecaRecordsTableProps) {
   const [activeTab, setActiveTab] = useState<'asset' | 'system'>('asset');
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editRow, setEditRow] = useState<any>(null);
   
   // Fetch asset FMECA records
   const { 
@@ -139,23 +148,63 @@ export function FmecaRecordsTable({ isOpen, onClose }: FmecaRecordsTableProps) {
     try {
       // Determine if it's an asset or system record based on fields
       const recordType = 'tagNumber' in record ? 'asset' : 'system';
-      const endpoint = `/api/enhanced-fmeca/${recordType}/${record.id}`;
       
-      // Get the current record data
-      const response = await fetch(endpoint);
+      // Instead of trying to fetch data before edit, let's directly open the edit dialog
+      // with the data we already have in the record
+      setEditRow(recordType === 'asset' ? {
+        // Asset FMECA data mapping
+        id: record.id.toString(),
+        tagNumber: record.tagNumber || '',
+        assetDescription: record.assetDescription || '',
+        assetFunction: record.assetFunction || '',
+        component: record.component || '',
+        failureMode: record.failureMode || '',
+        cause: record.cause || '',
+        effect: record.effect || '',
+        severity: record.severity,
+        severityJustification: record.severityJustification || '',
+        probability: record.probability,
+        probabilityJustification: record.probabilityJustification || '',
+        detection: record.detection,
+        detectionJustification: record.detectionJustification || '',
+        rpn: record.rpn,
+        action: record.action || '',
+        responsibility: record.responsibility || '',
+        targetDate: record.targetDate || '',
+        completionDate: record.completionDate || '',
+        verifiedBy: record.verifiedBy || '',
+        effectivenessVerified: record.effectivenessVerified || '',
+        comments: record.comments || ''
+      } : {
+        // System FMECA data mapping
+        id: record.id.toString(),
+        systemId: record.systemName || '',
+        systemName: record.systemName || '',
+        systemFunction: record.systemFunction || '',
+        subsystem: record.subsystem || '',
+        failureMode: record.failureMode || '',
+        cause: record.cause || '',
+        effect: record.effect || '',
+        severity: record.severity,
+        severityJustification: record.severityJustification || '',
+        probability: record.probability,
+        probabilityJustification: record.probabilityJustification || '',
+        detection: record.detection,
+        detectionJustification: record.detectionJustification || '',
+        rpn: record.rpn,
+        action: record.action || '',
+        responsibility: record.responsibility || '',
+        targetDate: record.targetDate || '',
+        completionDate: record.completionDate || '',
+        verifiedBy: record.verifiedBy || '',
+        effectivenessVerified: record.effectivenessVerified || '',
+        comments: record.comments || ''
+      });
       
-      if (!response.ok) {
-        throw new Error(`Failed to fetch record data. Status: ${response.status}`);
-      }
+      setIsEditDialogOpen(true);
       
-      // Show edit dialog with fetched data
-      const recordData = await response.json();
-      
-      // Open editor dialog directly after successful fetch
-      window.open(`/enhanced-fmeca?edit=${recordType}&id=${record.id}`, '_self');
-      
-      // Close this dialog
-      onClose();
+      // The dialog will be displayed instead of navigating away
+      // No need to close the current dialog until the edit is complete
     } catch (error) {
       console.error('Error editing record:', error);
       toast({
@@ -187,166 +236,338 @@ export function FmecaRecordsTable({ isOpen, onClose }: FmecaRecordsTableProps) {
   };
   
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-5xl h-[80vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>FMECA Records</DialogTitle>
-          <DialogDescription>
-            View and manage all stored FMECA records
-          </DialogDescription>
-        </DialogHeader>
-        
-        <Tabs defaultValue={activeTab} onValueChange={(value) => setActiveTab(value as 'asset' | 'system')} className="flex-1">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="asset">Asset FMECA Records</TabsTrigger>
-            <TabsTrigger value="system">System FMECA Records</TabsTrigger>
-          </TabsList>
+    <>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-5xl h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>FMECA Records</DialogTitle>
+            <DialogDescription>
+              View and manage all stored FMECA records
+            </DialogDescription>
+          </DialogHeader>
           
-          <TabsContent value="asset" className="flex-1 h-full">
-            {isLoadingAsset && (
-              <div className="flex items-center justify-center p-6">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <span className="ml-2">Loading asset records...</span>
-              </div>
-            )}
+          <Tabs defaultValue={activeTab} onValueChange={(value) => setActiveTab(value as 'asset' | 'system')} className="flex-1">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="asset">Asset FMECA Records</TabsTrigger>
+              <TabsTrigger value="system">System FMECA Records</TabsTrigger>
+            </TabsList>
             
-            {assetError && (
-              <div className="flex items-center justify-center p-6 text-red-600">
-                <AlertCircle className="h-6 w-6 mr-2" />
-                <span>Error loading asset records: {(assetError as Error).message}</span>
-              </div>
-            )}
-            
-            {!isLoadingAsset && assetRecords && assetRecords.length === 0 && (
-              <div className="text-center p-6 text-gray-500">
-                No asset FMECA records found.
-              </div>
-            )}
-            
-            {!isLoadingAsset && assetRecords && assetRecords.length > 0 && (
-              <ScrollArea className="h-[calc(80vh-12rem)]">
-                <Table>
-                  <TableHeader className="sticky top-0 bg-white">
-                    <TableRow>
-                      <TableHead>Tag Number</TableHead>
-                      <TableHead>Component</TableHead>
-                      <TableHead>Failure Mode</TableHead>
-                      <TableHead>RPN</TableHead>
-                      <TableHead>Risk Level</TableHead>
-                      <TableHead>Date Created</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {assetRecords.map((record) => (
-                      <TableRow key={record.id}>
-                        <TableCell>{record.tagNumber}</TableCell>
-                        <TableCell>{record.component}</TableCell>
-                        <TableCell>{record.failureMode}</TableCell>
-                        <TableCell className="font-bold">{record.rpn}</TableCell>
-                        <TableCell>{getRiskLevelBadge(record.rpn)}</TableCell>
-                        <TableCell>{new Date(record.createdAt).toLocaleDateString()}</TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handleEditRecord(record)}
-                            >
-                              Edit
-                            </Button>
-                            <Button 
-                              variant="destructive" 
-                              size="sm"
-                              onClick={() => handleDeleteRecord(record.id, 'asset')}
-                            >
-                              Delete
-                            </Button>
-                          </div>
-                        </TableCell>
+            <TabsContent value="asset" className="flex-1 h-full">
+              {isLoadingAsset && (
+                <div className="flex items-center justify-center p-6">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <span className="ml-2">Loading asset records...</span>
+                </div>
+              )}
+              
+              {assetError && (
+                <div className="flex items-center justify-center p-6 text-red-600">
+                  <AlertCircle className="h-6 w-6 mr-2" />
+                  <span>Error loading asset records: {(assetError as Error).message}</span>
+                </div>
+              )}
+              
+              {!isLoadingAsset && assetRecords && assetRecords.length === 0 && (
+                <div className="text-center p-6 text-gray-500">
+                  No asset FMECA records found.
+                </div>
+              )}
+              
+              {!isLoadingAsset && assetRecords && assetRecords.length > 0 && (
+                <ScrollArea className="h-[calc(80vh-12rem)]">
+                  <Table>
+                    <TableHeader className="sticky top-0 bg-white">
+                      <TableRow>
+                        <TableHead>Tag Number</TableHead>
+                        <TableHead>Component</TableHead>
+                        <TableHead>Failure Mode</TableHead>
+                        <TableHead>RPN</TableHead>
+                        <TableHead>Risk Level</TableHead>
+                        <TableHead>Date Created</TableHead>
+                        <TableHead>Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </ScrollArea>
-            )}
-          </TabsContent>
+                    </TableHeader>
+                    <TableBody>
+                      {assetRecords.map((record) => (
+                        <TableRow key={record.id}>
+                          <TableCell>{record.tagNumber}</TableCell>
+                          <TableCell>{record.component}</TableCell>
+                          <TableCell>{record.failureMode}</TableCell>
+                          <TableCell className="font-bold">{record.rpn}</TableCell>
+                          <TableCell>{getRiskLevelBadge(record.rpn)}</TableCell>
+                          <TableCell>{new Date(record.createdAt).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleEditRecord(record)}
+                              >
+                                Edit
+                              </Button>
+                              <Button 
+                                variant="destructive" 
+                                size="sm"
+                                onClick={() => handleDeleteRecord(record.id, 'asset')}
+                              >
+                                Delete
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="system" className="flex-1 h-full">
+              {isLoadingSystem && (
+                <div className="flex items-center justify-center p-6">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <span className="ml-2">Loading system records...</span>
+                </div>
+              )}
+              
+              {systemError && (
+                <div className="flex items-center justify-center p-6 text-red-600">
+                  <AlertCircle className="h-6 w-6 mr-2" />
+                  <span>Error loading system records: {(systemError as Error).message}</span>
+                </div>
+              )}
+              
+              {!isLoadingSystem && systemRecords && systemRecords.length === 0 && (
+                <div className="text-center p-6 text-gray-500">
+                  No system FMECA records found.
+                </div>
+              )}
+              
+              {!isLoadingSystem && systemRecords && systemRecords.length > 0 && (
+                <ScrollArea className="h-[calc(80vh-12rem)]">
+                  <Table>
+                    <TableHeader className="sticky top-0 bg-white">
+                      <TableRow>
+                        <TableHead>System Name</TableHead>
+                        <TableHead>Subsystem</TableHead>
+                        <TableHead>Failure Mode</TableHead>
+                        <TableHead>RPN</TableHead>
+                        <TableHead>Risk Level</TableHead>
+                        <TableHead>Date Created</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {systemRecords.map((record) => (
+                        <TableRow key={record.id}>
+                          <TableCell>{record.systemName}</TableCell>
+                          <TableCell>{record.subsystem}</TableCell>
+                          <TableCell>{record.failureMode}</TableCell>
+                          <TableCell className="font-bold">{record.rpn}</TableCell>
+                          <TableCell>{getRiskLevelBadge(record.rpn)}</TableCell>
+                          <TableCell>{new Date(record.createdAt).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleEditRecord(record)}
+                              >
+                                Edit
+                              </Button>
+                              <Button 
+                                variant="destructive" 
+                                size="sm"
+                                onClick={() => handleDeleteRecord(record.id, 'system')}
+                              >
+                                Delete
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
+              )}
+            </TabsContent>
+          </Tabs>
           
-          <TabsContent value="system" className="flex-1 h-full">
-            {isLoadingSystem && (
-              <div className="flex items-center justify-center p-6">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <span className="ml-2">Loading system records...</span>
-              </div>
-            )}
+          <DialogFooter>
+            <Button variant="outline" onClick={onClose}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      {editRow && (
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>Edit FMECA Record</DialogTitle>
+              <DialogDescription>
+                Edit the FMECA record details
+              </DialogDescription>
+            </DialogHeader>
             
-            {systemError && (
-              <div className="flex items-center justify-center p-6 text-red-600">
-                <AlertCircle className="h-6 w-6 mr-2" />
-                <span>Error loading system records: {(systemError as Error).message}</span>
+            <div className="grid grid-cols-2 gap-4 py-4">
+              {/* Add edit fields here based on editRow data */}
+              <div className="col-span-2">
+                <Label htmlFor="edit-failure-mode">Failure Mode</Label>
+                <Input
+                  id="edit-failure-mode"
+                  value={editRow.failureMode}
+                  onChange={(e) => setEditRow({ ...editRow, failureMode: e.target.value })}
+                />
               </div>
-            )}
-            
-            {!isLoadingSystem && systemRecords && systemRecords.length === 0 && (
-              <div className="text-center p-6 text-gray-500">
-                No system FMECA records found.
+              
+              <div>
+                <Label htmlFor="edit-cause">Cause</Label>
+                <Input
+                  id="edit-cause"
+                  value={editRow.cause}
+                  onChange={(e) => setEditRow({ ...editRow, cause: e.target.value })}
+                />
               </div>
-            )}
+              
+              <div>
+                <Label htmlFor="edit-effect">Effect</Label>
+                <Input
+                  id="edit-effect"
+                  value={editRow.effect}
+                  onChange={(e) => setEditRow({ ...editRow, effect: e.target.value })}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="edit-action">Action</Label>
+                <Input
+                  id="edit-action"
+                  value={editRow.action}
+                  onChange={(e) => setEditRow({ ...editRow, action: e.target.value })}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="edit-responsibility">Responsibility</Label>
+                <Input
+                  id="edit-responsibility"
+                  value={editRow.responsibility}
+                  onChange={(e) => setEditRow({ ...editRow, responsibility: e.target.value })}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="edit-target-date">Target Date</Label>
+                <Input
+                  id="edit-target-date"
+                  type="date"
+                  value={editRow.targetDate}
+                  onChange={(e) => setEditRow({ ...editRow, targetDate: e.target.value })}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="edit-completion-date">Completion Date</Label>
+                <Input
+                  id="edit-completion-date"
+                  type="date"
+                  value={editRow.completionDate || ''}
+                  onChange={(e) => setEditRow({ ...editRow, completionDate: e.target.value })}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="edit-verified-by">Verified By</Label>
+                <Input
+                  id="edit-verified-by"
+                  value={editRow.verifiedBy || ''}
+                  onChange={(e) => setEditRow({ ...editRow, verifiedBy: e.target.value })}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="edit-effectiveness">Effectiveness</Label>
+                <Select
+                  value={editRow.effectivenessVerified || ''}
+                  onValueChange={(value) => setEditRow({ ...editRow, effectivenessVerified: value })}
+                >
+                  <SelectTrigger id="edit-effectiveness">
+                    <SelectValue placeholder="Select..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Not Verified</SelectItem>
+                    <SelectItem value="yes">Fully Effective</SelectItem>
+                    <SelectItem value="partial">Partially Effective</SelectItem>
+                    <SelectItem value="no">Not Effective</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="col-span-2">
+                <Label htmlFor="edit-comments">Comments</Label>
+                <Textarea
+                  id="edit-comments"
+                  value={editRow.comments || ''}
+                  onChange={(e) => setEditRow({ ...editRow, comments: e.target.value })}
+                />
+              </div>
+            </div>
             
-            {!isLoadingSystem && systemRecords && systemRecords.length > 0 && (
-              <ScrollArea className="h-[calc(80vh-12rem)]">
-                <Table>
-                  <TableHeader className="sticky top-0 bg-white">
-                    <TableRow>
-                      <TableHead>System Name</TableHead>
-                      <TableHead>Subsystem</TableHead>
-                      <TableHead>Failure Mode</TableHead>
-                      <TableHead>RPN</TableHead>
-                      <TableHead>Risk Level</TableHead>
-                      <TableHead>Date Created</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {systemRecords.map((record) => (
-                      <TableRow key={record.id}>
-                        <TableCell>{record.systemName}</TableCell>
-                        <TableCell>{record.subsystem}</TableCell>
-                        <TableCell>{record.failureMode}</TableCell>
-                        <TableCell className="font-bold">{record.rpn}</TableCell>
-                        <TableCell>{getRiskLevelBadge(record.rpn)}</TableCell>
-                        <TableCell>{new Date(record.createdAt).toLocaleDateString()}</TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handleEditRecord(record)}
-                            >
-                              Edit
-                            </Button>
-                            <Button 
-                              variant="destructive" 
-                              size="sm"
-                              onClick={() => handleDeleteRecord(record.id, 'system')}
-                            >
-                              Delete
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </ScrollArea>
-            )}
-          </TabsContent>
-        </Tabs>
-        
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Close</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={() => {
+                  // Save the edited record
+                  const recordType = 'tagNumber' in editRow ? 'asset' : 'system';
+                  const endpoint = `/api/enhanced-fmeca/${recordType}/${editRow.id}`;
+                  
+                  fetch(endpoint, {
+                    method: 'PATCH',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(editRow),
+                  })
+                    .then(response => {
+                      if (!response.ok) {
+                        throw new Error('Failed to update record');
+                      }
+                      return response.json();
+                    })
+                    .then(() => {
+                      // Success message
+                      toast({
+                        title: 'Record updated',
+                        description: 'FMECA record has been updated successfully',
+                      });
+                      
+                      // Refresh data
+                      queryClient.invalidateQueries({ 
+                        queryKey: [`/api/enhanced-fmeca/${recordType}`] 
+                      });
+                      
+                      // Close dialog
+                      setIsEditDialogOpen(false);
+                    })
+                    .catch(error => {
+                      // Error message
+                      toast({
+                        title: 'Error',
+                        description: `Failed to update record: ${error.message}`,
+                        variant: 'destructive',
+                      });
+                    });
+                }}
+              >
+                Save Changes
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
   );
 }
