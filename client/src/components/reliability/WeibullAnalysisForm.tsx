@@ -16,6 +16,8 @@ interface WeibullParameters {
   eta: number;
   timeUnits: 'hours' | 'days' | 'months' | 'years';
   timeHorizon: number;
+  maxReliability: number;
+  acceptableDowntime: number;
 }
 
 interface WeibullAnalysisFormProps {
@@ -28,7 +30,9 @@ const WeibullAnalysisForm = ({ selectedAssetId }: WeibullAnalysisFormProps) => {
     beta: 2,
     eta: 1000,
     timeUnits: 'hours',
-    timeHorizon: 5000
+    timeHorizon: 5000,
+    maxReliability: 90,
+    acceptableDowntime: 24
   });
   const [results, setResults] = useState<WeibullAnalysisResponse | null>(null);
   
@@ -212,6 +216,43 @@ const WeibullAnalysisForm = ({ selectedAssetId }: WeibullAnalysisFormProps) => {
               />
               <p className="text-xs text-muted-foreground">
                 Maximum time period for analysis
+              </p>
+            </div>
+
+            {/* Maximum Reliability */}
+            <div className="space-y-2">
+              <Label htmlFor="maxReliability">Maximum Reliability (%)</Label>
+              <Input
+                id="maxReliability"
+                name="maxReliability"
+                type="number"
+                step="1"
+                min="1"
+                max="100"
+                value={formData.maxReliability}
+                onChange={handleInputChange}
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                Target reliability percentage (e.g., 90%)
+              </p>
+            </div>
+
+            {/* Acceptable Downtime */}
+            <div className="space-y-2">
+              <Label htmlFor="acceptableDowntime">Acceptable Downtime</Label>
+              <Input
+                id="acceptableDowntime"
+                name="acceptableDowntime"
+                type="number"
+                step="1"
+                min="1"
+                value={formData.acceptableDowntime}
+                onChange={handleInputChange}
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                Maximum acceptable downtime in {formData.timeUnits}
               </p>
             </div>
 
