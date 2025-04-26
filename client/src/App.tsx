@@ -6,8 +6,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import ChatPage from "@/pages/ChatPage";
 import ReliabilityPage from "@/pages/ReliabilityPage";
-import RcmPage from "@/pages/RcmPage";
-import FmecaPage from "@/pages/fmeca-page";
+import KpiDashboardPage from "@/pages/KpiDashboardPage";
+
 import EnhancedFmecaPage from "@/pages/enhanced-fmeca-page";
 import EditFmecaHistoryPage from "@/pages/edit-fmeca-history-page";
 import AuthPage from "@/pages/auth-page";
@@ -48,7 +48,7 @@ function Router() {
       <Route path="/rcm">
         <Layout>
           <ProtectedRoute>
-            <RcmPage />
+            <KpiDashboardPage />
           </ProtectedRoute>
         </Layout>
       </Route>

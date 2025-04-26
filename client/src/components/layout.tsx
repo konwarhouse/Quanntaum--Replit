@@ -44,6 +44,7 @@ export default function Layout({ children }: LayoutProps) {
       icon: Settings,
       current: location === '/rcm',
       roles: [UserRole.ADMIN, UserRole.ANALYST, UserRole.TECHNICIAN],
+      pro: true, // Mark as pro feature
     },
     {
       name: 'User Management',
@@ -88,11 +89,17 @@ export default function Layout({ children }: LayoutProps) {
                       item.current
                         ? 'bg-primary/10 text-primary'
                         : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-                      'rounded-md px-3 py-2 flex items-center text-sm font-medium'
+                      item.pro ? 'opacity-50 pointer-events-none filter grayscale' : '',
+                      'rounded-md px-3 py-2 flex items-center text-sm font-medium relative'
                     )}
                   >
                     <item.icon className="mr-2 h-5 w-5" />
                     {item.name}
+                    {item.pro && (
+                      <span className="absolute -top-2 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 text-[8px] text-white font-bold">
+                        PRO
+                      </span>
+                    )}
                   </Link>
                 ))}
               </nav>
@@ -116,11 +123,17 @@ export default function Layout({ children }: LayoutProps) {
                   item.current
                     ? 'bg-primary/10 text-primary'
                     : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-                  'flex-1 rounded-md px-3 py-2 flex items-center justify-center text-sm font-medium'
+                  item.pro ? 'opacity-50 pointer-events-none filter grayscale' : '',
+                  'flex-1 rounded-md px-3 py-2 flex items-center justify-center text-sm font-medium relative'
                 )}
               >
                 <item.icon className="mr-2 h-5 w-5" />
                 {item.name}
+                {item.pro && (
+                  <span className="absolute -top-2 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 text-[8px] text-white font-bold">
+                    PRO
+                  </span>
+                )}
               </Link>
             ))}
           </div>
