@@ -55,8 +55,14 @@ const ReliabilityPage = () => {
           <TabsTrigger value="equipmentClasses">Equipment Classes</TabsTrigger>
           <TabsTrigger value="weibull">Weibull Analysis</TabsTrigger>
           <TabsTrigger value="maintenance">Maintenance Optimization</TabsTrigger>
-          <TabsTrigger value="rcm">RCM Analysis</TabsTrigger>
-          <TabsTrigger value="simulation">Simulation</TabsTrigger>
+          <TabsTrigger value="rcm" className="relative">
+            RCM Analysis
+            <span className="absolute -top-2 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 text-[8px] text-white font-bold" title="Licensed Users Only">PRO</span>
+          </TabsTrigger>
+          <TabsTrigger value="simulation" className="relative">
+            Simulation
+            <span className="absolute -top-2 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 text-[8px] text-white font-bold" title="Licensed Users Only">PRO</span>
+          </TabsTrigger>
         </TabsList>
 
         <div className="mt-6">
@@ -142,6 +148,20 @@ const ReliabilityPage = () => {
                 Determine the most appropriate maintenance strategy based on asset criticality and failure modes
               </p>
             </div>
+            <div className="p-6 border border-blue-200 bg-blue-50 rounded-md mb-4">
+              <h3 className="text-lg font-semibold text-blue-700 flex items-center">
+                <span className="mr-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-md font-semibold">LICENSED USERS ONLY</span>
+                Advanced Module Under Development
+              </h3>
+              <p className="mt-2 text-blue-700">
+                The RCM Analysis module is currently under development as part of a complete reliability engineering platform.
+                This advanced feature will be available exclusively for licensed users with full access to Weibull modeling and 
+                comprehensive maintenance strategy optimization.
+              </p>
+              <p className="mt-2 text-blue-700">
+                Please contact our support team for licensing information and early access to these features.
+              </p>
+            </div>
             <RCMAnalysisForm />
           </TabsContent>
 
@@ -150,6 +170,20 @@ const ReliabilityPage = () => {
               <h2 className="text-3xl font-bold tracking-tight">Monte Carlo Simulation</h2>
               <p className="text-muted-foreground">
                 Simulate equipment failures and maintenance interventions to analyze costs and reliability
+              </p>
+            </div>
+            <div className="p-6 border border-blue-200 bg-blue-50 rounded-md mb-4">
+              <h3 className="text-lg font-semibold text-blue-700 flex items-center">
+                <span className="mr-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-md font-semibold">LICENSED USERS ONLY</span>
+                Advanced Module Under Development
+              </h3>
+              <p className="mt-2 text-blue-700">
+                The Simulation module is currently under development as part of a complete reliability engineering platform.
+                This advanced feature will provide Monte Carlo simulation capabilities to model equipment lifecycle, 
+                maintenance interventions, and failure events to optimize reliability strategies.
+              </p>
+              <p className="mt-2 text-blue-700">
+                Please contact our support team for licensing information and early access to these features.
               </p>
             </div>
             <SimulationForm />
