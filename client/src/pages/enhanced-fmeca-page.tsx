@@ -1803,6 +1803,12 @@ const EnhancedFmecaPage = () => {
           function: systemFunction
         }}
       />
+
+      {/* FMECA Records Table */}
+      <FmecaRecordsTable
+        isOpen={showFmecaRecords}
+        onClose={() => setShowFmecaRecords(false)}
+      />
     </div>
   );
 };
