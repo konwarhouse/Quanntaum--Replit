@@ -28,39 +28,9 @@ const authenticateUser = (req: express.Request, res: express.Response, next: exp
       return next();
     }
     
-    // If no explicit bypass, use the auto-login feature
-    console.log('FMECA DEV MODE: Attempting auto-login before giving access');
-    // Try to find admin user and auto-login
-    const db = require('../db').db;
-    const { eq } = require('drizzle-orm');
-    const { users } = require('@shared/schema');
-    
-    db.select()
-      .from(users)
-      .where(eq(users.username, 'admin'))
-      .limit(1)
-      .then(([adminUser]: any[]) => {
-        if (adminUser) {
-          req.login(adminUser, (err: any) => {
-            if (err) {
-              console.error('FMECA auto-login error:', err);
-              console.log('FMECA DEV FALLBACK: Allowing access despite login failure');
-              return next(); // Allow access anyway in dev mode
-            }
-            console.log('FMECA DEV AUTO-LOGIN: Successfully logged in as admin');
-            return next();
-          });
-        } else {
-          console.log('FMECA DEV FALLBACK: No admin user found, but allowing access anyway');
-          return next(); // Allow access anyway in dev mode
-        }
-      })
-      .catch((err: any) => {
-        console.error('FMECA DB query error:', err);
-        console.log('FMECA DEV FALLBACK: DB error, but allowing access anyway');
-        return next(); // Allow access anyway in dev mode
-      });
-    return; // Return early since we're handling async
+    // In development, always allow access without trying complicated auto-login
+    console.log('FMECA DEV MODE: Allowing access directly in development');
+    return next();
   }
   
   // In production, require authentication

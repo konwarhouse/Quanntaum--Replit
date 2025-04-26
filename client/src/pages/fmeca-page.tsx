@@ -883,16 +883,11 @@ const FmecaPage: React.FC = () => {
   const fetchAssetFmecaData = async () => {
     try {
       console.log("Fetching asset FMECA data...");
-      // Use the apiRequest function with credentials included and dev bypass
-      const isDev = process.env.NODE_ENV === 'development';
-      const url = isDev 
-        ? "/api/enhanced-fmeca/asset?bypass_auth=true" 
-        : "/api/enhanced-fmeca/asset";
-        
+      // Use the apiRequest function with credentials included
+      const url = "/api/enhanced-fmeca/asset";
+      
       console.log(`Requesting FMECA data from: ${url}`);
-      const response = await apiRequest("GET", url, undefined, {
-        headers: isDev ? { 'X-Bypass-Auth': 'true' } : undefined
-      });
+      const response = await apiRequest("GET", url);
       
       if (response.status === 401) {
         console.error("Authentication error when fetching asset FMECA data");
@@ -934,16 +929,11 @@ const FmecaPage: React.FC = () => {
   const fetchSystemFmecaData = async () => {
     try {
       console.log("Fetching system FMECA data...");
-      // Use the apiRequest function with credentials included and dev bypass
-      const isDev = process.env.NODE_ENV === 'development';
-      const url = isDev 
-        ? "/api/enhanced-fmeca/system?bypass_auth=true" 
-        : "/api/enhanced-fmeca/system";
-        
+      // Use the apiRequest function with credentials included
+      const url = "/api/enhanced-fmeca/system";
+      
       console.log(`Requesting system FMECA data from: ${url}`);
-      const response = await apiRequest("GET", url, undefined, {
-        headers: isDev ? { 'X-Bypass-Auth': 'true' } : undefined
-      });
+      const response = await apiRequest("GET", url);
       
       if (response.status === 401) {
         console.error("Authentication error when fetching system FMECA data");
@@ -984,8 +974,24 @@ const FmecaPage: React.FC = () => {
   
   // Load data on component mount
   useEffect(() => {
+    console.log("FMECA Page mounted - fetching data...");
     fetchAssetFmecaData();
     fetchSystemFmecaData();
+    
+    // Add error boundary to catch any rendering errors
+    window.onerror = (message, source, lineno, colno, error) => {
+      console.error("FMECA page error:", message, error);
+      toast({
+        title: "Application Error",
+        description: "An unexpected error occurred. Please try refreshing the page.",
+        variant: "destructive"
+      });
+      return true;
+    };
+
+    return () => {
+      window.onerror = null; // Clean up
+    };
   }, []);
   
   // Handle tab changes
@@ -997,20 +1003,14 @@ const FmecaPage: React.FC = () => {
     }
   }, [selectedTab]);
   
-  // Get all systems with dev bypass
+  // Get all systems
   const { data: systems, isLoading: systemsLoading } = useQuery({
     queryKey: ["/api/fmeca/systems"],
     queryFn: async () => {
-      // Use development auth bypass in dev environment
-      const isDev = process.env.NODE_ENV === 'development';
-      const url = isDev 
-        ? "/api/fmeca/systems?bypass_auth=true" 
-        : "/api/fmeca/systems";
+      const url = "/api/fmeca/systems";
       
       console.log(`Requesting systems data from: ${url}`);
-      const response = await apiRequest("GET", url, undefined, {
-        headers: isDev ? { 'X-Bypass-Auth': 'true' } : undefined
-      });
+      const response = await apiRequest("GET", url);
       
       if (response.status === 401) {
         console.error("Authentication error when fetching systems");
