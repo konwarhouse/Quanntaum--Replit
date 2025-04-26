@@ -94,8 +94,8 @@ interface FmecaRecordsDialogProps {
   assetRecords: AssetFmecaRecord[];
   systemRecords: SystemFmecaRecord[];
   onEditRecord: (record: FmecaRecord) => void;
-  onDeleteRecord: (id: number, type: 'asset' | 'system') => void;
-  onViewHistory: (id: number, type: 'asset' | 'system') => void;
+  onDeleteRecord: (id: number | string, type: 'asset' | 'system') => void;
+  onViewHistory: (id: number | string, type: 'asset' | 'system') => void;
 }
 
 export function FmecaRecordsDialog({
