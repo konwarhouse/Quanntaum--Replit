@@ -242,7 +242,7 @@ const FmecaPage: React.FC = () => {
       targetDate: targetDateEl.value,
       completionDate: completionDateEl?.value || '',
       verifiedBy: verifiedByEl?.value || '',
-      effectivenessVerified: effectivenessSelect?.value as 'yes' | 'no' | 'partial' | '',
+      effectivenessVerified: assetEffectivenessValue as 'yes' | 'no' | 'partial' | '',
       comments: commentsEl.value
     };
     
@@ -266,6 +266,7 @@ const FmecaPage: React.FC = () => {
     setAssetSeverityJustification("");
     setAssetProbabilityJustification("");
     setAssetDetectionJustification("");
+    setAssetEffectivenessValue("");
     
     toast({
       title: "Success",
@@ -533,7 +534,7 @@ const FmecaPage: React.FC = () => {
       targetDate: targetDateEl.value,
       completionDate: completionDateEl?.value || '',
       verifiedBy: verifiedByEl?.value || '',
-      effectivenessVerified: effectivenessSelect?.value as 'yes' | 'no' | 'partial' | '',
+      effectivenessVerified: assetEffectivenessValue as 'yes' | 'no' | 'partial' | '',
       comments: commentsEl.value
     };
     
@@ -557,6 +558,7 @@ const FmecaPage: React.FC = () => {
     setSystemSeverityJustification("");
     setSystemProbabilityJustification("");
     setSystemDetectionJustification("");
+    setSystemEffectivenessValue("");
     
     toast({
       title: "Success",
