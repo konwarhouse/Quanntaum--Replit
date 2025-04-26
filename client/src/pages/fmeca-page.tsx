@@ -110,6 +110,9 @@ const FmecaPage: React.FC = () => {
   const [assetDetection, setAssetDetection] = useState<number>(5);
   const [assetDetectionJustification, setAssetDetectionJustification] = useState<string>("");
   
+  // Verification tracking state for asset FMECA
+  const [assetEffectivenessValue, setAssetEffectivenessValue] = useState<string>("");
+  
   // Edit dialog state for asset FMECA rows
   const [isEditingAsset, setIsEditingAsset] = useState(false);
   const [editingAssetRow, setEditingAssetRow] = useState<AssetFmecaRow | null>(null);
@@ -127,6 +130,9 @@ const FmecaPage: React.FC = () => {
   const [systemProbabilityJustification, setSystemProbabilityJustification] = useState<string>("");
   const [systemDetection, setSystemDetection] = useState<number>(5);
   const [systemDetectionJustification, setSystemDetectionJustification] = useState<string>("");
+  
+  // Verification tracking state for system FMECA
+  const [systemEffectivenessValue, setSystemEffectivenessValue] = useState<string>("");
   
   // Edit dialog state for system FMECA rows
   const [isEditingSystem, setIsEditingSystem] = useState(false);
