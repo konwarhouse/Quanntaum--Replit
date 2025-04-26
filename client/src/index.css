@@ -12,7 +12,7 @@
   }
 }
 
-/* Removed colorful tabs styling to maintain stability */
+
 
 .message-container {
   @apply overflow-y-auto;
