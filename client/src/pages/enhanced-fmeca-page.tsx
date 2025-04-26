@@ -14,6 +14,8 @@ import {
   History
 } from "lucide-react";
 import { FmecaHistoryButton } from "@/components/fmeca/FmecaHistory";
+import { FmecaActionButtons } from "@/components/fmeca/FmecaWithHistoryButtons";
+import { AddHistoryButton } from "@/components/fmeca/AddFmecaHistory";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
