@@ -158,10 +158,9 @@ export const assetFmecaHistory = pgTable("asset_fmeca_history", {
 export const systemFmecaHistory = pgTable("system_fmeca_history", {
   id: serial("id").primaryKey(),
   systemFmecaId: integer("system_fmeca_id").notNull(), // Reference to original FMECA record
-  systemId: text("system_id").notNull(),
   systemName: text("system_name").notNull(),
-  systemFunction: text("system_function").notNull(),
-  subsystem: text("subsystem").notNull(),
+  systemDescription: text("system_description").notNull(), // Matches actual column in database (instead of system_function)
+  subSystem: text("sub_system").notNull(), // Matches actual column in database (with underscore)
   failureMode: text("failure_mode").notNull(),
   cause: text("cause").notNull(),
   effect: text("effect").notNull(),
@@ -219,10 +218,9 @@ export const insertAssetFmecaHistorySchema = createInsertSchema(assetFmecaHistor
 
 export const insertSystemFmecaHistorySchema = createInsertSchema(systemFmecaHistory, {
   systemFmecaId: z.number().int().positive("System FMECA ID is required"),
-  systemId: z.string().min(1, "System ID is required"),
   systemName: z.string().min(1, "System name is required"),
-  systemFunction: z.string().min(1, "System function is required"),
-  subsystem: z.string().min(1, "Subsystem is required"),
+  systemDescription: z.string().min(1, "System description is required"),
+  subSystem: z.string().min(1, "Sub-system is required"),
   failureMode: z.string().min(1, "Failure mode is required"),
   cause: z.string().min(1, "Cause is required"),
   effect: z.string().min(1, "Effect is required"),
