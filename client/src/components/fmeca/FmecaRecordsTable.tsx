@@ -135,14 +135,35 @@ export function FmecaRecordsTable({ isOpen, onClose }: FmecaRecordsTableProps) {
     }
   });
   
-  const handleEditRecord = (record: FmecaRecord) => {
-    // Close this dialog and pass record to parent for editing
-    onClose();
-    // For now, just show a toast as we implement the edit functionality
-    toast({
-      title: 'Edit Record',
-      description: `Editing record with ID: ${record.id}`,
-    });
+  const handleEditRecord = async (record: FmecaRecord) => {
+    try {
+      // Determine if it's an asset or system record based on fields
+      const recordType = 'tagNumber' in record ? 'asset' : 'system';
+      const endpoint = `/api/enhanced-fmeca/${recordType}/${record.id}`;
+      
+      // Get the current record data
+      const response = await fetch(endpoint);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch record data. Status: ${response.status}`);
+      }
+      
+      // Show edit dialog with fetched data
+      const recordData = await response.json();
+      
+      // Open editor dialog directly after successful fetch
+      window.open(`/enhanced-fmeca?edit=${recordType}&id=${record.id}`, '_self');
+      
+      // Close this dialog
+      onClose();
+    } catch (error) {
+      console.error('Error editing record:', error);
+      toast({
+        title: 'Error',
+        description: `Failed to edit record: ${(error as Error).message}`,
+        variant: 'destructive',
+      });
+    }
   };
   
   const handleDeleteRecord = (id: number, type: 'asset' | 'system') => {

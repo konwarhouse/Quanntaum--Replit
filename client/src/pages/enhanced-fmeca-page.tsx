@@ -1405,27 +1405,71 @@ const EnhancedFmecaPage = () => {
   };
   
   // Handlers for adding rows
-  const handleAddAssetRow = (newRow: AssetFmecaRow | SystemFmecaRow) => {
+  const handleAddAssetRow = async (newRow: AssetFmecaRow | SystemFmecaRow) => {
     // Type guard to ensure we're working with AssetFmecaRow
     if ('tagNumber' in newRow) {
       setAssetRows([...assetRows, newRow as AssetFmecaRow]);
       
-      toast({
-        title: "Success",
-        description: "Asset FMECA row added successfully"
-      });
+      try {
+        // Immediately save the new row to the database
+        const response = await fetch('/api/enhanced-fmeca/asset', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(newRow),
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to save FMECA data to database');
+        }
+        
+        toast({
+          title: "Success",
+          description: "Asset FMECA row added and saved to database successfully"
+        });
+      } catch (error) {
+        console.error('Error saving FMECA data:', error);
+        toast({
+          title: "Error",
+          description: "Failed to save FMECA data to database. Please try again.",
+          variant: "destructive"
+        });
+      }
     }
   };
   
-  const handleAddSystemRow = (newRow: AssetFmecaRow | SystemFmecaRow) => {
+  const handleAddSystemRow = async (newRow: AssetFmecaRow | SystemFmecaRow) => {
     // Type guard to ensure we're working with SystemFmecaRow
     if ('systemName' in newRow) {
       setSystemRows([...systemRows, newRow as SystemFmecaRow]);
       
-      toast({
-        title: "Success",
-        description: "System FMECA row added successfully"
-      });
+      try {
+        // Immediately save the new row to the database
+        const response = await fetch('/api/enhanced-fmeca/system', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(newRow),
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to save FMECA data to database');
+        }
+        
+        toast({
+          title: "Success",
+          description: "System FMECA row added and saved to database successfully"
+        });
+      } catch (error) {
+        console.error('Error saving FMECA data:', error);
+        toast({
+          title: "Error",
+          description: "Failed to save FMECA data to database. Please try again.",
+          variant: "destructive"
+        });
+      }
     }
   };
   
