@@ -219,6 +219,7 @@ const FmecaPage: React.FC = () => {
     // Get verification tracking fields
     const completionDateEl = document.getElementById('new-completion-date') as HTMLInputElement;
     const verifiedByEl = document.getElementById('new-verified-by') as HTMLInputElement;
+    const effectivenessSelect = document.querySelector('select[name="effectiveness"]') as HTMLSelectElement;
     
     // Create new row with asset information
     const newRow: AssetFmecaRow = {
