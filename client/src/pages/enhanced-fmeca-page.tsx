@@ -16,6 +16,7 @@ import {
 import { FmecaHistoryButton } from "@/components/fmeca/FmecaHistory";
 import { FmecaActionButtons } from "@/components/fmeca/FmecaWithHistoryButtons";
 import { AddHistoryButton } from "@/components/fmeca/AddFmecaHistory";
+import { FmecaActionCell } from "@/components/fmeca/FmecaActionCells";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
