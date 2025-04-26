@@ -9,6 +9,7 @@ import ReliabilityPage from "@/pages/ReliabilityPage";
 import RcmPage from "@/pages/RcmPage";
 import FmecaPage from "@/pages/fmeca-page";
 import EnhancedFmecaPage from "@/pages/enhanced-fmeca-page";
+import EditFmecaHistoryPage from "@/pages/edit-fmeca-history-page";
 import AuthPage from "@/pages/auth-page";
 import UserManagementPage from "@/pages/UserManagementPage";
 import { ProtectedRoute } from "@/components/auth/protected-route";
@@ -56,6 +57,15 @@ function Router() {
         <Layout>
           <ProtectedRoute>
             <EnhancedFmecaPage />
+          </ProtectedRoute>
+        </Layout>
+      </Route>
+      
+      {/* Route for editing FMECA history records */}
+      <Route path="/edit-fmeca-history/:recordType/:historyId">
+        <Layout>
+          <ProtectedRoute>
+            <EditFmecaHistoryPage />
           </ProtectedRoute>
         </Layout>
       </Route>

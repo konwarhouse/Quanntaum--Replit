@@ -19,7 +19,7 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, History, Clock, FileSpreadsheet } from "lucide-react";
+import { Loader2, History, Clock, FileSpreadsheet, Pencil } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { format } from 'date-fns';
