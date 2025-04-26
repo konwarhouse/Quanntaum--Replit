@@ -33,6 +33,8 @@ interface WeibullFittingParams {
   failureModeId?: number;
   useOperatingHours: boolean;
   timeHorizon: number;
+  maxReliability: number;
+  acceptableDowntime: number;
 }
 
 interface DataDrivenWeibullAnalysisProps {
@@ -58,6 +60,8 @@ const DataDrivenWeibullAnalysis = ({
 }: DataDrivenWeibullAnalysisProps) => {
   const { toast } = useToast();
   const [timeHorizon, setTimeHorizon] = useState(5000);
+  const [maxReliability, setMaxReliability] = useState(90);
+  const [acceptableDowntime, setAcceptableDowntime] = useState(24);
   const [activeTab, setActiveTab] = useState("results");
   const [results, setResults] = useState<ExtendedWeibullAnalysisResponse | null>(null);
   
