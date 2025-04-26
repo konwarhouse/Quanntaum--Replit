@@ -9,7 +9,10 @@ import {
 } from "@shared/schema";
 import {
   type AssetFmeca, type InsertAssetFmeca,
-  type SystemFmeca, type InsertSystemFmeca
+  type SystemFmeca, type InsertSystemFmeca,
+  type AssetFmecaHistory, type InsertAssetFmecaHistory,
+  type SystemFmecaHistory, type InsertSystemFmecaHistory,
+  FmecaHistoryStatus
 } from "@shared/fmeca-schema";
 
 // modify the interface with any CRUD methods
@@ -72,6 +75,20 @@ export interface IStorage {
   createSystemFmeca(fmeca: InsertSystemFmeca): Promise<SystemFmeca>;
   updateSystemFmeca(id: number, fmeca: Partial<InsertSystemFmeca>): Promise<SystemFmeca | undefined>;
   deleteSystemFmeca(id: number): Promise<boolean>;
+  
+  // Asset FMECA History operations
+  getAssetFmecaHistory(id: number): Promise<AssetFmecaHistory | undefined>;
+  getAssetFmecaHistoryByFmecaId(assetFmecaId: number): Promise<AssetFmecaHistory[]>;
+  getAssetFmecaHistoryByTagNumber(tagNumber: string): Promise<AssetFmecaHistory[]>;
+  createAssetFmecaHistory(fmecaHistory: InsertAssetFmecaHistory): Promise<AssetFmecaHistory>;
+  getLatestAssetFmecaHistory(assetFmecaId: number): Promise<AssetFmecaHistory | undefined>;
+  
+  // System FMECA History operations
+  getSystemFmecaHistory(id: number): Promise<SystemFmecaHistory | undefined>;
+  getSystemFmecaHistoryByFmecaId(systemFmecaId: number): Promise<SystemFmecaHistory[]>;
+  getSystemFmecaHistoryBySystemName(systemName: string): Promise<SystemFmecaHistory[]>;
+  createSystemFmecaHistory(fmecaHistory: InsertSystemFmecaHistory): Promise<SystemFmecaHistory>;
+  getLatestSystemFmecaHistory(systemFmecaId: number): Promise<SystemFmecaHistory | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -84,6 +101,8 @@ export class MemStorage implements IStorage {
   private failureHistoryMap: Map<number, FailureHistory>;
   private assetFmecaMap: Map<number, AssetFmeca>;
   private systemFmecaMap: Map<number, SystemFmeca>;
+  private assetFmecaHistoryMap: Map<number, AssetFmecaHistory>;
+  private systemFmecaHistoryMap: Map<number, SystemFmecaHistory>;
   
   private userCurrentId: number;
   private messageCurrentId: number;
@@ -94,6 +113,8 @@ export class MemStorage implements IStorage {
   private failureHistoryCurrentId: number;
   private assetFmecaCurrentId: number;
   private systemFmecaCurrentId: number;
+  private assetFmecaHistoryCurrentId: number;
+  private systemFmecaHistoryCurrentId: number;
 
   constructor() {
     this.users = new Map();
@@ -105,6 +126,8 @@ export class MemStorage implements IStorage {
     this.failureHistoryMap = new Map();
     this.assetFmecaMap = new Map();
     this.systemFmecaMap = new Map();
+    this.assetFmecaHistoryMap = new Map();
+    this.systemFmecaHistoryMap = new Map();
     
     this.userCurrentId = 1;
     this.messageCurrentId = 1;
@@ -115,6 +138,8 @@ export class MemStorage implements IStorage {
     this.failureHistoryCurrentId = 1;
     this.assetFmecaCurrentId = 1;
     this.systemFmecaCurrentId = 1;
+    this.assetFmecaHistoryCurrentId = 1;
+    this.systemFmecaHistoryCurrentId = 1;
   }
 
   // User operations
