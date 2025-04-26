@@ -328,6 +328,21 @@ export const RcmDecisionLogic: React.FC<RcmDecisionLogicProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Core Development Notice */}
+      <div className="p-6 border border-blue-200 bg-blue-50 rounded-md">
+        <h3 className="text-lg font-semibold text-blue-700 flex items-center">
+          <Badge variant="default" className="mr-2 bg-blue-500">EXTERNAL DEVELOPMENT</Badge>
+          Core Integration In Progress
+        </h3>
+        <p className="mt-2 text-blue-700">
+          The RCM Decision Logic module is currently being developed by Core as part of a complete FMECA, RCM, and RAM platform.
+          This dedicated platform will provide more comprehensive analysis capabilities with a specialized interface.
+        </p>
+        <p className="mt-2 text-blue-700">
+          Contact our support team for more information about timeline and licensing options.
+        </p>
+      </div>
+      
       <div className="flex flex-col md:flex-row justify-between gap-4">
         <Card className="flex-1">
           <CardHeader>

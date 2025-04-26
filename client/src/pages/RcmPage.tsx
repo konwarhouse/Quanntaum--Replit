@@ -156,6 +156,22 @@ const RcmPage: React.FC = () => {
         <p className="text-muted-foreground">
           A comprehensive approach to maintenance strategy using FMECA, RCM, and RAM analysis.
         </p>
+        
+        {/* Premium Feature Badge */}
+        <div className="mt-4 p-4 border border-blue-200 bg-blue-50 rounded-md">
+          <h3 className="text-lg font-semibold text-blue-700 flex items-center">
+            <Badge variant="default" className="mr-2 bg-blue-500">LICENSED USERS ONLY</Badge>
+            Advanced Module Under Development
+          </h3>
+          <p className="mt-2 text-blue-700">
+            The RCM and RAM modules are currently being developed by Core as part of a complete reliability engineering platform.
+            These advanced features will be available exclusively for licensed users with full access to Weibull modeling and 
+            comprehensive maintenance strategy optimization.
+          </p>
+          <p className="mt-2 text-blue-700">
+            Please contact our support team for licensing information and early access to these features.
+          </p>
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
