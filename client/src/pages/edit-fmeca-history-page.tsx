@@ -467,14 +467,14 @@ const EditFmecaHistoryPage = () => {
                 <div>
                   <Label htmlFor="effectivenessVerified">Effectiveness Verified</Label>
                   <Select
-                    value={formData.effectivenessVerified || 'none'}
-                    onValueChange={(value) => handleChange('effectivenessVerified', value === 'none' ? null : value)}
+                    value={formData.effectivenessVerified || 'not_verified'}
+                    onValueChange={(value) => handleChange('effectivenessVerified', value === 'not_verified' ? null : value)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select..." />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">Not Verified</SelectItem>
+                      <SelectItem value="not_verified">Not Verified</SelectItem>
                       <SelectItem value="yes">Yes - Fully Effective</SelectItem>
                       <SelectItem value="partial">Partial - Requires Additional Actions</SelectItem>
                       <SelectItem value="no">No - Action Was Not Effective</SelectItem>
