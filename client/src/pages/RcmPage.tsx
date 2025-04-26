@@ -196,174 +196,175 @@ const RcmPage: React.FC = () => {
               <TabsTrigger value="components">Components</TabsTrigger>
               <TabsTrigger value="analysis">Analysis</TabsTrigger>
             </TabsList>
-        
-        <TabsContent value="systems" className="space-y-6">
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>RCM Systems</CardTitle>
-              <CardDescription>
-                Define the systems you want to analyze using the RCM methodology. 
-                A system is a collection of components working together to achieve a specific function.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-4">
-                Each system should have a clear scope, operating context, and boundaries defined. 
-                Start by creating a system before adding components and performing analysis.
-              </p>
-            </CardContent>
-          </Card>
-          
-          <SystemManager onSystemSelect={handleSystemSelect} />
-        </TabsContent>
-        
-        <TabsContent value="components" className="space-y-6">
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>System Components</CardTitle>
-              <CardDescription>
-                Define the components that make up your systems. Components can have parent-child relationships
-                and serve specific functions within the system.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-4">
-                Components are the building blocks of your system. Each component has a specific function and 
-                can be assigned a criticality level. This information will be used in the RCM analysis.
-              </p>
-              {!selectedSystemId && (
-                <div className="p-4 border border-amber-200 bg-amber-50 rounded-md text-amber-800 text-sm">
-                  Please select a system from the Systems tab first to manage its components.
-                </div>
-              )}
-            </CardContent>
-          </Card>
-          
-          <ComponentManager systemId={selectedSystemId} />
-        </TabsContent>
-        
-        <TabsContent value="analysis" className="space-y-6">
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>RCM Analysis</CardTitle>
-              <CardDescription>
-                Perform comprehensive RCM analysis including FMECA, RCM decision logic, and RAM analysis.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {!selectedSystemId ? (
-                <div className="p-4 border border-amber-200 bg-amber-50 rounded-md text-amber-800 text-sm mb-6">
-                  Please select a system from the Systems tab first to perform analysis.
-                </div>
-              ) : (
-                <div className="p-4 border border-green-200 bg-green-50 rounded-md text-green-800 text-sm mb-6">
-                  System selected: System ID #{selectedSystemId}. Now you can analyze components for this system.
-                </div>
-              )}
-              
-              {/* Analysis Type Selection */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">FMECA Analysis</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Failure Mode, Effects and Criticality Analysis identifies potential failure modes and their impacts.
-                    </p>
-                    <Button 
-                      disabled={!selectedSystemId} 
-                      variant="outline" 
-                      className="w-full"
-                      onClick={() => setActiveAnalysisTab("fmeca")}
-                    >
-                      Start FMECA Analysis
-                    </Button>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">RCM Decision Logic</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Evaluate maintenance strategies based on failure consequences and criticality.
-                    </p>
-                    <Button 
-                      disabled={!selectedSystemId} 
-                      variant="outline" 
-                      className="w-full"
-                      onClick={() => setActiveAnalysisTab("rcm")}
-                    >
-                      Start RCM Analysis
-                    </Button>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">RAM Analysis</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Reliability, Availability, and Maintainability metrics for system performance.
-                    </p>
-                    <Button 
-                      disabled={!selectedSystemId} 
-                      variant="outline" 
-                      className="w-full"
-                      onClick={() => setActiveAnalysisTab("ram")}
-                    >
-                      Start RAM Analysis
-                    </Button>
-                  </CardContent>
-                </Card>
-              </div>
-              
-              {/* Analysis Content */}
-              <Tabs value={activeAnalysisTab} onValueChange={setActiveAnalysisTab} className="w-full">
-                <TabsList className="mb-6 grid w-full grid-cols-3">
-                  <TabsTrigger value="fmeca">FMECA</TabsTrigger>
-                  <TabsTrigger value="rcm">RCM Logic</TabsTrigger>
-                  <TabsTrigger value="ram">RAM Analysis</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="fmeca">
-                  <FmecaAnalysis systemId={selectedSystemId} />
-                </TabsContent>
-                
-                <TabsContent value="rcm">
-                  <RcmDecisionLogic systemId={selectedSystemId} />
-                </TabsContent>
-                
-                <TabsContent value="ram">
-                  <RamAnalysis systemId={selectedSystemId} />
-                </TabsContent>
-              </Tabs>
-              
-              {/* System Component List */}
-              <Card className="mt-6">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">System Components</CardTitle>
+            
+            <TabsContent value="systems" className="space-y-6">
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle>RCM Systems</CardTitle>
                   <CardDescription>
-                    Components in selected system available for analysis
+                    Define the systems you want to analyze using the RCM methodology. 
+                    A system is a collection of components working together to achieve a specific function.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Each system should have a clear scope, operating context, and boundaries defined. 
+                    Start by creating a system before adding components and performing analysis.
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <SystemManager onSystemSelect={handleSystemSelect} />
+            </TabsContent>
+            
+            <TabsContent value="components" className="space-y-6">
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle>System Components</CardTitle>
+                  <CardDescription>
+                    Define the components that make up your systems. Components can have parent-child relationships
+                    and serve specific functions within the system.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Components are the building blocks of your system. Each component has a specific function and 
+                    can be assigned a criticality level. This information will be used in the RCM analysis.
+                  </p>
+                  {!selectedSystemId && (
+                    <div className="p-4 border border-amber-200 bg-amber-50 rounded-md text-amber-800 text-sm">
+                      Please select a system from the Systems tab first to manage its components.
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+              
+              <ComponentManager systemId={selectedSystemId} />
+            </TabsContent>
+            
+            <TabsContent value="analysis" className="space-y-6">
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle>RCM Analysis</CardTitle>
+                  <CardDescription>
+                    Perform comprehensive RCM analysis including FMECA, RCM decision logic, and RAM analysis.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   {!selectedSystemId ? (
-                    <div className="text-center py-8">
-                      <p className="text-muted-foreground">Please select a system first</p>
+                    <div className="p-4 border border-amber-200 bg-amber-50 rounded-md text-amber-800 text-sm mb-6">
+                      Please select a system from the Systems tab first to perform analysis.
                     </div>
                   ) : (
-                    <SystemComponentsList systemId={selectedSystemId} />
+                    <div className="p-4 border border-green-200 bg-green-50 rounded-md text-green-800 text-sm mb-6">
+                      System selected: System ID #{selectedSystemId}. Now you can analyze components for this system.
+                    </div>
                   )}
+                  
+                  {/* Analysis Type Selection */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-lg">FMECA Analysis</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          Failure Mode, Effects and Criticality Analysis identifies potential failure modes and their impacts.
+                        </p>
+                        <Button 
+                          disabled={!selectedSystemId} 
+                          variant="outline" 
+                          className="w-full"
+                          onClick={() => setActiveAnalysisTab("fmeca")}
+                        >
+                          Start FMECA Analysis
+                        </Button>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-lg">RCM Decision Logic</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          Evaluate maintenance strategies based on failure consequences and criticality.
+                        </p>
+                        <Button 
+                          disabled={!selectedSystemId} 
+                          variant="outline" 
+                          className="w-full"
+                          onClick={() => setActiveAnalysisTab("rcm")}
+                        >
+                          Start RCM Analysis
+                        </Button>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-lg">RAM Analysis</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          Reliability, Availability, and Maintainability metrics for system performance.
+                        </p>
+                        <Button 
+                          disabled={!selectedSystemId} 
+                          variant="outline" 
+                          className="w-full"
+                          onClick={() => setActiveAnalysisTab("ram")}
+                        >
+                          Start RAM Analysis
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </div>
+                  
+                  {/* Analysis Content */}
+                  <Tabs value={activeAnalysisTab} onValueChange={setActiveAnalysisTab} className="w-full">
+                    <TabsList className="mb-6 grid w-full grid-cols-3">
+                      <TabsTrigger value="fmeca">FMECA</TabsTrigger>
+                      <TabsTrigger value="rcm">RCM Logic</TabsTrigger>
+                      <TabsTrigger value="ram">RAM Analysis</TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="fmeca">
+                      <FmecaAnalysis systemId={selectedSystemId} />
+                    </TabsContent>
+                    
+                    <TabsContent value="rcm">
+                      <RcmDecisionLogic systemId={selectedSystemId} />
+                    </TabsContent>
+                    
+                    <TabsContent value="ram">
+                      <RamAnalysis systemId={selectedSystemId} />
+                    </TabsContent>
+                  </Tabs>
+                  
+                  {/* System Component List */}
+                  <Card className="mt-6">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg">System Components</CardTitle>
+                      <CardDescription>
+                        Components in selected system available for analysis
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {!selectedSystemId ? (
+                        <div className="text-center py-8">
+                          <p className="text-muted-foreground">Please select a system first</p>
+                        </div>
+                      ) : (
+                        <SystemComponentsList systemId={selectedSystemId} />
+                      )}
+                    </CardContent>
+                  </Card>
                 </CardContent>
               </Card>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
     </div>
   );
