@@ -3,8 +3,18 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { testDatabaseConnection } from "./db";
 import { setupAuth, ensureAdminExists } from "./auth";
+import cors from "cors";
 
 const app = express();
+
+// Setup CORS with proper settings for credentials
+app.use(cors({
+  origin: true, // Allow the current origin
+  credentials: true, // Allow credentials (cookies, authorization headers)
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 

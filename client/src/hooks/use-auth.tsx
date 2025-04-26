@@ -89,23 +89,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Login mutation
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginCredentials): Promise<User> => {
-      const res = await apiRequest("POST", "/api/auth/login", credentials);
-      
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Login failed");
+      try {
+        console.log("Attempting login for user:", credentials.username);
+        const res = await apiRequest("POST", "/api/auth/login", credentials);
+        
+        if (res.status === 401) {
+          throw new Error("Invalid username or password");
+        }
+        
+        if (!res.ok) {
+          let errorMessage = "Login failed";
+          try {
+            const errorData = await res.json();
+            errorMessage = errorData.error || errorMessage;
+          } catch (e) {
+            console.error("Could not parse error response:", e);
+          }
+          throw new Error(errorMessage);
+        }
+        
+        const userData = await res.json();
+        console.log("Login successful for:", userData.username);
+        return userData;
+      } catch (error) {
+        console.error("Login error:", error);
+        throw error;
       }
-      
-      return res.json();
     },
     onSuccess: (userData: User) => {
+      console.log("Setting user data in query client:", userData.username);
       queryClient.setQueryData(["/api/auth/user"], userData);
+      
+      // Invalidate all queries to force a refetch with the new auth state
+      queryClient.invalidateQueries();
+      
       toast({
         title: "Login successful",
         description: `Welcome back, ${userData.username}!`,
       });
     },
     onError: (error: Error) => {
+      console.error("Login mutation error:", error.message);
       toast({
         title: "Login failed",
         description: error.message,
@@ -142,27 +166,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  // Logout mutation
+  // Logout mutation with enhanced handling
   const logoutMutation = useMutation({
     mutationFn: async (): Promise<void> => {
-      const res = await apiRequest("POST", "/api/auth/logout");
-      
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Logout failed");
+      try {
+        console.log("Attempting to log out user");
+        const res = await apiRequest("POST", "/api/auth/logout");
+        
+        if (!res.ok) {
+          let errorMessage = "Logout failed";
+          try {
+            const errorData = await res.json();
+            errorMessage = errorData.error || errorMessage;
+          } catch (e) {
+            console.error("Could not parse error response:", e);
+          }
+          throw new Error(errorMessage);
+        }
+        console.log("Logout API call successful");
+      } catch (error) {
+        console.error("Logout error:", error);
+        throw error;
       }
     },
     onSuccess: () => {
+      console.log("Clearing user data from query client");
+      // Clear user data
       queryClient.setQueryData(["/api/auth/user"], null);
+      
+      // Force a reset of all queries to clean state
+      queryClient.removeQueries();
+      
       toast({
         title: "Logged out",
         description: "You have been logged out successfully",
       });
     },
     onError: (error: Error) => {
+      console.error("Logout mutation error:", error.message);
+      // Even if the server-side logout fails, clear the local user data
+      queryClient.setQueryData(["/api/auth/user"], null);
+      
       toast({
-        title: "Logout failed",
-        description: error.message,
+        title: "Logout issue",
+        description: "You've been logged out locally, but there was a server issue: " + error.message,
         variant: "destructive",
       });
     },
