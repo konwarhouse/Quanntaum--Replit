@@ -38,7 +38,7 @@ interface FmecaRecord {
   targetDate: string;
   completionDate?: string;
   verifiedBy?: string;
-  effectivenessVerified?: 'yes' | 'no' | 'partial' | '';
+  effectivenessVerified?: 'yes' | 'no' | 'partial' | 'not_verified' | null;
   comments: string;
   createdAt: string;
   
@@ -608,9 +608,9 @@ export function FmecaRecordsTable({ isOpen, onClose }: FmecaRecordsTableProps) {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="not_verified">Not Verified</SelectItem>
-                    <SelectItem value="Fully Effective">Fully Effective</SelectItem>
-                    <SelectItem value="Partially Effective">Partially Effective</SelectItem>
-                    <SelectItem value="Not Effective">Not Effective</SelectItem>
+                    <SelectItem value="yes">Yes - Fully Effective</SelectItem>
+                    <SelectItem value="partial">Partial - Requires Additional Actions</SelectItem>
+                    <SelectItem value="no">No - Action Was Not Effective</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -646,7 +646,7 @@ export function FmecaRecordsTable({ isOpen, onClose }: FmecaRecordsTableProps) {
                     // Ensure empty strings are sent as null
                     completionDate: editRow.completionDate || null,
                     verifiedBy: editRow.verifiedBy || null,
-                    effectivenessVerified: editRow.effectivenessVerified || null,
+                    effectivenessVerified: editRow.effectivenessVerified === 'not_verified' ? null : editRow.effectivenessVerified,
                     comments: editRow.comments || null
                   };
                   
