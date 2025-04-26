@@ -631,33 +631,37 @@ export class DatabaseStorage implements IStorage {
     
     return executeWithRetry(
       async () => {
-        // Use the same approach as with asset FMECA history
-        console.log(`Executing query using Drizzle ORM with simple ordering`);
+        // Using a simple but safe SQL query approach
+        console.log(`Using plain SQL query for system FMECA history`);
         
         try {
-          // Get all records for this FMECA ID and sort them in JavaScript
-          const records = await db
-            .select()
-            .from(systemFmecaHistory)
-            .where(eq(systemFmecaHistory.systemFmecaId, systemFmecaId));
+          // Use raw SQL with inlined parameters (safe for numeric IDs)
+          const query = `
+            SELECT * 
+            FROM system_fmeca_history 
+            WHERE system_fmeca_id = ${systemFmecaId} 
+            ORDER BY version DESC 
+            LIMIT 1
+          `;
           
-          // Sort by version in descending order using JavaScript
-          records.sort((a, b) => b.version - a.version);
+          console.log("Executing SQL query:", query);
+          const result = await db.execute(query);
+          const rows = result.rows;
           
-          // Get the first record (highest version)
-          const record = records.length > 0 ? records[0] : undefined;
+          console.log(`Query returned ${rows.length} records`);
+          
+          const record = rows.length > 0 ? rows[0] as SystemFmecaHistory : undefined;
           
           if (record) {
-            console.log(`Found latest history record (version ${record.version}) for system FMECA ID ${systemFmecaId}`);
-            // Debug the record
-            console.log('Record details (Drizzle ORM with JS sorting):', JSON.stringify(record, null, 2));
+            console.log(`Found latest history record for system FMECA ID ${systemFmecaId}`);
+            console.log('Record details:', JSON.stringify(record, null, 2));
           } else {
             console.log(`No history records found for system FMECA ID ${systemFmecaId}`);
           }
           
           return record;
         } catch (error) {
-          console.error('Error in Drizzle query:', error);
+          console.error('Error in SQL query:', error);
           throw error;
         }
       },
