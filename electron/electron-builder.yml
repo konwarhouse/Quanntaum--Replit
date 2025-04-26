@@ -1,0 +1,81 @@
+appId: com.quanntaum.predict
+productName: Quanntaum Predict
+copyright: Copyright © 2025
+
+directories:
+  buildResources: electron/build
+  output: dist_electron
+
+files:
+  - package.json
+  - dist/**/*
+  - electron/**/*
+  - server/**/*
+  - shared/**/*
+  - "!**/.git"
+  - "!**/node_modules/**/*"
+
+extraResources:
+  - client/dist
+
+asar: true
+
+# Auto-update configuration
+publish:
+  provider: generic
+  url: https://your-update-server.com/
+
+# Windows configuration
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+        - ia32
+  icon: electron/icons/icon.ico
+  artifactName: ${productName}-Setup-${version}.${ext}
+
+# macOS configuration
+mac:
+  target:
+    - target: dmg
+    - target: zip
+  category: public.app-category.business
+  icon: electron/icons/icon.icns
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: electron/entitlements.plist
+  entitlementsInherit: electron/entitlements.plist
+  artifactName: ${productName}-${version}-${arch}.${ext}
+  
+# Linux configuration
+linux:
+  target:
+    - target: AppImage
+    - target: deb
+    - target: rpm
+  icon: electron/icons
+  description: "Reliability and system analysis platform"
+  category: Office
+
+# NSIS installer configuration for Windows
+nsis:
+  oneClick: true
+  perMachine: false
+  allowToChangeInstallationDirectory: false
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: "${productName}"
+  installerIcon: electron/icons/icon.ico
+  uninstallerIcon: electron/icons/icon.ico
+  installerHeaderIcon: electron/icons/icon.ico
+  
+# DMG configuration for macOS
+dmg:
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications

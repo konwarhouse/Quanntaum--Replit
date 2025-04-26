@@ -1,0 +1,23 @@
+{
+  "name": "quanntaum-predict-desktop",
+  "version": "1.0.0",
+  "description": "Quanntaum Predict - Reliability and System Analysis Platform",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux"
+  },
+  "author": "Quanntaum",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.6.4"
+  },
+  "dependencies": {
+    "portfinder": "^1.0.32",
+    "wait-on": "^7.0.1"
+  }
+}
