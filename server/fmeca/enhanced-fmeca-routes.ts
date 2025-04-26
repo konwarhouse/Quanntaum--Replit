@@ -558,4 +558,140 @@ router.get('/system/:fmecaId/history/:historyId', async (req, res) => {
   }
 });
 
+// Route to get a history record by ID (doesn't need parent FMECA ID)
+router.get('/asset/history/:historyId', async (req, res) => {
+  try {
+    const { historyId } = req.params;
+    
+    if (!historyId || isNaN(Number(historyId))) {
+      return res.status(400).json({ error: 'Valid history ID is required' });
+    }
+    
+    const recordId = Number(historyId);
+    const history = await storage.getAssetFmecaHistory(recordId);
+    
+    if (!history) {
+      return res.status(404).json({ error: 'Asset FMECA history record not found' });
+    }
+    
+    return res.status(200).json(history);
+  } catch (error) {
+    console.error('Error fetching asset FMECA history record:', error);
+    return res.status(500).json({ error: 'Failed to fetch asset FMECA history record' });
+  }
+});
+
+// Route to get a system history record by ID (doesn't need parent FMECA ID)
+router.get('/system/history/:historyId', async (req, res) => {
+  try {
+    const { historyId } = req.params;
+    
+    if (!historyId || isNaN(Number(historyId))) {
+      return res.status(400).json({ error: 'Valid history ID is required' });
+    }
+    
+    const recordId = Number(historyId);
+    const history = await storage.getSystemFmecaHistory(recordId);
+    
+    if (!history) {
+      return res.status(404).json({ error: 'System FMECA history record not found' });
+    }
+    
+    return res.status(200).json(history);
+  } catch (error) {
+    console.error('Error fetching system FMECA history record:', error);
+    return res.status(500).json({ error: 'Failed to fetch system FMECA history record' });
+  }
+});
+
+// Update asset FMECA history record
+router.put('/asset/history/:historyId', async (req, res) => {
+  try {
+    const { historyId } = req.params;
+    
+    if (!historyId || isNaN(Number(historyId))) {
+      return res.status(400).json({ error: 'Valid history ID is required' });
+    }
+    
+    const recordId = Number(historyId);
+    const existingRecord = await storage.getAssetFmecaHistory(recordId);
+    
+    if (!existingRecord) {
+      return res.status(404).json({ error: 'Asset FMECA history record not found' });
+    }
+    
+    // Validate update data
+    const updateData = {
+      ...req.body,
+      // Ensure these fields are properly typed/converted
+      severity: Number(req.body.severity),
+      probability: Number(req.body.probability),
+      detection: Number(req.body.detection),
+      rpn: Number(req.body.rpn),
+      // Convert empty strings to null for optional fields
+      completionDate: req.body.completionDate || null,
+      verifiedBy: req.body.verifiedBy || null,
+      effectivenessVerified: req.body.effectivenessVerified || null,
+      comments: req.body.comments || null
+    };
+    
+    // Update the record
+    const updatedRecord = await storage.updateAssetFmecaHistory(recordId, updateData);
+    
+    if (!updatedRecord) {
+      return res.status(500).json({ error: 'Failed to update asset FMECA history record' });
+    }
+    
+    return res.status(200).json(updatedRecord);
+  } catch (error) {
+    console.error('Error updating asset FMECA history record:', error);
+    return res.status(500).json({ error: 'Failed to update asset FMECA history record' });
+  }
+});
+
+// Update system FMECA history record
+router.put('/system/history/:historyId', async (req, res) => {
+  try {
+    const { historyId } = req.params;
+    
+    if (!historyId || isNaN(Number(historyId))) {
+      return res.status(400).json({ error: 'Valid history ID is required' });
+    }
+    
+    const recordId = Number(historyId);
+    const existingRecord = await storage.getSystemFmecaHistory(recordId);
+    
+    if (!existingRecord) {
+      return res.status(404).json({ error: 'System FMECA history record not found' });
+    }
+    
+    // Validate update data
+    const updateData = {
+      ...req.body,
+      // Ensure these fields are properly typed/converted
+      severity: Number(req.body.severity),
+      probability: Number(req.body.probability),
+      detection: Number(req.body.detection),
+      rpn: Number(req.body.rpn),
+      // Convert empty strings to null for optional fields
+      completionDate: req.body.completionDate || null,
+      verifiedBy: req.body.verifiedBy || null,
+      effectivenessVerified: req.body.effectivenessVerified || null,
+      comments: req.body.comments || null
+    };
+    
+    // Update the record
+    const updatedRecord = await storage.updateSystemFmecaHistory(recordId, updateData);
+    
+    if (!updatedRecord) {
+      return res.status(500).json({ error: 'Failed to update system FMECA history record' });
+    }
+    
+    return res.status(200).json(updatedRecord);
+  } catch (error) {
+    console.error('Error updating system FMECA history record:', error);
+    return res.status(500).json({ error: 'Failed to update system FMECA history record' });
+  }
+});
+
 export default router;

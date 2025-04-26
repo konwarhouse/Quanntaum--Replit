@@ -81,6 +81,7 @@ export interface IStorage {
   getAssetFmecaHistoryByFmecaId(assetFmecaId: number): Promise<AssetFmecaHistory[]>;
   getAssetFmecaHistoryByTagNumber(tagNumber: string): Promise<AssetFmecaHistory[]>;
   createAssetFmecaHistory(fmecaHistory: InsertAssetFmecaHistory): Promise<AssetFmecaHistory>;
+  updateAssetFmecaHistory(id: number, updateData: Partial<AssetFmecaHistory>): Promise<AssetFmecaHistory | undefined>;
   getLatestAssetFmecaHistory(assetFmecaId: number): Promise<AssetFmecaHistory | undefined>;
   
   // System FMECA History operations
@@ -88,6 +89,7 @@ export interface IStorage {
   getSystemFmecaHistoryByFmecaId(systemFmecaId: number): Promise<SystemFmecaHistory[]>;
   getSystemFmecaHistoryBySystemName(systemName: string): Promise<SystemFmecaHistory[]>;
   createSystemFmecaHistory(fmecaHistory: InsertSystemFmecaHistory): Promise<SystemFmecaHistory>;
+  updateSystemFmecaHistory(id: number, updateData: Partial<SystemFmecaHistory>): Promise<SystemFmecaHistory | undefined>;
   getLatestSystemFmecaHistory(systemFmecaId: number): Promise<SystemFmecaHistory | undefined>;
 }
 
@@ -533,6 +535,22 @@ export class MemStorage implements IStorage {
     return assetFmecaHistory;
   }
 
+  async updateAssetFmecaHistory(id: number, updateData: Partial<AssetFmecaHistory>): Promise<AssetFmecaHistory | undefined> {
+    const existingRecord = this.assetFmecaHistoryMap.get(id);
+    if (!existingRecord) return undefined;
+    
+    const now = new Date();
+    
+    const updatedRecord: AssetFmecaHistory = {
+      ...existingRecord,
+      ...updateData,
+      updatedAt: now
+    };
+    
+    this.assetFmecaHistoryMap.set(id, updatedRecord);
+    return updatedRecord;
+  }
+
   async getLatestAssetFmecaHistory(assetFmecaId: number): Promise<AssetFmecaHistory | undefined> {
     const histories = await this.getAssetFmecaHistoryByFmecaId(assetFmecaId);
     return histories.length > 0 ? histories[0] : undefined; // Return the most recent version
@@ -572,6 +590,22 @@ export class MemStorage implements IStorage {
     
     this.systemFmecaHistoryMap.set(id, systemFmecaHistory);
     return systemFmecaHistory;
+  }
+
+  async updateSystemFmecaHistory(id: number, updateData: Partial<SystemFmecaHistory>): Promise<SystemFmecaHistory | undefined> {
+    const existingRecord = this.systemFmecaHistoryMap.get(id);
+    if (!existingRecord) return undefined;
+    
+    const now = new Date();
+    
+    const updatedRecord: SystemFmecaHistory = {
+      ...existingRecord,
+      ...updateData,
+      updatedAt: now
+    };
+    
+    this.systemFmecaHistoryMap.set(id, updatedRecord);
+    return updatedRecord;
   }
 
   async getLatestSystemFmecaHistory(systemFmecaId: number): Promise<SystemFmecaHistory | undefined> {
