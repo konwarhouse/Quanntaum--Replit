@@ -164,7 +164,7 @@ const RcmPage: React.FC = () => {
             Advanced Module Under Development
           </h3>
           <p className="mt-2 text-blue-700">
-            The RCM and RAM modules are currently being developed by Core as part of a complete reliability engineering platform.
+            The RCM and RAM modules are currently under development as part of a complete reliability engineering platform.
             These advanced features will be available exclusively for licensed users with full access to Weibull modeling and 
             comprehensive maintenance strategy optimization.
           </p>

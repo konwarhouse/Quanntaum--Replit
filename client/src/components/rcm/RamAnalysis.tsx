@@ -288,18 +288,18 @@ export const RamAnalysis: React.FC<RamAnalysisProps> = ({ systemId }) => {
 
   return (
     <div className="space-y-6">
-      {/* Core Development Notice */}
+      {/* Licensed Feature Notice */}
       <div className="p-6 border border-blue-200 bg-blue-50 rounded-md">
         <h3 className="text-lg font-semibold text-blue-700 flex items-center">
-          <Badge variant="default" className="mr-2 bg-blue-500">EXTERNAL DEVELOPMENT</Badge>
-          Core Integration In Progress
+          <Badge variant="default" className="mr-2 bg-blue-500">LICENSED USERS ONLY</Badge>
+          Advanced Module Under Development
         </h3>
         <p className="mt-2 text-blue-700">
-          The RAM Analysis module is currently being developed by Core as part of a complete FMECA, RCM, and RAM platform.
+          The RAM Analysis module is currently under development as part of a complete reliability engineering platform.
           The dedicated implementation will include advanced Weibull reliability modeling and comprehensive maintainability metrics.
         </p>
         <p className="mt-2 text-blue-700">
-          Contact our support team for more information about timeline and licensing options.
+          Contact our support team for more information about licensing options and early access.
         </p>
       </div>
       
