@@ -246,7 +246,7 @@ export const FmecaHistoryDialog: React.FC<FmecaHistoryDialogProps> = ({
       const wb = XLSX.utils.book_new();
       
       // Convert all records to a format suitable for Excel
-      const exportData = historyRecords.map((record) => {
+      const exportData = historyRecords.map((record: AssetFmecaHistory | SystemFmecaHistory) => {
         return recordType === 'asset' 
           ? {
               'Version': record.version,
@@ -371,19 +371,12 @@ export const FmecaHistoryDialog: React.FC<FmecaHistoryDialogProps> = ({
     setSelectedVersion(null);
   }, [isOpen, recordId, recordType]);
   
-  // When history records load, select the latest version by default
+  // Initially we will set selectedVersion to null to show the comprehensive table
+  // We'll avoid automatically selecting a version to immediately show the full history table
   useEffect(() => {
+    // Initialize with null to show the comprehensive table by default
     if (historyRecords && historyRecords.length > 0) {
-      // Find the highest version
-      const latestVersion = historyRecords.reduce(
-        (max: number, record: AssetFmecaHistory | SystemFmecaHistory) => (record.version > max ? record.version : max),
-        0
-      );
-      // Find the record with the highest version
-      const latestRecord = historyRecords.find((record: AssetFmecaHistory | SystemFmecaHistory) => record.version === latestVersion);
-      if (latestRecord) {
-        setSelectedVersion(latestRecord.id);
-      }
+      setSelectedVersion(null);
     }
   }, [historyRecords]);
   
@@ -415,25 +408,110 @@ export const FmecaHistoryDialog: React.FC<FmecaHistoryDialogProps> = ({
           </div>
         ) : historyRecords && historyRecords.length > 0 ? (
           <div className="space-y-4">
-            <div>
-              <h3 className="text-sm font-medium mb-2">Select Version</h3>
-              <Select
-                value={selectedVersion?.toString() || ''}
-                onValueChange={(value) => setSelectedVersion(Number(value))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select version..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {historyRecords
-                    .sort((a: AssetFmecaHistory | SystemFmecaHistory, b: AssetFmecaHistory | SystemFmecaHistory) => b.version - a.version) // Sort by version descending
-                    .map((record: AssetFmecaHistory | SystemFmecaHistory) => (
-                      <SelectItem key={record.id} value={record.id.toString()}>
-                        Version {record.version} - {formatDate(record.createdAt)}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-medium">Select Version</h3>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setSelectedVersion(null)}
+                    className="text-xs"
+                  >
+                    View All Versions
+                  </Button>
+                </div>
+              </div>
+              
+              {selectedVersion === null ? (
+                // Show comprehensive table of all versions
+                <div className="border rounded-md overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-16">Version</TableHead>
+                        <TableHead>
+                          {recordType === 'asset' ? 'Tag Number' : 'System Name'}
+                        </TableHead>
+                        <TableHead>Failure Mode</TableHead>
+                        <TableHead className="text-center w-24">RPN</TableHead>
+                        <TableHead className="text-center w-24">Status</TableHead>
+                        <TableHead className="text-center w-24">Date</TableHead>
+                        <TableHead className="text-center w-28">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {historyRecords
+                        .sort((a: AssetFmecaHistory | SystemFmecaHistory, b: AssetFmecaHistory | SystemFmecaHistory) => b.version - a.version)
+                        .map((record: AssetFmecaHistory | SystemFmecaHistory) => (
+                          <TableRow key={record.id}>
+                            <TableCell className="font-medium">{record.version}</TableCell>
+                            <TableCell>
+                              {recordType === 'asset' 
+                                ? (record as AssetFmecaHistory).tagNumber
+                                : (record as SystemFmecaHistory).systemName}
+                            </TableCell>
+                            <TableCell>{record.failureMode}</TableCell>
+                            <TableCell className="text-center font-bold">{record.rpn}</TableCell>
+                            <TableCell className="text-center">
+                              <StatusBadge status={record.status} />
+                            </TableCell>
+                            <TableCell className="text-center text-xs">
+                              {format(new Date(record.createdAt), 'yyyy-MM-dd')}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center justify-center gap-1">
+                                <Button
+                                  variant="ghost" 
+                                  size="icon"
+                                  onClick={() => setSelectedVersion(record.id)}
+                                  title="View details"
+                                >
+                                  <FileSpreadsheet className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost" 
+                                  size="icon"
+                                  onClick={() => exportSingleRecordToExcel(record)}
+                                  title="Export this record"
+                                >
+                                  <Download className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost" 
+                                  size="icon"
+                                  onClick={() => window.open(`/edit-fmeca-history/${recordType}/${record.id}`, '_blank')}
+                                  title="Edit this record"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                // Show version selector when not in "view all" mode
+                <Select
+                  value={selectedVersion?.toString() || ''}
+                  onValueChange={(value) => setSelectedVersion(Number(value))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select version..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {historyRecords
+                      .sort((a: AssetFmecaHistory | SystemFmecaHistory, b: AssetFmecaHistory | SystemFmecaHistory) => b.version - a.version) // Sort by version descending
+                      .map((record: AssetFmecaHistory | SystemFmecaHistory) => (
+                        <SelectItem key={record.id} value={record.id.toString()}>
+                          Version {record.version} - {formatDate(record.createdAt)}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
             
             {isVersionLoading ? (
@@ -598,7 +676,31 @@ export const FmecaHistoryDialog: React.FC<FmecaHistoryDialogProps> = ({
           </div>
         )}
         
-        <div className="flex justify-end mt-4">
+        <div className="flex justify-between items-center mt-4">
+          <div className="flex items-center gap-2">
+            {historyRecords && historyRecords.length > 0 && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={exportAllHistoryToExcel}
+                className="flex items-center gap-1"
+              >
+                <Download className="h-4 w-4" />
+                Export All History
+              </Button>
+            )}
+            {versionDetail && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => exportSingleRecordToExcel(versionDetail)}
+                className="flex items-center gap-1"
+              >
+                <FileSpreadsheet className="h-4 w-4" />
+                Export Current Version
+              </Button>
+            )}
+          </div>
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>
