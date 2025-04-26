@@ -236,9 +236,34 @@ export function FmecaRecordsTable({ isOpen, onClose }: FmecaRecordsTableProps) {
     }
   };
   
+  // We'll now use our enhanced FmecaRecordsDialog instead of the basic Dialog
+  const [isRecordsDialogOpen, setIsRecordsDialogOpen] = useState(true);
+
+  const handleViewHistory = (id: number, type: 'asset' | 'system') => {
+    toast({
+      title: "History View",
+      description: `Viewing history for ${type} record ${id}`,
+    });
+    // History view logic would go here
+  };
+
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={onClose}>
+      {/* Use our enhanced FmecaRecordsDialog component which has export functionality */}
+      {isOpen && (
+        <FmecaRecordsDialog
+          isOpen={isOpen}
+          onClose={onClose}
+          assetRecords={assetRecords || []}
+          systemRecords={systemRecords || []}
+          onEditRecord={handleEditRecord}
+          onDeleteRecord={handleDeleteRecord}
+          onViewHistory={handleViewHistory}
+        />
+      )}
+      
+      {/* Keep the old dialog code as fallback, but it should never run */}
+      <Dialog open={false}>
         <DialogContent className="max-w-5xl h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>FMECA Records</DialogTitle>
