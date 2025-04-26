@@ -167,9 +167,17 @@ const DataDrivenWeibullAnalysis = ({
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value);
-    if (!isNaN(value) && value > 0) {
-      setTimeHorizon(value);
+    const { name, value } = e.target;
+    const numValue = parseInt(value);
+    
+    if (!isNaN(numValue) && numValue > 0) {
+      if (name === 'timeHorizon') {
+        setTimeHorizon(numValue);
+      } else if (name === 'maxReliability') {
+        setMaxReliability(Math.min(100, numValue));
+      } else if (name === 'acceptableDowntime') {
+        setAcceptableDowntime(numValue);
+      }
     }
   };
 
@@ -178,7 +186,9 @@ const DataDrivenWeibullAnalysis = ({
     
     const params: WeibullFittingParams = {
       useOperatingHours,
-      timeHorizon
+      timeHorizon,
+      maxReliability,
+      acceptableDowntime
     };
     
     if (selectedAssetId) {
@@ -381,8 +391,44 @@ const DataDrivenWeibullAnalysis = ({
                 Maximum time period for analysis
               </p>
             </div>
-            
 
+            {/* Maximum Reliability */}
+            <div className="space-y-2 pt-4">
+              <Label htmlFor="maxReliability">Maximum Reliability (%)</Label>
+              <Input
+                id="maxReliability"
+                name="maxReliability"
+                type="number"
+                step="1"
+                min="1"
+                max="100"
+                value={maxReliability}
+                onChange={handleInputChange}
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                Target reliability percentage (e.g., 90%)
+              </p>
+            </div>
+
+            {/* Acceptable Downtime */}
+            <div className="space-y-2 pt-4">
+              <Label htmlFor="acceptableDowntime">Acceptable Downtime ({formatTimeLabel()})</Label>
+              <Input
+                id="acceptableDowntime"
+                name="acceptableDowntime"
+                type="number"
+                step="1"
+                min="1"
+                value={acceptableDowntime}
+                onChange={handleInputChange}
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                Maximum acceptable downtime period
+              </p>
+            </div>
+            
 
             <Button 
               type="submit" 
