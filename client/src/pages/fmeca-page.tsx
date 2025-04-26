@@ -200,7 +200,7 @@ const FmecaPage: React.FC = () => {
     }
   };
   
-  const handleAddAssetRow = () => {
+  const handleAddAssetRow = async () => {
     // Get values from the form
     const componentEl = document.getElementById('new-component') as HTMLInputElement;
     const failureModeEl = document.getElementById('new-failure-mode') as HTMLInputElement;
@@ -244,58 +244,99 @@ const FmecaPage: React.FC = () => {
     const completionDateEl = document.getElementById('new-completion-date') as HTMLInputElement;
     const verifiedByEl = document.getElementById('new-verified-by') as HTMLInputElement;
     
-    // Create new row with asset information
-    const newRow: AssetFmecaRow = {
-      id: Date.now().toString(),
-      tagNumber: assetTagNumber,
-      assetDescription: assetDescription,
-      assetFunction: assetFunction,
-      component: componentEl.value,
-      failureMode: failureModeEl.value,
-      cause: causeEl.value,
-      effect: effectEl.value,
-      severity: assetSeverity,
-      severityJustification: assetSeverityJustification,
-      probability: assetProbability,
-      probabilityJustification: assetProbabilityJustification,
-      detection: assetDetection,
-      detectionJustification: assetDetectionJustification,
-      rpn: calculateAssetRpn(),
-      action: actionEl.value,
-      responsibility: responsibilityEl.value,
-      targetDate: targetDateEl.value,
-      completionDate: completionDateEl?.value || '',
-      verifiedBy: verifiedByEl?.value || '',
-      effectivenessVerified: assetEffectivenessValue as 'yes' | 'no' | 'partial' | '',
-      comments: commentsEl.value
-    };
+    // Calculate RPN
+    const rpnValue = calculateAssetRpn();
     
-    // Add new row to the table
-    setAssetRows([...assetRows, newRow]);
-    
-    // Clear form fields
-    componentEl.value = '';
-    failureModeEl.value = '';
-    causeEl.value = '';
-    effectEl.value = '';
-    actionEl.value = '';
-    responsibilityEl.value = '';
-    targetDateEl.value = '';
-    commentsEl.value = '';
-    
-    // Reset ratings and justifications to default
-    setAssetSeverity(5);
-    setAssetProbability(5);
-    setAssetDetection(5);
-    setAssetSeverityJustification("");
-    setAssetProbabilityJustification("");
-    setAssetDetectionJustification("");
-    setAssetEffectivenessValue("");
-    
-    toast({
-      title: "Success",
-      description: "FMECA row added successfully"
-    });
+    try {
+      // Create row data to send to API
+      const apiRow = {
+        tagNumber: assetTagNumber,
+        assetDescription: assetDescription,
+        assetFunction: assetFunction,
+        component: componentEl.value,
+        failureMode: failureModeEl.value,
+        cause: causeEl.value,
+        effect: effectEl.value,
+        severity: Number(assetSeverity),
+        severityJustification: assetSeverityJustification,
+        probability: Number(assetProbability),
+        probabilityJustification: assetProbabilityJustification,
+        detection: Number(assetDetection),
+        detectionJustification: assetDetectionJustification,
+        rpn: Number(rpnValue),
+        action: actionEl.value,
+        responsibility: responsibilityEl.value,
+        targetDate: targetDateEl.value,
+        completionDate: completionDateEl?.value || null,
+        verifiedBy: verifiedByEl?.value || null,
+        effectivenessVerified: assetEffectivenessValue || null,
+        comments: commentsEl.value
+      };
+      
+      console.log("Saving new asset FMECA row:", apiRow);
+      
+      // Save to database immediately
+      const response = await apiRequest(
+        "POST", 
+        "/api/enhanced-fmeca/asset", 
+        apiRow
+      );
+      
+      if (!response.ok) {
+        throw new Error("Failed to save FMECA row to database");
+      }
+      
+      // Get the saved row with its database ID
+      const savedRow = await response.json();
+      console.log("Saved row from database:", savedRow);
+      
+      // Add new row to the table with the database ID
+      const newRow: AssetFmecaRow = {
+        ...apiRow,
+        id: savedRow.id.toString(),
+        // Ensure proper types for display
+        severity: Number(assetSeverity),
+        probability: Number(assetProbability),
+        detection: Number(assetDetection),
+        rpn: Number(rpnValue),
+        completionDate: completionDateEl?.value || '',
+        verifiedBy: verifiedByEl?.value || '',
+        effectivenessVerified: (assetEffectivenessValue || '') as 'yes' | 'no' | 'partial' | ''
+      };
+      
+      setAssetRows([...assetRows, newRow]);
+      
+      // Clear form fields
+      componentEl.value = '';
+      failureModeEl.value = '';
+      causeEl.value = '';
+      effectEl.value = '';
+      actionEl.value = '';
+      responsibilityEl.value = '';
+      targetDateEl.value = '';
+      commentsEl.value = '';
+      
+      // Reset ratings and justifications to default
+      setAssetSeverity(5);
+      setAssetProbability(5);
+      setAssetDetection(5);
+      setAssetSeverityJustification("");
+      setAssetProbabilityJustification("");
+      setAssetDetectionJustification("");
+      setAssetEffectivenessValue("");
+      
+      toast({
+        title: "Success",
+        description: "FMECA row added and saved to database successfully"
+      });
+    } catch (error) {
+      console.error("Error saving new FMECA row:", error);
+      toast({
+        title: "Save Failed",
+        description: "Failed to save FMECA row to database",
+        variant: "destructive"
+      });
+    }
   };
   
   const handleEditAssetRow = (row: AssetFmecaRow) => {
@@ -364,6 +405,21 @@ const FmecaPage: React.FC = () => {
   
   const handleDeleteAssetRow = async (id: string) => {
     try {
+      // Only administrators can delete FMECA rows
+      if (user?.role !== 'admin') {
+        toast({
+          title: "Permission Denied",
+          description: "Only administrators can delete FMECA records",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Confirm deletion
+      if (!window.confirm("Are you sure you want to delete this FMECA record? This action cannot be undone.")) {
+        return;
+      }
+      
       // If the ID is a number (stored in database), delete from the database
       if (!isNaN(Number(id))) {
         const response = await apiRequest(
@@ -495,7 +551,7 @@ const FmecaPage: React.FC = () => {
     }
   };
   
-  const handleAddSystemRow = () => {
+  const handleAddSystemRow = async () => {
     // Get values from the form
     const subsystemEl = document.getElementById('new-subsystem') as HTMLInputElement;
     const failureModeEl = document.getElementById('new-system-failure-mode') as HTMLInputElement;
@@ -540,58 +596,99 @@ const FmecaPage: React.FC = () => {
     const verifiedByEl = document.getElementById('new-system-verified-by') as HTMLInputElement;
     const effectivenessSelect = document.querySelector('select[name="system-effectiveness"]') as HTMLSelectElement;
     
-    // Create new row with system information
-    const newRow: SystemFmecaRow = {
-      id: Date.now().toString(),
-      systemId: Date.now().toString(), // Temporary ID for now
-      systemName: systemName,
-      systemFunction: systemFunction,
-      subsystem: subsystemEl.value,
-      failureMode: failureModeEl.value,
-      cause: causeEl.value,
-      effect: effectEl.value,
-      severity: systemSeverity,
-      severityJustification: systemSeverityJustification,
-      probability: systemProbability,
-      probabilityJustification: systemProbabilityJustification,
-      detection: systemDetection,
-      detectionJustification: systemDetectionJustification,
-      rpn: calculateSystemRpn(),
-      action: actionEl.value,
-      responsibility: responsibilityEl.value,
-      targetDate: targetDateEl.value,
-      completionDate: completionDateEl?.value || '',
-      verifiedBy: verifiedByEl?.value || '',
-      effectivenessVerified: assetEffectivenessValue as 'yes' | 'no' | 'partial' | '',
-      comments: commentsEl.value
-    };
+    // Calculate RPN
+    const rpnValue = calculateSystemRpn();
     
-    // Add new row to the table
-    setSystemRows([...systemRows, newRow]);
-    
-    // Clear form fields
-    subsystemEl.value = '';
-    failureModeEl.value = '';
-    causeEl.value = '';
-    effectEl.value = '';
-    actionEl.value = '';
-    responsibilityEl.value = '';
-    targetDateEl.value = '';
-    commentsEl.value = '';
-    
-    // Reset ratings and justifications to default
-    setSystemSeverity(5);
-    setSystemProbability(5);
-    setSystemDetection(5);
-    setSystemSeverityJustification("");
-    setSystemProbabilityJustification("");
-    setSystemDetectionJustification("");
-    setSystemEffectivenessValue("");
-    
-    toast({
-      title: "Success",
-      description: "System FMECA row added successfully"
-    });
+    try {
+      // Create row data to send to API
+      const apiRow = {
+        systemId: Date.now().toString(), // Using timestamp as temporary ID
+        systemName: systemName,
+        systemFunction: systemFunction,
+        subsystem: subsystemEl.value,
+        failureMode: failureModeEl.value,
+        cause: causeEl.value,
+        effect: effectEl.value,
+        severity: Number(systemSeverity),
+        severityJustification: systemSeverityJustification,
+        probability: Number(systemProbability),
+        probabilityJustification: systemProbabilityJustification,
+        detection: Number(systemDetection),
+        detectionJustification: systemDetectionJustification,
+        rpn: Number(rpnValue),
+        action: actionEl.value,
+        responsibility: responsibilityEl.value,
+        targetDate: targetDateEl.value,
+        completionDate: completionDateEl?.value || null,
+        verifiedBy: verifiedByEl?.value || null,
+        effectivenessVerified: systemEffectivenessValue || null,
+        comments: commentsEl.value
+      };
+      
+      console.log("Saving new system FMECA row:", apiRow);
+      
+      // Save to database immediately
+      const response = await apiRequest(
+        "POST", 
+        "/api/enhanced-fmeca/system", 
+        apiRow
+      );
+      
+      if (!response.ok) {
+        throw new Error("Failed to save System FMECA row to database");
+      }
+      
+      // Get the saved row with its database ID
+      const savedRow = await response.json();
+      console.log("Saved system row from database:", savedRow);
+      
+      // Add new row to the table with the database ID
+      const newRow: SystemFmecaRow = {
+        ...apiRow,
+        id: savedRow.id.toString(),
+        // Ensure proper types for display
+        severity: Number(systemSeverity),
+        probability: Number(systemProbability),
+        detection: Number(systemDetection),
+        rpn: Number(rpnValue),
+        completionDate: completionDateEl?.value || '',
+        verifiedBy: verifiedByEl?.value || '',
+        effectivenessVerified: (systemEffectivenessValue || '') as 'yes' | 'no' | 'partial' | ''
+      };
+      
+      setSystemRows([...systemRows, newRow]);
+      
+      // Clear form fields
+      subsystemEl.value = '';
+      failureModeEl.value = '';
+      causeEl.value = '';
+      effectEl.value = '';
+      actionEl.value = '';
+      responsibilityEl.value = '';
+      targetDateEl.value = '';
+      commentsEl.value = '';
+      
+      // Reset ratings and justifications to default
+      setSystemSeverity(5);
+      setSystemProbability(5);
+      setSystemDetection(5);
+      setSystemSeverityJustification("");
+      setSystemProbabilityJustification("");
+      setSystemDetectionJustification("");
+      setSystemEffectivenessValue("");
+      
+      toast({
+        title: "Success",
+        description: "System FMECA row added and saved to database successfully"
+      });
+    } catch (error) {
+      console.error("Error saving new System FMECA row:", error);
+      toast({
+        title: "Save Failed",
+        description: "Failed to save System FMECA row to database",
+        variant: "destructive"
+      });
+    }
   };
   
   const handleEditSystemRow = (row: SystemFmecaRow) => {
@@ -660,6 +757,21 @@ const FmecaPage: React.FC = () => {
   
   const handleDeleteSystemRow = async (id: string) => {
     try {
+      // Only administrators can delete FMECA rows
+      if (user?.role !== 'admin') {
+        toast({
+          title: "Permission Denied",
+          description: "Only administrators can delete System FMECA records",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Confirm deletion
+      if (!window.confirm("Are you sure you want to delete this System FMECA record? This action cannot be undone.")) {
+        return;
+      }
+      
       // If the ID is a number (stored in database), delete from the database
       if (!isNaN(Number(id))) {
         const response = await apiRequest(
