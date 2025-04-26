@@ -1,9 +1,11 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { testDatabaseConnection } from "./db";
+import { testDatabaseConnection, isElectronMode } from "./db";
 import { setupAuth, ensureAdminExists } from "./auth";
 import cors from "cors";
+import { setupElectronDemoData } from "./electron-mode";
+import { storage } from "./storage";
 
 const app = express();
 
@@ -49,23 +51,38 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Test database connection before starting the server
-  try {
-    const isConnected = await testDatabaseConnection();
-    if (!isConnected) {
-      log("Warning: Database connection failed. Some features may not work properly.");
-    } else {
-      log("Database connection successful.");
+  if (isElectronMode()) {
+    log("Running in Electron mode with in-memory storage");
+    
+    // Setup authentication first (needed for the demo data)
+    setupAuth(app);
+    
+    // Set up demo data for Electron mode
+    try {
+      await setupElectronDemoData(storage);
+      log("Electron demo data setup complete");
+    } catch (error) {
+      log(`Error setting up Electron demo data: ${error}`);
     }
-  } catch (error) {
-    log(`Database connection error: ${error}`);
+  } else {
+    // Test database connection before starting the server
+    try {
+      const isConnected = await testDatabaseConnection();
+      if (!isConnected) {
+        log("Warning: Database connection failed. Some features may not work properly.");
+      } else {
+        log("Database connection successful.");
+      }
+    } catch (error) {
+      log(`Database connection error: ${error}`);
+    }
+    
+    // Setup authentication
+    setupAuth(app);
+    
+    // Create default admin user if none exists
+    await ensureAdminExists();
   }
-  
-  // Setup authentication
-  setupAuth(app);
-  
-  // Create default admin user if none exists
-  await ensureAdminExists();
   
   const server = await registerRoutes(app);
 
