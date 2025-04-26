@@ -1,7 +1,8 @@
 import React, { useState, useEffect, ChangeEvent } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { Loader2, FileText, Database, Plus, Trash, CheckCircle2, Edit, Save } from "lucide-react";
+import { Loader2, FileText, Database, Plus, Trash, CheckCircle2, Edit, Save, FileSpreadsheet, Download } from "lucide-react";
+import { FmecaRecordsTable } from "@/components/fmeca/FmecaRecordsTable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -1543,6 +1544,20 @@ const FmecaPage: React.FC = () => {
         failure modes in a system and their effects.
       </p>
       
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">Enhanced FMECA Analysis</h1>
+        <div className="flex space-x-2">
+          <Button 
+            variant="outline" 
+            className="flex items-center" 
+            onClick={() => setShowRecordsTable(true)}
+          >
+            <FileSpreadsheet className="h-4 w-4 mr-2" />
+            View All FMECA Records
+          </Button>
+        </div>
+      </div>
+
       <Tabs defaultValue="asset-level" className="w-full" onValueChange={setSelectedTab}>
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="asset-level" className="flex items-center">
