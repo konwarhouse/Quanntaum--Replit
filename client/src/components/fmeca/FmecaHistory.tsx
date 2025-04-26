@@ -23,6 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { format } from 'date-fns';
 import * as XLSX from 'xlsx';
+import { FmecaTableView } from './FmecaTableView';
 
 // Interfaces for asset and system FMECA history
 interface AssetFmecaHistory {
@@ -105,7 +106,7 @@ const formatDate = (dateString: string | null) => {
 };
 
 // Status badge component
-const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
+export const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
   let variant: "default" | "secondary" | "destructive" | "outline" = "default";
   
   switch (status.toLowerCase()) {
@@ -124,6 +125,14 @@ const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
   }
   
   return <Badge variant={variant}>{status}</Badge>;
+};
+
+// Helper function for getting effectiveness colors
+export const getEffectivenessColor = (effectiveness?: string | null): string => {
+  if (!effectiveness) return 'bg-gray-100 text-gray-800';
+  if (effectiveness === 'yes') return 'bg-green-100 text-green-800';
+  if (effectiveness === 'partial') return 'bg-amber-100 text-amber-800';
+  return 'bg-red-100 text-red-800';
 };
 
 // Main FMECA History Dialog Component
@@ -437,108 +446,13 @@ export const FmecaHistoryDialog: React.FC<FmecaHistoryDialogProps> = ({
               </div>
               
               {selectedVersion === null ? (
-                // Show comprehensive table with detailed information
-                <div className="border rounded-md overflow-x-auto">
-                  <div className="p-3 flex justify-between items-center bg-slate-50 border-b">
-                    <h3 className="font-medium text-blue-800">Comprehensive View of All FMECA History Versions</h3>
-                    <Button
-                      variant="default"
-                      size="sm"
-                      onClick={exportAllHistoryToExcel}
-                      className="flex items-center gap-1"
-                    >
-                      <Download className="h-4 w-4 mr-1" />
-                      <span>Export All to Excel</span>
-                    </Button>
-                  </div>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-16">Version</TableHead>
-                        <TableHead>{recordType === 'asset' ? 'Tag Number' : 'System Name'}</TableHead>
-                        <TableHead>{recordType === 'asset' ? 'Component' : 'Subsystem'}</TableHead>
-                        <TableHead>Failure Mode</TableHead>
-                        <TableHead>Cause</TableHead>
-                        <TableHead>Effect</TableHead>
-                        <TableHead className="text-center">S</TableHead>
-                        <TableHead className="text-center">O</TableHead>
-                        <TableHead className="text-center">D</TableHead>
-                        <TableHead className="text-center">RPN</TableHead>
-                        <TableHead>Action</TableHead>
-                        <TableHead>Responsibility</TableHead>
-                        <TableHead>Target Date</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-center">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {historyRecords
-                        .sort((a: AssetFmecaHistory | SystemFmecaHistory, b: AssetFmecaHistory | SystemFmecaHistory) => b.version - a.version)
-                        .map((record: AssetFmecaHistory | SystemFmecaHistory) => (
-                          <TableRow key={record.id} className="hover:bg-slate-50">
-                            <TableCell className="font-medium">{record.version}</TableCell>
-                            <TableCell>
-                              {recordType === 'asset' 
-                                ? (record as AssetFmecaHistory).tagNumber
-                                : (record as SystemFmecaHistory).systemName}
-                            </TableCell>
-                            <TableCell>
-                              {recordType === 'asset' 
-                                ? (record as AssetFmecaHistory).component
-                                : (record as SystemFmecaHistory).subSystem}
-                            </TableCell>
-                            <TableCell>{record.failureMode}</TableCell>
-                            <TableCell>{record.cause}</TableCell>
-                            <TableCell>{record.effect}</TableCell>
-                            <TableCell className="text-center">{record.severity}</TableCell>
-                            <TableCell className="text-center">{record.probability}</TableCell>
-                            <TableCell className="text-center">{record.detection}</TableCell>
-                            <TableCell className="text-center font-bold">{record.rpn}</TableCell>
-                            <TableCell>{record.action}</TableCell>
-                            <TableCell>{record.responsibility}</TableCell>
-                            <TableCell>{record.targetDate}</TableCell>
-                            <TableCell>
-                              <StatusBadge status={record.status} />
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center justify-center gap-1">
-                                <Button
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => setSelectedVersion(record.id)}
-                                  title="View complete details"
-                                  className="px-2 py-0 h-7"
-                                >
-                                  <FileSpreadsheet className="h-3 w-3 mr-1" />
-                                  <span className="text-xs">Details</span>
-                                </Button>
-                                <Button
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => exportSingleRecordToExcel(record)}
-                                  title="Export this version to Excel"
-                                  className="px-2 py-0 h-7"
-                                >
-                                  <Download className="h-3 w-3 mr-1" />
-                                  <span className="text-xs">Export</span>
-                                </Button>
-                                <Button
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => window.open(`/edit-fmeca-history/${recordType}/${record.id}`, '_blank')}
-                                  title="Edit this version"
-                                  className="px-2 py-0 h-7"
-                                >
-                                  <Pencil className="h-3 w-3 mr-1" />
-                                  <span className="text-xs">Edit</span>
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                    </TableBody>
-                  </Table>
-                </div>
+                <FmecaTableView
+                  historyRecords={historyRecords}
+                  recordType={recordType}
+                  onViewDetails={(id) => setSelectedVersion(id)}
+                  onExport={exportSingleRecordToExcel}
+                  exportAllRecords={exportAllHistoryToExcel}
+                />
               ) : (
                 // Show version selector when not in "view all" mode
                 <Select
@@ -731,38 +645,45 @@ export const FmecaHistoryDialog: React.FC<FmecaHistoryDialogProps> = ({
   );
 };
 
-// Helper function for getting effectiveness colors
-const getEffectivenessColor = (effectiveness?: string | null): string => {
-  if (!effectiveness) return 'bg-gray-100 text-gray-800';
-  if (effectiveness === 'yes') return 'bg-green-100 text-green-800';
-  if (effectiveness === 'partial') return 'bg-amber-100 text-amber-800';
-  return 'bg-red-100 text-red-800';
-};
-
 // AddHistoryButton component to show in action cells
 export const AddHistoryButton: React.FC<{
   recordId: number;
   recordType: 'asset' | 'system';
 }> = ({ recordId, recordType }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const { toast } = useToast();
+  
+  const handleOpenHistory = () => {
+    if (recordId <= 0) {
+      toast({
+        title: "Cannot view history",
+        description: "This record must be saved first before viewing history.",
+        variant: "destructive"
+      });
+      return;
+    }
+    setIsOpen(true);
+  };
   
   return (
     <>
       <Button 
         variant="outline" 
         size="sm"
-        onClick={() => setIsOpen(true)}
+        onClick={handleOpenHistory}
         title="View history"
       >
         <History className="h-4 w-4" />
       </Button>
       
-      <FmecaHistoryDialog
-        recordId={recordId}
-        recordType={recordType}
-        isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-      />
+      {isOpen && (
+        <FmecaHistoryDialog
+          recordId={recordId}
+          recordType={recordType}
+          isOpen={isOpen}
+          onClose={() => setIsOpen(false)}
+        />
+      )}
     </>
   );
 };
