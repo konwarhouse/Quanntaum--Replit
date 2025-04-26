@@ -106,16 +106,39 @@ const EditFmecaHistoryPage = () => {
   // Mutation to update the history record
   const updateMutation = useMutation({
     mutationFn: async (data: FmecaHistory) => {
+      // Process data to match server expectations
+      const processedData = {
+        ...data,
+        // Ensure numeric values are sent as numbers
+        severity: Number(data.severity),
+        probability: Number(data.probability),
+        detection: Number(data.detection),
+        rpn: Number(data.rpn),
+        // Convert empty strings to null for optional fields
+        completionDate: data.completionDate || null,
+        verifiedBy: data.verifiedBy || null,
+        effectivenessVerified: data.effectivenessVerified === 'not_verified' ? null : data.effectivenessVerified,
+        comments: data.comments || null
+      };
+      
+      console.log("Sending processed data:", processedData);
+      
       const response = await fetch(`/api/enhanced-fmeca/${recordType}/history/${historyId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(processedData),
       });
       
       if (!response.ok) {
-        throw new Error('Failed to update FMECA history record');
+        // Get error details when possible
+        try {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to update FMECA history record');
+        } catch (e) {
+          throw new Error('Failed to update FMECA history record');
+        }
       }
       
       return await response.json();

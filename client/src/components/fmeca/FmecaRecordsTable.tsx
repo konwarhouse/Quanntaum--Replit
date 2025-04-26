@@ -651,7 +651,7 @@ export function FmecaRecordsTable({ isOpen, onClose }: FmecaRecordsTableProps) {
                   };
                   
                   fetch(endpoint, {
-                    method: 'PATCH',
+                    method: 'PUT',
                     headers: {
                       'Content-Type': 'application/json',
                     },
