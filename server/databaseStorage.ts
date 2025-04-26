@@ -510,6 +510,9 @@ export class DatabaseStorage implements IStorage {
     
     return executeWithRetry(
       async () => {
+        // Debug SQL query
+        console.log(`Executing query: SELECT * FROM asset_fmeca_history WHERE asset_fmeca_id = ${assetFmecaId} ORDER BY version DESC LIMIT 1`);
+        
         const [record] = await db
           .select()
           .from(assetFmecaHistory)
@@ -519,6 +522,8 @@ export class DatabaseStorage implements IStorage {
         
         if (record) {
           console.log(`Found latest history record (version ${record.version}) for asset FMECA ID ${assetFmecaId}`);
+          // Debug the record
+          console.log('Record details:', JSON.stringify(record, null, 2));
         } else {
           console.log(`No history records found for asset FMECA ID ${assetFmecaId}`);
         }
