@@ -10,8 +10,10 @@ import {
   Pencil, 
   CheckCircle2,
   Upload,
-  Download 
+  Download,
+  History
 } from "lucide-react";
+import { FmecaHistoryButton } from "@/components/fmeca/FmecaHistory";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
