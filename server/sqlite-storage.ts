@@ -1,4 +1,4 @@
-import Database from 'better-sqlite3';
+import BetterSQLite3 from 'better-sqlite3';
 import * as fs from 'fs';
 import * as path from 'path';
 import { IStorage } from './storage';
@@ -24,7 +24,7 @@ import {
  * SQLite implementation of the storage interface for Electron mode
  */
 export class SQLiteStorage implements IStorage {
-  private db: Database.Database;
+  private db: BetterSQLite3.Database;
   private dbPath: string;
   
   constructor(dbFilePath?: string) {
@@ -35,7 +35,7 @@ export class SQLiteStorage implements IStorage {
     this.dbPath = dbFilePath || path.join(userDataPath, 'quanntaum-predict.db');
     console.log(`Initializing SQLite database at: ${this.dbPath}`);
     
-    this.db = new Database(this.dbPath);
+    this.db = new BetterSQLite3(this.dbPath);
     
     // Enable foreign keys
     this.db.pragma('foreign_keys = ON');
