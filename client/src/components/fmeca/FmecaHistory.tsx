@@ -5,8 +5,7 @@ import {
   DialogContent, 
   DialogDescription, 
   DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
+  DialogTitle
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { 
@@ -384,16 +383,30 @@ export const FmecaHistoryDialog: React.FC<FmecaHistoryDialogProps> = ({
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
-            <div className="flex items-center gap-2">
-              <History className="h-5 w-5" />
-              <span>FMECA Version History</span>
-            </div>
-          </DialogTitle>
+          <div className="flex justify-between items-center mb-2">
+            <DialogTitle>
+              <div className="flex items-center gap-2">
+                <History className="h-5 w-5" />
+                <span>FMECA Version History</span>
+              </div>
+            </DialogTitle>
+            
+            {historyRecords && historyRecords.length > 0 && (
+              <Button 
+                variant="default" 
+                size="sm"
+                onClick={exportAllHistoryToExcel}
+                className="flex items-center gap-1"
+              >
+                <Download className="h-4 w-4 mr-1" />
+                <span>Export All to Excel</span>
+              </Button>
+            )}
+          </div>
           <DialogDescription>
-            View and compare different versions of this FMECA record
+            View, compare, and export different versions of this FMECA record - all information is displayed in the table below
           </DialogDescription>
         </DialogHeader>
         
@@ -424,66 +437,100 @@ export const FmecaHistoryDialog: React.FC<FmecaHistoryDialogProps> = ({
               </div>
               
               {selectedVersion === null ? (
-                // Show comprehensive table of all versions
-                <div className="border rounded-md overflow-hidden">
+                // Show comprehensive table with detailed information
+                <div className="border rounded-md overflow-x-auto">
+                  <div className="p-3 flex justify-between items-center bg-slate-50 border-b">
+                    <h3 className="font-medium text-blue-800">Comprehensive View of All FMECA History Versions</h3>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={exportAllHistoryToExcel}
+                      className="flex items-center gap-1"
+                    >
+                      <Download className="h-4 w-4 mr-1" />
+                      <span>Export All to Excel</span>
+                    </Button>
+                  </div>
                   <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead className="w-16">Version</TableHead>
-                        <TableHead>
-                          {recordType === 'asset' ? 'Tag Number' : 'System Name'}
-                        </TableHead>
+                        <TableHead>{recordType === 'asset' ? 'Tag Number' : 'System Name'}</TableHead>
+                        <TableHead>{recordType === 'asset' ? 'Component' : 'Subsystem'}</TableHead>
                         <TableHead>Failure Mode</TableHead>
-                        <TableHead className="text-center w-24">RPN</TableHead>
-                        <TableHead className="text-center w-24">Status</TableHead>
-                        <TableHead className="text-center w-24">Date</TableHead>
-                        <TableHead className="text-center w-28">Actions</TableHead>
+                        <TableHead>Cause</TableHead>
+                        <TableHead>Effect</TableHead>
+                        <TableHead className="text-center">S</TableHead>
+                        <TableHead className="text-center">O</TableHead>
+                        <TableHead className="text-center">D</TableHead>
+                        <TableHead className="text-center">RPN</TableHead>
+                        <TableHead>Action</TableHead>
+                        <TableHead>Responsibility</TableHead>
+                        <TableHead>Target Date</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-center">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {historyRecords
                         .sort((a: AssetFmecaHistory | SystemFmecaHistory, b: AssetFmecaHistory | SystemFmecaHistory) => b.version - a.version)
                         .map((record: AssetFmecaHistory | SystemFmecaHistory) => (
-                          <TableRow key={record.id}>
+                          <TableRow key={record.id} className="hover:bg-slate-50">
                             <TableCell className="font-medium">{record.version}</TableCell>
                             <TableCell>
                               {recordType === 'asset' 
                                 ? (record as AssetFmecaHistory).tagNumber
                                 : (record as SystemFmecaHistory).systemName}
                             </TableCell>
-                            <TableCell>{record.failureMode}</TableCell>
-                            <TableCell className="text-center font-bold">{record.rpn}</TableCell>
-                            <TableCell className="text-center">
-                              <StatusBadge status={record.status} />
+                            <TableCell>
+                              {recordType === 'asset' 
+                                ? (record as AssetFmecaHistory).component
+                                : (record as SystemFmecaHistory).subSystem}
                             </TableCell>
-                            <TableCell className="text-center text-xs">
-                              {format(new Date(record.createdAt), 'yyyy-MM-dd')}
+                            <TableCell>{record.failureMode}</TableCell>
+                            <TableCell>{record.cause}</TableCell>
+                            <TableCell>{record.effect}</TableCell>
+                            <TableCell className="text-center">{record.severity}</TableCell>
+                            <TableCell className="text-center">{record.probability}</TableCell>
+                            <TableCell className="text-center">{record.detection}</TableCell>
+                            <TableCell className="text-center font-bold">{record.rpn}</TableCell>
+                            <TableCell>{record.action}</TableCell>
+                            <TableCell>{record.responsibility}</TableCell>
+                            <TableCell>{record.targetDate}</TableCell>
+                            <TableCell>
+                              <StatusBadge status={record.status} />
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center justify-center gap-1">
                                 <Button
-                                  variant="ghost" 
-                                  size="icon"
+                                  variant="outline" 
+                                  size="sm"
                                   onClick={() => setSelectedVersion(record.id)}
-                                  title="View details"
+                                  title="View complete details"
+                                  className="px-2 py-0 h-7"
                                 >
-                                  <FileSpreadsheet className="h-4 w-4" />
+                                  <FileSpreadsheet className="h-3 w-3 mr-1" />
+                                  <span className="text-xs">Details</span>
                                 </Button>
                                 <Button
-                                  variant="ghost" 
-                                  size="icon"
+                                  variant="outline" 
+                                  size="sm"
                                   onClick={() => exportSingleRecordToExcel(record)}
-                                  title="Export this record"
+                                  title="Export this version to Excel"
+                                  className="px-2 py-0 h-7"
                                 >
-                                  <Download className="h-4 w-4" />
+                                  <Download className="h-3 w-3 mr-1" />
+                                  <span className="text-xs">Export</span>
                                 </Button>
                                 <Button
-                                  variant="ghost" 
-                                  size="icon"
+                                  variant="outline" 
+                                  size="sm"
                                   onClick={() => window.open(`/edit-fmeca-history/${recordType}/${record.id}`, '_blank')}
-                                  title="Edit this record"
+                                  title="Edit this version"
+                                  className="px-2 py-0 h-7"
                                 >
-                                  <Pencil className="h-4 w-4" />
+                                  <Pencil className="h-3 w-3 mr-1" />
+                                  <span className="text-xs">Edit</span>
                                 </Button>
                               </div>
                             </TableCell>
@@ -543,6 +590,14 @@ export const FmecaHistoryDialog: React.FC<FmecaHistoryDialogProps> = ({
                     >
                       <Pencil className="h-4 w-4 mr-1" />
                       Edit Record
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => exportSingleRecordToExcel(versionDetail)}
+                    >
+                      <Download className="h-4 w-4 mr-1" />
+                      Export Current Version
                     </Button>
                   </div>
                 </div>
@@ -637,24 +692,24 @@ export const FmecaHistoryDialog: React.FC<FmecaHistoryDialogProps> = ({
                       <TableCell className="font-medium">Target Date</TableCell>
                       <TableCell>{versionDetail.targetDate}</TableCell>
                     </TableRow>
-                    
-                    {/* Verification fields with highlight if populated */}
                     <TableRow>
                       <TableCell className="font-medium">Completion Date</TableCell>
-                      <TableCell className={versionDetail.completionDate ? "bg-green-50" : ""}>
-                        {versionDetail.completionDate || 'Not completed'}
-                      </TableCell>
+                      <TableCell>{versionDetail.completionDate || 'Not completed'}</TableCell>
                     </TableRow>
                     <TableRow>
                       <TableCell className="font-medium">Verified By</TableCell>
-                      <TableCell className={versionDetail.verifiedBy ? "bg-green-50" : ""}>
-                        {versionDetail.verifiedBy || 'Not verified'}
-                      </TableCell>
+                      <TableCell>{versionDetail.verifiedBy || 'Not verified'}</TableCell>
                     </TableRow>
                     <TableRow>
                       <TableCell className="font-medium">Effectiveness Verified</TableCell>
-                      <TableCell className={versionDetail.effectivenessVerified ? "bg-green-50" : ""}>
-                        {versionDetail.effectivenessVerified || 'Not verified'}
+                      <TableCell>
+                        {versionDetail.effectivenessVerified ? (
+                          <Badge className={getEffectivenessColor(versionDetail.effectivenessVerified)}>
+                            {versionDetail.effectivenessVerified === 'yes' ? 'Fully Effective' :
+                             versionDetail.effectivenessVerified === 'partial' ? 'Partially Effective' :
+                             versionDetail.effectivenessVerified === 'no' ? 'Not Effective' : 'Not Verified'}
+                          </Badge>
+                        ) : 'Not verified'}
                       </TableCell>
                     </TableRow>
                     <TableRow>
@@ -664,101 +719,50 @@ export const FmecaHistoryDialog: React.FC<FmecaHistoryDialogProps> = ({
                   </TableBody>
                 </Table>
               </div>
-            ) : (
-              <div className="text-center p-4 border rounded-md">
-                Select a version to view details
-              </div>
-            )}
+            ) : null}
           </div>
         ) : (
-          <div className="text-center p-4 border rounded-md">
-            No history records found for this FMECA record
+          <div className="text-center p-8">
+            <p>No history records found for this FMECA item.</p>
           </div>
         )}
-        
-        <div className="flex justify-between items-center mt-4">
-          <div className="flex items-center gap-2">
-            {historyRecords && historyRecords.length > 0 && (
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={exportAllHistoryToExcel}
-                className="flex items-center gap-1"
-              >
-                <Download className="h-4 w-4" />
-                Export All History
-              </Button>
-            )}
-            {versionDetail && (
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => exportSingleRecordToExcel(versionDetail)}
-                className="flex items-center gap-1"
-              >
-                <FileSpreadsheet className="h-4 w-4" />
-                Export Current Version
-              </Button>
-            )}
-          </div>
-          <Button variant="outline" onClick={onClose}>
-            Close
-          </Button>
-        </div>
       </DialogContent>
     </Dialog>
   );
 };
 
-// History button component to show the history dialog
-interface FmecaHistoryButtonProps {
+// Helper function for getting effectiveness colors
+const getEffectivenessColor = (effectiveness?: string | null): string => {
+  if (!effectiveness) return 'bg-gray-100 text-gray-800';
+  if (effectiveness === 'yes') return 'bg-green-100 text-green-800';
+  if (effectiveness === 'partial') return 'bg-amber-100 text-amber-800';
+  return 'bg-red-100 text-red-800';
+};
+
+// AddHistoryButton component to show in action cells
+export const AddHistoryButton: React.FC<{
   recordId: number;
   recordType: 'asset' | 'system';
-  variant?: "default" | "outline" | "secondary" | "ghost" | "link" | "destructive";
-  iconOnly?: boolean;
-}
-
-export const FmecaHistoryButton: React.FC<FmecaHistoryButtonProps> = ({ 
-  recordId, 
-  recordType,
-  variant = "outline",
-  iconOnly = false
-}) => {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { toast } = useToast();
-  
-  const handleOpenHistory = () => {
-    if (recordId <= 0) {
-      toast({
-        title: "Cannot view history",
-        description: "This record must be saved first before viewing history.",
-        variant: "destructive"
-      });
-      return;
-    }
-    setIsDialogOpen(true);
-  };
+}> = ({ recordId, recordType }) => {
+  const [isOpen, setIsOpen] = useState(false);
   
   return (
     <>
       <Button 
-        variant={variant} 
-        size="sm" 
-        onClick={handleOpenHistory}
-        className={iconOnly ? "" : "gap-1"}
+        variant="outline" 
+        size="sm"
+        onClick={() => setIsOpen(true)}
+        title="View history"
       >
         <History className="h-4 w-4" />
-        {!iconOnly && <span>History</span>}
       </Button>
       
-      {isDialogOpen && (
-        <FmecaHistoryDialog
-          recordId={recordId}
-          recordType={recordType}
-          isOpen={isDialogOpen}
-          onClose={() => setIsDialogOpen(false)}
-        />
-      )}
+      <FmecaHistoryDialog
+        recordId={recordId}
+        recordType={recordType}
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+      />
     </>
   );
 };
