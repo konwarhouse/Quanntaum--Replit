@@ -63,18 +63,18 @@ export async function comparePasswords(plainPassword: string, hashedPassword: st
 const MemStore = memorystore(session);
 
 export function setupAuth(app: express.Express) {
-  // Session configuration
+  // Session configuration with improved settings for better persistence
   app.use(session({
     store: new MemStore({
       checkPeriod: 86400000 // prune expired entries every 24h
     }),
     secret: process.env.SESSION_SECRET || "change-me-in-production",
-    resave: false,
-    saveUninitialized: false,
+    resave: true, // Changed from false to true to ensure session is saved on every request
+    saveUninitialized: true, // Changed to true to save new sessions
     cookie: {
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: false, // Changed to false to work in development environment
       sameSite: "lax",
     }
   }));
