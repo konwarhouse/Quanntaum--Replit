@@ -99,16 +99,19 @@ const FmecaPage: React.FC = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  // Redirect to login if not authenticated
+  // Show loading state while checking authentication
   if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-border" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2">Checking authentication...</span>
       </div>
     );
   }
   
+  // Redirect to login if not authenticated
   if (!user) {
+    console.log("User not authenticated, redirecting to auth page");
     toast({
       title: "Authentication Required",
       description: "You must be logged in to access the FMECA page",
