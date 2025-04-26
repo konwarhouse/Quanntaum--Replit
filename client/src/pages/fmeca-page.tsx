@@ -405,6 +405,7 @@ const FmecaPage: React.FC = () => {
         // Convert string IDs to proper format for API
         // Only send rows that don't have a numeric ID (not yet saved to DB)
         if (isNaN(Number(row.id))) {
+          console.log("Saving asset FMECA row:", row);
           const apiRow = {
             ...row,
             // Convert string properties to required types
@@ -417,6 +418,9 @@ const FmecaPage: React.FC = () => {
             verifiedBy: row.verifiedBy || null,
             effectivenessVerified: row.effectivenessVerified || null,
           };
+          
+          console.log("API row data:", apiRow);
+          console.log("Sending to endpoint:", "/api/enhanced-fmeca/asset");
           
           const response = await apiRequest(
             "POST", 
