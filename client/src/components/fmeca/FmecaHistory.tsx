@@ -253,7 +253,23 @@ export const FmecaHistoryDialog: React.FC<FmecaHistoryDialogProps> = ({
                       Created: {formatDate(versionDetail.createdAt)}
                     </span>
                   </div>
-                  <StatusBadge status={versionDetail.status} />
+                  <div className="flex gap-2 items-center">
+                    <StatusBadge status={versionDetail.status} />
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => {
+                        // Open edit dialog for the current history record
+                        const historyId = selectedVersion;
+                        if (historyId) {
+                          window.open(`/edit-fmeca-history/${recordType}/${historyId}`, '_blank');
+                        }
+                      }}
+                    >
+                      <Pencil className="h-4 w-4 mr-1" />
+                      Edit Record
+                    </Button>
+                  </div>
                 </div>
                 
                 <div className="p-2 bg-muted/50 rounded-md">
