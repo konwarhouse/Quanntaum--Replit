@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ColorfulTabs, ColorfulTabsList, ColorfulTabsTrigger } from "@/components/ui/colorful-tabs";
 import WeibullAnalysisForm from "@/components/reliability/WeibullAnalysisForm";
 import DataDrivenWeibullAnalysis from "@/components/reliability/DataDrivenWeibullAnalysis";
 import MaintenanceOptimizationForm from "@/components/reliability/MaintenanceOptimizationForm";
@@ -41,29 +42,29 @@ const ReliabilityPage = () => {
         </p>
       </div>
 
-      <Tabs
+      <ColorfulTabs
         defaultValue="assets"
         value={activeTab}
         onValueChange={setActiveTab}
         className="w-full"
       >
-        <TabsList className="grid grid-cols-2 md:grid-cols-9 w-full">
-          <TabsTrigger value="assets">Asset Master</TabsTrigger>
-          <TabsTrigger value="criticality">Criticality</TabsTrigger>
-          <TabsTrigger value="failures">Failure History</TabsTrigger>
-          <TabsTrigger value="failureModes">Failure Modes</TabsTrigger>
-          <TabsTrigger value="equipmentClasses">Equipment Classes</TabsTrigger>
-          <TabsTrigger value="weibull">Weibull Analysis</TabsTrigger>
-          <TabsTrigger value="maintenance">Maintenance Optimization</TabsTrigger>
-          <TabsTrigger value="rcm" className="relative">
+        <ColorfulTabsList className="grid grid-cols-2 md:grid-cols-9 w-full">
+          <ColorfulTabsTrigger value="assets" color="blue">Asset Master</ColorfulTabsTrigger>
+          <ColorfulTabsTrigger value="criticality" color="red">Criticality</ColorfulTabsTrigger>
+          <ColorfulTabsTrigger value="failures" color="orange">Failure History</ColorfulTabsTrigger>
+          <ColorfulTabsTrigger value="failureModes" color="amber">Failure Modes</ColorfulTabsTrigger>
+          <ColorfulTabsTrigger value="equipmentClasses" color="green">Equipment Classes</ColorfulTabsTrigger>
+          <ColorfulTabsTrigger value="weibull" color="cyan">Weibull Analysis</ColorfulTabsTrigger>
+          <ColorfulTabsTrigger value="maintenance" color="indigo">Maintenance Optimization</ColorfulTabsTrigger>
+          <ColorfulTabsTrigger value="rcm" color="purple" className="relative">
             RCM Analysis
             <span className="absolute -top-2 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 text-[8px] text-white font-bold" title="Licensed Users Only">PRO</span>
-          </TabsTrigger>
-          <TabsTrigger value="simulation" className="relative">
+          </ColorfulTabsTrigger>
+          <ColorfulTabsTrigger value="simulation" color="pink" className="relative">
             Simulation
             <span className="absolute -top-2 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 text-[8px] text-white font-bold" title="Licensed Users Only">PRO</span>
-          </TabsTrigger>
-        </TabsList>
+          </ColorfulTabsTrigger>
+        </ColorfulTabsList>
 
         <div className="mt-6">
           <TabsContent value="assets" className="focus-visible:outline-none focus-visible:ring-0">
@@ -203,7 +204,7 @@ const ReliabilityPage = () => {
             </div>
           </TabsContent>
         </div>
-      </Tabs>
+      </ColorfulTabs>
     </div>
   );
 };

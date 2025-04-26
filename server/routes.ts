@@ -84,10 +84,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }));
       
       // Default fallback response if OpenAI API fails
-      let responseContent = "I'm currently experiencing connectivity issues with my knowledge base. " +
-        "In the meantime, I can tell you that Reliability Centered Maintenance (RCM) is a process to ensure that assets continue to do what their users require in their present operating context. " +
-        "Weibull analysis is a method for modeling and analyzing failure data, where the Weibull distribution is characterized by shape parameter (β) and scale parameter (η). " +
-        "Would you like to know more about asset management or reliability engineering?";
+      let responseContent = "At the moment, I'm busy with other tasks. Please feel free to navigate the other features until I'm available again. " +
+        "You can explore the Reliability Dashboard, FMECA analysis, or Asset Master while waiting. " +
+        "If you need immediate assistance with reliability engineering concepts, please check back in a few minutes when I should be available again.";
       
       try {
         // Check if OpenAI API key is available

@@ -31,7 +31,7 @@ const ChatWindow = ({ messages, isLoading, username }: ChatWindowProps) => {
               AI
             </div>
             <div className="ml-2 bg-aiMessage p-3 rounded-lg rounded-tl-none max-w-[80%]">
-              <p className="text-gray-800">Welcome! I'm your AI assistant. How can I help you today?</p>
+              <p className="text-gray-800">Welcome to Quanntaum Predict! I'm your AI assistant for reliability engineering questions. Note that I might be busy at times, but you can explore the Reliability Dashboard, FMECA analysis, or Asset Master features while waiting for a response. How can I help you today?</p>
               <span className="text-xs text-gray-500 mt-1 block">Just now</span>
             </div>
           </div>
