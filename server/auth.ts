@@ -143,11 +143,23 @@ export function setupAuth(app: express.Express) {
     }
   });
 
-  // Authentication middleware
+  // Authentication middleware with development bypass
   const authenticateUser = (req: Request, res: Response, next: NextFunction) => {
+    // Check if already authenticated
     if (req.isAuthenticated()) {
       return next();
     }
+    
+    // For development, allow a bypass using a query parameter for testing
+    const bypassAuth = process.env.NODE_ENV === 'development' && 
+                        (req.query.bypass_auth === 'true' || 
+                        req.headers['x-bypass-auth'] === 'true');
+    
+    if (bypassAuth) {
+      console.log('DEV AUTH BYPASS: Allowing access without authentication');
+      return next();
+    }
+    
     res.status(401).json({ error: "Authentication required" });
   };
 
@@ -263,6 +275,36 @@ export function setupAuth(app: express.Express) {
 
   app.get("/api/auth/user", (req, res) => {
     if (!req.isAuthenticated()) {
+      // For development only - check if we should use dev bypass
+      if (process.env.NODE_ENV === 'development' && 
+          (req.query.auto_login === 'true' || req.headers['x-auto-login'] === 'true')) {
+        // Find admin user
+        db.select()
+          .from(users)
+          .where(eq(users.username, 'admin'))
+          .limit(1)
+          .then(([adminUser]) => {
+            if (adminUser) {
+              // Auto-login as admin for development
+              req.login(adminUser, (err) => {
+                if (err) {
+                  console.error('Dev auto-login error:', err);
+                  return res.status(401).json({ error: "Not authenticated" });
+                }
+                const { password, ...userWithoutPassword } = adminUser;
+                console.log('DEV AUTO-LOGIN: Automatically logged in as admin');
+                return res.json(userWithoutPassword);
+              });
+            } else {
+              return res.status(401).json({ error: "Not authenticated" });
+            }
+          })
+          .catch(err => {
+            console.error('Dev auto-login query error:', err);
+            return res.status(401).json({ error: "Not authenticated" });
+          });
+        return;
+      }
       return res.status(401).json({ error: "Not authenticated" });
     }
     

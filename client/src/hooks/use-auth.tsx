@@ -53,35 +53,53 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
 
-  // Get the current user
+  // Get the current user with development auto-login support
   const {
     data: user,
     error,
     isLoading,
+    refetch: refetchUser
   } = useQuery<User | null, Error>({
     queryKey: ["/api/auth/user"],
     queryFn: async ({ signal }) => {
       try {
-        const res = await apiRequest("GET", "/api/auth/user", undefined, { signal });
+        // Development helper: Add auto_login=true parameter in development
+        const isDev = process.env.NODE_ENV === 'development';
+        const url = isDev 
+          ? "/api/auth/user?auto_login=true" 
+          : "/api/auth/user";
+        
+        console.log(`Fetching user from ${url}`);
+        const res = await apiRequest("GET", url, undefined, { 
+          signal,
+          headers: isDev ? { 'X-Auto-Login': 'true' } : undefined
+        });
         
         if (res.status === 401) {
+          console.log("Not authenticated, returning null");
           return null; // Return null instead of undefined
         }
         
         if (!res.ok) {
           const errorData = await res.json();
-          throw new Error(errorData.error || "Failed to fetch user");
+          const errorMsg = errorData.error || "Failed to fetch user";
+          console.error("Error fetching user:", errorMsg);
+          throw new Error(errorMsg);
         }
         
-        return await res.json();
+        const userData = await res.json();
+        console.log("User data fetched successfully:", userData.username);
+        return userData;
       } catch (err) {
         if (err instanceof Error && err.name === "AbortError") {
-          return null; // Return null instead of undefined
+          return null;
         }
+        console.error("Error in auth query:", err);
         throw err;
       }
     },
-    retry: false,
+    retry: 1, // Retry once if it fails
+    retryDelay: 1000, // Wait 1 second before retrying
     refetchOnWindowFocus: true,
     refetchInterval: false,
   });

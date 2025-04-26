@@ -8,12 +8,24 @@ import {
 
 const router = express.Router();
 
-// Authentication middleware
+// Authentication middleware with development bypass
 const authenticateUser = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: 'Not authenticated' });
+  // Check if already authenticated
+  if (req.isAuthenticated()) {
+    return next();
   }
-  next();
+  
+  // For development, allow a bypass using a query parameter for testing
+  const bypassAuth = process.env.NODE_ENV === 'development' && 
+                     (req.query.bypass_auth === 'true' || 
+                     req.headers['x-bypass-auth'] === 'true');
+  
+  if (bypassAuth) {
+    console.log('FMECA DEV AUTH BYPASS: Allowing access without authentication');
+    return next();
+  }
+  
+  return res.status(401).json({ error: 'Not authenticated' });
 };
 
 // Apply authentication middleware to all routes
