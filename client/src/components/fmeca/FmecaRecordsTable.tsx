@@ -173,7 +173,7 @@ export function FmecaRecordsTable({ isOpen, onClose }: FmecaRecordsTableProps) {
         targetDate: record.targetDate || '',
         completionDate: record.completionDate || '',
         verifiedBy: record.verifiedBy || '',
-        effectivenessVerified: record.effectivenessVerified || '',
+        effectivenessVerified: record.effectivenessVerified || 'not_verified',
         comments: record.comments || ''
       } : {
         // System FMECA data mapping
@@ -197,7 +197,7 @@ export function FmecaRecordsTable({ isOpen, onClose }: FmecaRecordsTableProps) {
         targetDate: record.targetDate || '',
         completionDate: record.completionDate || '',
         verifiedBy: record.verifiedBy || '',
-        effectivenessVerified: record.effectivenessVerified || '',
+        effectivenessVerified: record.effectivenessVerified || 'not_verified',
         comments: record.comments || ''
       });
       
