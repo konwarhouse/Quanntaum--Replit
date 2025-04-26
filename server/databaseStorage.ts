@@ -510,20 +510,25 @@ export class DatabaseStorage implements IStorage {
     
     return executeWithRetry(
       async () => {
-        // Debug SQL query
-        console.log(`Executing query: SELECT * FROM asset_fmeca_history WHERE asset_fmeca_id = ${assetFmecaId} ORDER BY version DESC LIMIT 1`);
+        // Use SQL with subquery to get the record with the maximum version number
+        console.log(`Executing custom SQL query for latest history record using subquery`);
         
-        const [record] = await db
-          .select()
-          .from(assetFmecaHistory)
-          .where(eq(assetFmecaHistory.assetFmecaId, assetFmecaId))
-          .orderBy(assetFmecaHistory.version, "desc")
-          .limit(1);
+        const { rows } = await db.execute(
+          `SELECT * FROM asset_fmeca_history 
+           WHERE asset_fmeca_id = $1 
+           AND version = (
+             SELECT MAX(version) FROM asset_fmeca_history 
+             WHERE asset_fmeca_id = $1
+           )`,
+          [assetFmecaId]
+        );
+        
+        const record = rows[0] as AssetFmecaHistory | undefined;
         
         if (record) {
           console.log(`Found latest history record (version ${record.version}) for asset FMECA ID ${assetFmecaId}`);
           // Debug the record
-          console.log('Record details:', JSON.stringify(record, null, 2));
+          console.log('Record details (direct SQL with subquery):', JSON.stringify(record, null, 2));
         } else {
           console.log(`No history records found for asset FMECA ID ${assetFmecaId}`);
         }
@@ -621,15 +626,25 @@ export class DatabaseStorage implements IStorage {
     
     return executeWithRetry(
       async () => {
-        const [record] = await db
-          .select()
-          .from(systemFmecaHistory)
-          .where(eq(systemFmecaHistory.systemFmecaId, systemFmecaId))
-          .orderBy(systemFmecaHistory.version, "desc")
-          .limit(1);
+        // Use SQL with subquery to get the record with the maximum version number
+        console.log(`Executing custom SQL query for latest system history record using subquery`);
+        
+        const { rows } = await db.execute(
+          `SELECT * FROM system_fmeca_history 
+           WHERE system_fmeca_id = $1 
+           AND version = (
+             SELECT MAX(version) FROM system_fmeca_history 
+             WHERE system_fmeca_id = $1
+           )`,
+          [systemFmecaId]
+        );
+        
+        const record = rows[0] as SystemFmecaHistory | undefined;
         
         if (record) {
           console.log(`Found latest history record (version ${record.version}) for system FMECA ID ${systemFmecaId}`);
+          // Debug the record
+          console.log('Record details (direct SQL with subquery):', JSON.stringify(record, null, 2));
         } else {
           console.log(`No history records found for system FMECA ID ${systemFmecaId}`);
         }
