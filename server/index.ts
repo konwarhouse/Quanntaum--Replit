@@ -1,7 +1,8 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { testDatabaseConnection, isElectronMode } from "./db";
+import { testDatabaseConnection } from "./db";
+import { isElectronMode } from "./electron-mode";
 import { setupAuth, ensureAdminExists } from "./auth";
 import cors from "cors";
 import { setupElectronDemoData } from "./electron-mode";

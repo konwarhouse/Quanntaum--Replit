@@ -619,12 +619,28 @@ export class MemStorage implements IStorage {
 
 // Import the DatabaseStorage implementation
 import { DatabaseStorage } from "./databaseStorage";
+// Import isElectronMode from electron-mode.ts
+import { isElectronMode } from "./electron-mode";
+// Import SQLiteStorage for Electron mode
+import { SQLiteStorage } from "./sqlite-storage";
 
-// Choose the storage implementation based on environment
-// For electron mode, use memory storage, otherwise database storage
-import { isElectronMode } from "./db";
+// Create appropriate storage based on mode
+let storageInstance: IStorage;
 
-// Initialize appropriate storage implementation
-export const storage = isElectronMode() 
-  ? new MemStorage() 
-  : new DatabaseStorage();
+if (isElectronMode()) {
+  try {
+    // Use SQLite in Electron mode for persistent storage
+    storageInstance = new SQLiteStorage();
+    console.log('Using SQLite storage for Electron mode');
+  } catch (error) {
+    console.error('Failed to initialize SQLite storage:', error);
+    console.log('Falling back to in-memory storage');
+    storageInstance = new MemStorage();
+  }
+} else {
+  // Use database storage for production
+  storageInstance = new DatabaseStorage();
+  console.log('Using database storage');
+}
+
+export const storage = storageInstance;
