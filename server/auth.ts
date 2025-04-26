@@ -63,20 +63,25 @@ export async function comparePasswords(plainPassword: string, hashedPassword: st
 const MemStore = memorystore(session);
 
 export function setupAuth(app: express.Express) {
-  // Session configuration with improved settings for better persistence
+  // Session configuration with enhanced settings for better persistence
   app.use(session({
     store: new MemStore({
-      checkPeriod: 86400000 // prune expired entries every 24h
+      checkPeriod: 86400000, // prune expired entries every 24h
+      ttl: 7 * 24 * 60 * 60 * 1000, // 7 days
+      stale: false, // don't return stale sessions
     }),
     secret: process.env.SESSION_SECRET || "change-me-in-production",
-    resave: true, // Changed from false to true to ensure session is saved on every request
-    saveUninitialized: true, // Changed to true to save new sessions
+    resave: true, // Keep as true to ensure session is saved on every request
+    saveUninitialized: true, // Keep as true to save new sessions
+    name: 'quanntaum.sid', // Custom name to avoid conflicts
     cookie: {
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       httpOnly: true,
-      secure: false, // Changed to false to work in development environment
+      secure: false, // Keep as false for development
       sameSite: "lax",
-    }
+      path: '/',
+    },
+    rolling: true, // Reset cookie expiration on each response
   }));
 
   // Initialize Passport
