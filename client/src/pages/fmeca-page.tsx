@@ -97,6 +97,7 @@ interface SystemFmecaRow {
 const FmecaPage: React.FC = () => {
   const { user, isLoading: authLoading } = useAuth();
   const [selectedTab, setSelectedTab] = useState("asset-level");
+  const [showRecordsTable, setShowRecordsTable] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -2454,6 +2455,14 @@ const FmecaPage: React.FC = () => {
           </div>
         </TabsContent>
       </Tabs>
+      
+      {/* FMECA Records Dialog */}
+      {showRecordsTable && (
+        <FmecaRecordsTable 
+          isOpen={showRecordsTable} 
+          onClose={() => setShowRecordsTable(false)} 
+        />
+      )}
     </div>
   );
 };
