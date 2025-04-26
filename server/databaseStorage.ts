@@ -543,6 +543,45 @@ export class DatabaseStorage implements IStorage {
       `Get latest asset FMECA history for FMECA ID ${assetFmecaId}`
     );
   }
+  
+  async updateAssetFmecaHistory(id: number, updateData: Partial<AssetFmecaHistory>): Promise<AssetFmecaHistory | undefined> {
+    console.log("Updating asset FMECA history record with ID:", id);
+    
+    return executeWithRetry(
+      async () => {
+        try {
+          // First check if the record exists
+          const existing = await db
+            .select()
+            .from(assetFmecaHistory)
+            .where(eq(assetFmecaHistory.id, id));
+          
+          if (existing.length === 0) {
+            console.log(`Asset FMECA history record with ID ${id} not found`);
+            return undefined;
+          }
+          
+          // Update the record
+          const now = new Date();
+          const [updated] = await db
+            .update(assetFmecaHistory)
+            .set({
+              ...updateData,
+              updatedAt: now
+            })
+            .where(eq(assetFmecaHistory.id, id))
+            .returning();
+          
+          console.log(`Asset FMECA history record with ID ${id} updated successfully`);
+          return updated;
+        } catch (err) {
+          console.error(`Error updating asset FMECA history record with ID ${id}:`, err);
+          return undefined;
+        }
+      },
+      "Update asset FMECA history record"
+    );
+  }
 
   // System FMECA History operations
   async getSystemFmecaHistory(id: number): Promise<SystemFmecaHistory | undefined> {
@@ -666,6 +705,45 @@ export class DatabaseStorage implements IStorage {
         }
       },
       `Get latest system FMECA history for FMECA ID ${systemFmecaId}`
+    );
+  }
+  
+  async updateSystemFmecaHistory(id: number, updateData: Partial<SystemFmecaHistory>): Promise<SystemFmecaHistory | undefined> {
+    console.log("Updating system FMECA history record with ID:", id);
+    
+    return executeWithRetry(
+      async () => {
+        try {
+          // First check if the record exists
+          const existing = await db
+            .select()
+            .from(systemFmecaHistory)
+            .where(eq(systemFmecaHistory.id, id));
+          
+          if (existing.length === 0) {
+            console.log(`System FMECA history record with ID ${id} not found`);
+            return undefined;
+          }
+          
+          // Update the record
+          const now = new Date();
+          const [updated] = await db
+            .update(systemFmecaHistory)
+            .set({
+              ...updateData,
+              updatedAt: now
+            })
+            .where(eq(systemFmecaHistory.id, id))
+            .returning();
+          
+          console.log(`System FMECA history record with ID ${id} updated successfully`);
+          return updated;
+        } catch (err) {
+          console.error(`Error updating system FMECA history record with ID ${id}:`, err);
+          return undefined;
+        }
+      },
+      "Update system FMECA history record"
     );
   }
 }
