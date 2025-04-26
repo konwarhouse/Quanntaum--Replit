@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { db, executeWithRetry } from "./db";
 import { IStorage } from "./storage";
 import {
@@ -510,30 +510,35 @@ export class DatabaseStorage implements IStorage {
     
     return executeWithRetry(
       async () => {
-        // Use SQL with subquery to get the record with the maximum version number
-        console.log(`Executing custom SQL query for latest history record using subquery`);
+        // Fall back to using direct Drizzle ORM methods
+        console.log(`Executing query using Drizzle ORM with simple ordering`);
         
-        const { rows } = await db.execute(
-          `SELECT * FROM asset_fmeca_history 
-           WHERE asset_fmeca_id = $1 
-           AND version = (
-             SELECT MAX(version) FROM asset_fmeca_history 
-             WHERE asset_fmeca_id = $1
-           )`,
-          [assetFmecaId]
-        );
-        
-        const record = rows[0] as AssetFmecaHistory | undefined;
-        
-        if (record) {
-          console.log(`Found latest history record (version ${record.version}) for asset FMECA ID ${assetFmecaId}`);
-          // Debug the record
-          console.log('Record details (direct SQL with subquery):', JSON.stringify(record, null, 2));
-        } else {
-          console.log(`No history records found for asset FMECA ID ${assetFmecaId}`);
+        try {
+          // Get all records for this FMECA ID and sort them in JavaScript
+          const records = await db
+            .select()
+            .from(assetFmecaHistory)
+            .where(eq(assetFmecaHistory.assetFmecaId, assetFmecaId));
+          
+          // Sort by version in descending order using JavaScript
+          records.sort((a, b) => b.version - a.version);
+          
+          // Get the first record (highest version)
+          const record = records.length > 0 ? records[0] : undefined;
+          
+          if (record) {
+            console.log(`Found latest history record (version ${record.version}) for asset FMECA ID ${assetFmecaId}`);
+            // Debug the record
+            console.log('Record details (Drizzle ORM with JS sorting):', JSON.stringify(record, null, 2));
+          } else {
+            console.log(`No history records found for asset FMECA ID ${assetFmecaId}`);
+          }
+          
+          return record;
+        } catch (error) {
+          console.error('Error in Drizzle query:', error);
+          throw error;
         }
-        
-        return record;
       },
       `Get latest asset FMECA history for FMECA ID ${assetFmecaId}`
     );
@@ -626,30 +631,35 @@ export class DatabaseStorage implements IStorage {
     
     return executeWithRetry(
       async () => {
-        // Use SQL with subquery to get the record with the maximum version number
-        console.log(`Executing custom SQL query for latest system history record using subquery`);
+        // Use the same approach as with asset FMECA history
+        console.log(`Executing query using Drizzle ORM with simple ordering`);
         
-        const { rows } = await db.execute(
-          `SELECT * FROM system_fmeca_history 
-           WHERE system_fmeca_id = $1 
-           AND version = (
-             SELECT MAX(version) FROM system_fmeca_history 
-             WHERE system_fmeca_id = $1
-           )`,
-          [systemFmecaId]
-        );
-        
-        const record = rows[0] as SystemFmecaHistory | undefined;
-        
-        if (record) {
-          console.log(`Found latest history record (version ${record.version}) for system FMECA ID ${systemFmecaId}`);
-          // Debug the record
-          console.log('Record details (direct SQL with subquery):', JSON.stringify(record, null, 2));
-        } else {
-          console.log(`No history records found for system FMECA ID ${systemFmecaId}`);
+        try {
+          // Get all records for this FMECA ID and sort them in JavaScript
+          const records = await db
+            .select()
+            .from(systemFmecaHistory)
+            .where(eq(systemFmecaHistory.systemFmecaId, systemFmecaId));
+          
+          // Sort by version in descending order using JavaScript
+          records.sort((a, b) => b.version - a.version);
+          
+          // Get the first record (highest version)
+          const record = records.length > 0 ? records[0] : undefined;
+          
+          if (record) {
+            console.log(`Found latest history record (version ${record.version}) for system FMECA ID ${systemFmecaId}`);
+            // Debug the record
+            console.log('Record details (Drizzle ORM with JS sorting):', JSON.stringify(record, null, 2));
+          } else {
+            console.log(`No history records found for system FMECA ID ${systemFmecaId}`);
+          }
+          
+          return record;
+        } catch (error) {
+          console.error('Error in Drizzle query:', error);
+          throw error;
         }
-        
-        return record;
       },
       `Get latest system FMECA history for FMECA ID ${systemFmecaId}`
     );
