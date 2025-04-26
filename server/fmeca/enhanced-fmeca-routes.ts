@@ -432,6 +432,38 @@ router.get('/asset/:id/history/latest', async (req, res) => {
   }
 });
 
+// Get a specific asset FMECA history record by ID
+router.get('/asset/:fmecaId/history/:historyId', async (req, res) => {
+  try {
+    const { fmecaId, historyId } = req.params;
+    
+    if (!fmecaId || isNaN(Number(fmecaId))) {
+      return res.status(400).json({ error: 'Valid FMECA ID is required' });
+    }
+    
+    if (!historyId || isNaN(Number(historyId))) {
+      return res.status(400).json({ error: 'Valid history ID is required' });
+    }
+    
+    const recordId = Number(historyId);
+    const history = await storage.getAssetFmecaHistory(recordId);
+    
+    if (!history) {
+      return res.status(404).json({ error: 'Asset FMECA history record not found' });
+    }
+    
+    // Verify that this history record belongs to the specified FMECA
+    if (history.assetFmecaId !== Number(fmecaId)) {
+      return res.status(404).json({ error: 'History record does not match the specified FMECA ID' });
+    }
+    
+    return res.status(200).json(history);
+  } catch (error) {
+    console.error('Error fetching specific asset FMECA history record:', error);
+    return res.status(500).json({ error: 'Failed to fetch asset FMECA history record' });
+  }
+});
+
 // System FMECA History
 
 // Get system FMECA history by FMECA ID
@@ -491,6 +523,38 @@ router.get('/system/:id/history/latest', async (req, res) => {
   } catch (error) {
     console.error('Error fetching latest system FMECA history:', error);
     return res.status(500).json({ error: 'Failed to fetch latest system FMECA history' });
+  }
+});
+
+// Get a specific system FMECA history record by ID
+router.get('/system/:fmecaId/history/:historyId', async (req, res) => {
+  try {
+    const { fmecaId, historyId } = req.params;
+    
+    if (!fmecaId || isNaN(Number(fmecaId))) {
+      return res.status(400).json({ error: 'Valid FMECA ID is required' });
+    }
+    
+    if (!historyId || isNaN(Number(historyId))) {
+      return res.status(400).json({ error: 'Valid history ID is required' });
+    }
+    
+    const recordId = Number(historyId);
+    const history = await storage.getSystemFmecaHistory(recordId);
+    
+    if (!history) {
+      return res.status(404).json({ error: 'System FMECA history record not found' });
+    }
+    
+    // Verify that this history record belongs to the specified FMECA
+    if (history.systemFmecaId !== Number(fmecaId)) {
+      return res.status(404).json({ error: 'History record does not match the specified FMECA ID' });
+    }
+    
+    return res.status(200).json(history);
+  } catch (error) {
+    console.error('Error fetching specific system FMECA history record:', error);
+    return res.status(500).json({ error: 'Failed to fetch system FMECA history record' });
   }
 });
 
