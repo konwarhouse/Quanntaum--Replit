@@ -19,10 +19,11 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, History, Clock, FileSpreadsheet, Pencil } from "lucide-react";
+import { Loader2, History, Clock, FileSpreadsheet, Pencil, Download } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { format } from 'date-fns';
+import * as XLSX from 'xlsx';
 
 // Interfaces for asset and system FMECA history
 interface AssetFmecaHistory {
@@ -134,6 +135,202 @@ export const FmecaHistoryDialog: React.FC<FmecaHistoryDialogProps> = ({
   onClose 
 }) => {
   const [selectedVersion, setSelectedVersion] = useState<number | null>(null);
+  const { toast } = useToast();
+  
+  // Function to export a single history record to Excel
+  const exportSingleRecordToExcel = (record: AssetFmecaHistory | SystemFmecaHistory) => {
+    try {
+      const wb = XLSX.utils.book_new();
+      
+      // Convert the record to a format suitable for Excel
+      const exportData = recordType === 'asset' 
+        ? {
+            'Tag Number': (record as AssetFmecaHistory).tagNumber,
+            'Asset Description': (record as AssetFmecaHistory).assetDescription,
+            'Asset Function': (record as AssetFmecaHistory).assetFunction,
+            'Component': (record as AssetFmecaHistory).component,
+            'Failure Mode': record.failureMode,
+            'Cause': record.cause,
+            'Effect': record.effect,
+            'Severity (S)': record.severity,
+            'Severity Justification': record.severityJustification,
+            'Probability (P)': record.probability,
+            'Probability Justification': record.probabilityJustification,
+            'Detection (D)': record.detection,
+            'Detection Justification': record.detectionJustification,
+            'RPN': record.rpn,
+            'Action': record.action,
+            'Responsibility': record.responsibility,
+            'Target Date': record.targetDate,
+            'Completion Date': record.completionDate || '',
+            'Verified By': record.verifiedBy || '',
+            'Effectiveness Verified': record.effectivenessVerified || '',
+            'Comments': record.comments || '',
+            'Created At': formatDate(record.createdAt),
+            'Updated At': formatDate(record.updatedAt),
+            'Status': record.status,
+            'History Reason': record.historyReason,
+            'Version': record.version
+          }
+        : {
+            'System Name': (record as SystemFmecaHistory).systemName,
+            'System Description': (record as SystemFmecaHistory).systemDescription,
+            'Subsystem': (record as SystemFmecaHistory).subSystem,
+            'Failure Mode': record.failureMode,
+            'Cause': record.cause,
+            'Effect': record.effect,
+            'Severity (S)': record.severity,
+            'Severity Justification': record.severityJustification,
+            'Probability (P)': record.probability,
+            'Probability Justification': record.probabilityJustification,
+            'Detection (D)': record.detection,
+            'Detection Justification': record.detectionJustification,
+            'RPN': record.rpn,
+            'Action': record.action,
+            'Responsibility': record.responsibility,
+            'Target Date': record.targetDate,
+            'Completion Date': record.completionDate || '',
+            'Verified By': record.verifiedBy || '',
+            'Effectiveness Verified': record.effectivenessVerified || '',
+            'Comments': record.comments || '',
+            'Created At': formatDate(record.createdAt),
+            'Updated At': formatDate(record.updatedAt),
+            'Status': record.status,
+            'History Reason': record.historyReason,
+            'Version': record.version
+          };
+      
+      // Create worksheet
+      const ws = XLSX.utils.json_to_sheet([exportData]);
+      
+      // Add the worksheet to the workbook
+      const sheetName = recordType === 'asset' 
+        ? `Asset_${(record as AssetFmecaHistory).tagNumber}_v${record.version}` 
+        : `System_${(record as SystemFmecaHistory).systemName}_v${record.version}`;
+      
+      XLSX.utils.book_append_sheet(wb, ws, sheetName);
+      
+      // Generate Excel file and trigger download
+      const fileName = recordType === 'asset' 
+        ? `FMECA_Asset_${(record as AssetFmecaHistory).tagNumber}_v${record.version}.xlsx` 
+        : `FMECA_System_${(record as SystemFmecaHistory).systemName}_v${record.version}.xlsx`;
+      
+      XLSX.writeFile(wb, fileName);
+      
+      toast({
+        title: 'Export Successful',
+        description: `History record exported to ${fileName}`,
+      });
+    } catch (error) {
+      console.error('Error exporting to Excel:', error);
+      toast({
+        title: 'Export Failed',
+        description: 'Failed to export history record to Excel',
+        variant: 'destructive'
+      });
+    }
+  };
+  
+  // Function to export all history records to Excel
+  const exportAllHistoryToExcel = () => {
+    if (!historyRecords || historyRecords.length === 0) {
+      toast({
+        title: 'Export Failed',
+        description: 'No history records to export',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    try {
+      const wb = XLSX.utils.book_new();
+      
+      // Convert all records to a format suitable for Excel
+      const exportData = historyRecords.map((record) => {
+        return recordType === 'asset' 
+          ? {
+              'Version': record.version,
+              'Tag Number': (record as AssetFmecaHistory).tagNumber,
+              'Asset Description': (record as AssetFmecaHistory).assetDescription,
+              'Asset Function': (record as AssetFmecaHistory).assetFunction,
+              'Component': (record as AssetFmecaHistory).component,
+              'Failure Mode': record.failureMode,
+              'Cause': record.cause,
+              'Effect': record.effect,
+              'Severity (S)': record.severity,
+              'Severity Justification': record.severityJustification,
+              'Probability (P)': record.probability,
+              'Probability Justification': record.probabilityJustification,
+              'Detection (D)': record.detection,
+              'Detection Justification': record.detectionJustification,
+              'RPN': record.rpn,
+              'Action': record.action,
+              'Responsibility': record.responsibility,
+              'Target Date': record.targetDate,
+              'Completion Date': record.completionDate || '',
+              'Verified By': record.verifiedBy || '',
+              'Effectiveness Verified': record.effectivenessVerified || '',
+              'Comments': record.comments || '',
+              'Created At': formatDate(record.createdAt),
+              'Status': record.status,
+              'History Reason': record.historyReason
+            }
+          : {
+              'Version': record.version,
+              'System Name': (record as SystemFmecaHistory).systemName,
+              'System Description': (record as SystemFmecaHistory).systemDescription,
+              'Subsystem': (record as SystemFmecaHistory).subSystem,
+              'Failure Mode': record.failureMode,
+              'Cause': record.cause,
+              'Effect': record.effect,
+              'Severity (S)': record.severity,
+              'Severity Justification': record.severityJustification,
+              'Probability (P)': record.probability,
+              'Probability Justification': record.probabilityJustification,
+              'Detection (D)': record.detection,
+              'Detection Justification': record.detectionJustification,
+              'RPN': record.rpn,
+              'Action': record.action,
+              'Responsibility': record.responsibility,
+              'Target Date': record.targetDate,
+              'Completion Date': record.completionDate || '',
+              'Verified By': record.verifiedBy || '',
+              'Effectiveness Verified': record.effectivenessVerified || '',
+              'Comments': record.comments || '',
+              'Created At': formatDate(record.createdAt),
+              'Status': record.status,
+              'History Reason': record.historyReason
+            };
+      });
+      
+      // Create worksheet
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      
+      // Add the worksheet to the workbook
+      const entityName = recordType === 'asset' 
+        ? historyRecords.length > 0 ? (historyRecords[0] as AssetFmecaHistory).tagNumber : 'Unknown'
+        : historyRecords.length > 0 ? (historyRecords[0] as SystemFmecaHistory).systemName : 'Unknown';
+        
+      const sheetName = `FMECA_History_${recordType}_${entityName}`.substring(0, 31);
+      XLSX.utils.book_append_sheet(wb, ws, sheetName);
+      
+      // Generate Excel file and trigger download
+      const fileName = `FMECA_History_${recordType}_${entityName}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+      
+      toast({
+        title: 'Export Successful',
+        description: `All history records exported to ${fileName}`,
+      });
+    } catch (error) {
+      console.error('Error exporting to Excel:', error);
+      toast({
+        title: 'Export Failed',
+        description: 'Failed to export history records to Excel',
+        variant: 'destructive'
+      });
+    }
+  };
   
   // Query to fetch the history records
   const { 
@@ -179,11 +376,11 @@ export const FmecaHistoryDialog: React.FC<FmecaHistoryDialogProps> = ({
     if (historyRecords && historyRecords.length > 0) {
       // Find the highest version
       const latestVersion = historyRecords.reduce(
-        (max, record) => (record.version > max ? record.version : max),
+        (max: number, record: AssetFmecaHistory | SystemFmecaHistory) => (record.version > max ? record.version : max),
         0
       );
       // Find the record with the highest version
-      const latestRecord = historyRecords.find(record => record.version === latestVersion);
+      const latestRecord = historyRecords.find((record: AssetFmecaHistory | SystemFmecaHistory) => record.version === latestVersion);
       if (latestRecord) {
         setSelectedVersion(latestRecord.id);
       }
@@ -229,8 +426,8 @@ export const FmecaHistoryDialog: React.FC<FmecaHistoryDialogProps> = ({
                 </SelectTrigger>
                 <SelectContent>
                   {historyRecords
-                    .sort((a, b) => b.version - a.version) // Sort by version descending
-                    .map((record) => (
+                    .sort((a: AssetFmecaHistory | SystemFmecaHistory, b: AssetFmecaHistory | SystemFmecaHistory) => b.version - a.version) // Sort by version descending
+                    .map((record: AssetFmecaHistory | SystemFmecaHistory) => (
                       <SelectItem key={record.id} value={record.id.toString()}>
                         Version {record.version} - {formatDate(record.createdAt)}
                       </SelectItem>
