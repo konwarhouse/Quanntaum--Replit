@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { db } from "./db";
+import { db, executeWithRetry } from "./db";
 import { IStorage } from "./storage";
 import {
   users, messages, equipmentClasses, assets, maintenanceEvents, failureModes, failureHistory,
@@ -238,177 +238,185 @@ export class DatabaseStorage implements IStorage {
 
   // Asset FMECA operations
   async getAssetFmecaByTagNumber(tagNumber: string): Promise<AssetFmeca[]> {
-    try {
-      console.log("Getting asset FMECA by tag number:", tagNumber);
-      const results = await db.select().from(assetFmeca).where(eq(assetFmeca.tagNumber, tagNumber));
-      console.log(`Found ${results.length} asset FMECA records for tag ${tagNumber}`);
-      return results;
-    } catch (error) {
-      console.error("Error getting asset FMECA by tag number:", error);
-      throw error;
-    }
+    console.log("Getting asset FMECA by tag number:", tagNumber);
+    
+    return executeWithRetry(
+      async () => {
+        const results = await db.select().from(assetFmeca).where(eq(assetFmeca.tagNumber, tagNumber));
+        console.log(`Found ${results.length} asset FMECA records for tag ${tagNumber}`);
+        return results;
+      },
+      `Get asset FMECA for tag ${tagNumber}`
+    );
   }
 
   async getAllAssetFmeca(): Promise<AssetFmeca[]> {
-    try {
-      console.log("Getting all asset FMECA records");
-      const results = await db.select().from(assetFmeca);
-      console.log(`Found ${results.length} total asset FMECA records`);
-      return results;
-    } catch (error) {
-      console.error("Error getting all asset FMECA records:", error);
-      throw error;
-    }
+    console.log("Getting all asset FMECA records");
+    
+    return executeWithRetry(
+      async () => {
+        const results = await db.select().from(assetFmeca);
+        console.log(`Found ${results.length} total asset FMECA records`);
+        return results;
+      },
+      "Get all asset FMECA records"
+    );
   }
 
   async createAssetFmeca(insertFmeca: InsertAssetFmeca): Promise<AssetFmeca> {
-    try {
-      console.log("Creating new asset FMECA record:", JSON.stringify(insertFmeca, null, 2));
-      
-      // Process nullable string fields
-      const processedData = {...insertFmeca};
-      if (processedData.completionDate === '') processedData.completionDate = undefined;
-      if (processedData.verifiedBy === '') processedData.verifiedBy = undefined;
-      if (processedData.effectivenessVerified === '') processedData.effectivenessVerified = undefined;
-      if (processedData.comments === '') processedData.comments = undefined;
-      
-      console.log("After processing:", JSON.stringify(processedData, null, 2));
-      const [record] = await db.insert(assetFmeca).values(processedData).returning();
-      console.log("Asset FMECA record created with ID:", record.id);
-      return record;
-    } catch (error) {
-      console.error("Error creating asset FMECA record:", error);
-      throw error;
-    }
+    console.log("Creating new asset FMECA record:", JSON.stringify(insertFmeca, null, 2));
+    
+    // Process nullable string fields
+    const processedData = {...insertFmeca};
+    if (processedData.completionDate === '') processedData.completionDate = undefined;
+    if (processedData.verifiedBy === '') processedData.verifiedBy = undefined;
+    if (processedData.effectivenessVerified === '') processedData.effectivenessVerified = undefined;
+    if (processedData.comments === '') processedData.comments = undefined;
+    
+    console.log("After processing:", JSON.stringify(processedData, null, 2));
+    
+    return executeWithRetry(
+      async () => {
+        const [record] = await db.insert(assetFmeca).values(processedData).returning();
+        console.log("Asset FMECA record created with ID:", record.id);
+        return record;
+      },
+      "Create asset FMECA record"
+    );
   }
 
   async updateAssetFmeca(id: number, fmecaUpdate: Partial<InsertAssetFmeca>): Promise<AssetFmeca | undefined> {
-    try {
-      console.log(`Updating asset FMECA with ID ${id}:`, JSON.stringify(fmecaUpdate, null, 2));
-      
-      // Process nullable string fields
-      const processedData = {...fmecaUpdate};
-      if (processedData.completionDate === '') processedData.completionDate = undefined;
-      if (processedData.verifiedBy === '') processedData.verifiedBy = undefined;
-      if (processedData.effectivenessVerified === '') processedData.effectivenessVerified = undefined;
-      if (processedData.comments === '') processedData.comments = undefined;
-      
-      const [updatedRecord] = await db
-        .update(assetFmeca)
-        .set(processedData)
-        .where(eq(assetFmeca.id, id))
-        .returning();
-      
-      if (updatedRecord) {
-        console.log("Asset FMECA record updated successfully");
-      } else {
-        console.log("No asset FMECA record found to update");
-      }
-      
-      return updatedRecord;
-    } catch (error) {
-      console.error(`Error updating asset FMECA with ID ${id}:`, error);
-      throw error;
-    }
+    console.log(`Updating asset FMECA with ID ${id}:`, JSON.stringify(fmecaUpdate, null, 2));
+    
+    // Process nullable string fields
+    const processedData = {...fmecaUpdate};
+    if (processedData.completionDate === '') processedData.completionDate = undefined;
+    if (processedData.verifiedBy === '') processedData.verifiedBy = undefined;
+    if (processedData.effectivenessVerified === '') processedData.effectivenessVerified = undefined;
+    if (processedData.comments === '') processedData.comments = undefined;
+    
+    return executeWithRetry(
+      async () => {
+        const [updatedRecord] = await db
+          .update(assetFmeca)
+          .set(processedData)
+          .where(eq(assetFmeca.id, id))
+          .returning();
+        
+        if (updatedRecord) {
+          console.log("Asset FMECA record updated successfully");
+        } else {
+          console.log("No asset FMECA record found to update");
+        }
+        
+        return updatedRecord;
+      },
+      `Update asset FMECA with ID ${id}`
+    );
   }
 
   async deleteAssetFmeca(id: number): Promise<boolean> {
-    try {
-      console.log(`Deleting asset FMECA with ID ${id}`);
-      await db.delete(assetFmeca).where(eq(assetFmeca.id, id));
-      console.log("Asset FMECA record deleted successfully");
-      return true;
-    } catch (error) {
-      console.error(`Error deleting asset FMECA with ID ${id}:`, error);
-      throw error;
-    }
+    console.log(`Deleting asset FMECA with ID ${id}`);
+    
+    return executeWithRetry(
+      async () => {
+        await db.delete(assetFmeca).where(eq(assetFmeca.id, id));
+        console.log("Asset FMECA record deleted successfully");
+        return true;
+      },
+      `Delete asset FMECA with ID ${id}`
+    );
   }
 
   // System FMECA operations
   async getSystemFmecaBySystemName(systemName: string): Promise<SystemFmeca[]> {
-    try {
-      console.log("Getting system FMECA by system name:", systemName);
-      const results = await db.select().from(systemFmeca).where(eq(systemFmeca.systemName, systemName));
-      console.log(`Found ${results.length} system FMECA records for system ${systemName}`);
-      return results;
-    } catch (error) {
-      console.error("Error getting system FMECA by system name:", error);
-      throw error;
-    }
+    console.log("Getting system FMECA by system name:", systemName);
+    
+    return executeWithRetry(
+      async () => {
+        const results = await db.select().from(systemFmeca).where(eq(systemFmeca.systemName, systemName));
+        console.log(`Found ${results.length} system FMECA records for system ${systemName}`);
+        return results;
+      },
+      `Get system FMECA for system ${systemName}`
+    );
   }
 
   async getAllSystemFmeca(): Promise<SystemFmeca[]> {
-    try {
-      console.log("Getting all system FMECA records");
-      const results = await db.select().from(systemFmeca);
-      console.log(`Found ${results.length} total system FMECA records`);
-      return results;
-    } catch (error) {
-      console.error("Error getting all system FMECA records:", error);
-      throw error;
-    }
+    console.log("Getting all system FMECA records");
+    
+    return executeWithRetry(
+      async () => {
+        const results = await db.select().from(systemFmeca);
+        console.log(`Found ${results.length} total system FMECA records`);
+        return results;
+      },
+      "Get all system FMECA records"
+    );
   }
 
   async createSystemFmeca(insertFmeca: InsertSystemFmeca): Promise<SystemFmeca> {
-    try {
-      console.log("Creating new system FMECA record:", JSON.stringify(insertFmeca, null, 2));
-      
-      // Process nullable string fields
-      const processedData = {...insertFmeca};
-      if (processedData.completionDate === '') processedData.completionDate = undefined;
-      if (processedData.verifiedBy === '') processedData.verifiedBy = undefined;
-      if (processedData.effectivenessVerified === '') processedData.effectivenessVerified = undefined;
-      if (processedData.comments === '') processedData.comments = undefined;
-      
-      console.log("After processing:", JSON.stringify(processedData, null, 2));
-      const [record] = await db.insert(systemFmeca).values(processedData).returning();
-      console.log("System FMECA record created with ID:", record.id);
-      return record;
-    } catch (error) {
-      console.error("Error creating system FMECA record:", error);
-      throw error;
-    }
+    console.log("Creating new system FMECA record:", JSON.stringify(insertFmeca, null, 2));
+    
+    // Process nullable string fields
+    const processedData = {...insertFmeca};
+    if (processedData.completionDate === '') processedData.completionDate = undefined;
+    if (processedData.verifiedBy === '') processedData.verifiedBy = undefined;
+    if (processedData.effectivenessVerified === '') processedData.effectivenessVerified = undefined;
+    if (processedData.comments === '') processedData.comments = undefined;
+    
+    console.log("After processing:", JSON.stringify(processedData, null, 2));
+    
+    return executeWithRetry(
+      async () => {
+        const [record] = await db.insert(systemFmeca).values(processedData).returning();
+        console.log("System FMECA record created with ID:", record.id);
+        return record;
+      },
+      "Create system FMECA record"
+    );
   }
 
   async updateSystemFmeca(id: number, fmecaUpdate: Partial<InsertSystemFmeca>): Promise<SystemFmeca | undefined> {
-    try {
-      console.log(`Updating system FMECA with ID ${id}:`, JSON.stringify(fmecaUpdate, null, 2));
-      
-      // Process nullable string fields
-      const processedData = {...fmecaUpdate};
-      if (processedData.completionDate === '') processedData.completionDate = undefined;
-      if (processedData.verifiedBy === '') processedData.verifiedBy = undefined;
-      if (processedData.effectivenessVerified === '') processedData.effectivenessVerified = undefined;
-      if (processedData.comments === '') processedData.comments = undefined;
-      
-      const [updatedRecord] = await db
-        .update(systemFmeca)
-        .set(processedData)
-        .where(eq(systemFmeca.id, id))
-        .returning();
-      
-      if (updatedRecord) {
-        console.log("System FMECA record updated successfully");
-      } else {
-        console.log("No system FMECA record found to update");
-      }
-      
-      return updatedRecord;
-    } catch (error) {
-      console.error(`Error updating system FMECA with ID ${id}:`, error);
-      throw error;
-    }
+    console.log(`Updating system FMECA with ID ${id}:`, JSON.stringify(fmecaUpdate, null, 2));
+    
+    // Process nullable string fields
+    const processedData = {...fmecaUpdate};
+    if (processedData.completionDate === '') processedData.completionDate = undefined;
+    if (processedData.verifiedBy === '') processedData.verifiedBy = undefined;
+    if (processedData.effectivenessVerified === '') processedData.effectivenessVerified = undefined;
+    if (processedData.comments === '') processedData.comments = undefined;
+    
+    return executeWithRetry(
+      async () => {
+        const [updatedRecord] = await db
+          .update(systemFmeca)
+          .set(processedData)
+          .where(eq(systemFmeca.id, id))
+          .returning();
+        
+        if (updatedRecord) {
+          console.log("System FMECA record updated successfully");
+        } else {
+          console.log("No system FMECA record found to update");
+        }
+        
+        return updatedRecord;
+      },
+      `Update system FMECA with ID ${id}`
+    );
   }
 
   async deleteSystemFmeca(id: number): Promise<boolean> {
-    try {
-      console.log(`Deleting system FMECA with ID ${id}`);
-      await db.delete(systemFmeca).where(eq(systemFmeca.id, id));
-      console.log("System FMECA record deleted successfully");
-      return true;
-    } catch (error) {
-      console.error(`Error deleting system FMECA with ID ${id}:`, error);
-      throw error;
-    }
+    console.log(`Deleting system FMECA with ID ${id}`);
+    
+    return executeWithRetry(
+      async () => {
+        await db.delete(systemFmeca).where(eq(systemFmeca.id, id));
+        console.log("System FMECA record deleted successfully");
+        return true;
+      },
+      `Delete system FMECA with ID ${id}`
+    );
   }
 }
