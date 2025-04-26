@@ -41,6 +41,8 @@ router.get('/asset/:tagNumber', async (req, res) => {
 // Create a new asset FMECA record
 router.post('/asset', async (req, res) => {
   try {
+    console.log("Received request to create asset FMECA:", JSON.stringify(req.body, null, 2));
+    
     const validatedData = insertAssetFmecaSchema.parse(req.body);
     
     // Set created by if user is authenticated
@@ -48,7 +50,9 @@ router.post('/asset', async (req, res) => {
       validatedData.createdBy = req.user.id;
     }
     
+    console.log("Validated data:", JSON.stringify(validatedData, null, 2));
     const record = await storage.createAssetFmeca(validatedData);
+    console.log("Created asset FMECA record:", JSON.stringify(record, null, 2));
     return res.status(201).json(record);
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -141,6 +145,8 @@ router.get('/system/:systemName', async (req, res) => {
 // Create a new system FMECA record
 router.post('/system', async (req, res) => {
   try {
+    console.log("Received request to create system FMECA:", JSON.stringify(req.body, null, 2));
+    
     const validatedData = insertSystemFmecaSchema.parse(req.body);
     
     // Set created by if user is authenticated
@@ -148,7 +154,9 @@ router.post('/system', async (req, res) => {
       validatedData.createdBy = req.user.id;
     }
     
+    console.log("Validated data:", JSON.stringify(validatedData, null, 2));
     const record = await storage.createSystemFmeca(validatedData);
+    console.log("Created system FMECA record:", JSON.stringify(record, null, 2));
     return res.status(201).json(record);
   } catch (error) {
     if (error instanceof z.ZodError) {
