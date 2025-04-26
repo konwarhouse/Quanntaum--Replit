@@ -134,13 +134,89 @@ export const FmecaManager: React.FC<FmecaManagerProps> = ({
     });
   };
   
-  const handleImport = (importedRows: any[]) => {
-    if (rowType === 'asset') {
-      // If we're handling asset rows
-      onUpdateRows([...rows, ...importedRows] as AssetFmecaRow[]);
-    } else {
-      // If we're handling system rows
-      onUpdateRows([...rows, ...importedRows] as SystemFmecaRow[]);
+  const handleImport = async (importedRows: any[]) => {
+    try {
+      if (rowType === 'asset') {
+        // Save each imported asset row to the database
+        const savedRows = [];
+        
+        for (const row of importedRows) {
+          // Save to the API
+          const response = await fetch('/api/enhanced-fmeca/asset', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(row),
+          });
+          
+          if (!response.ok) {
+            throw new Error('Failed to save imported FMECA data to database');
+          }
+          
+          // Get the saved row with its database ID
+          const savedRow = await response.json();
+          savedRows.push({
+            ...row,
+            id: savedRow.id.toString()
+          });
+        }
+        
+        // Update UI with saved rows that have database IDs
+        onUpdateRows([...rows, ...savedRows] as AssetFmecaRow[]);
+        
+        toast({
+          title: "Import Successful",
+          description: `${savedRows.length} asset FMECA rows imported and saved to database`
+        });
+      } else {
+        // Save each imported system row to the database
+        const savedRows = [];
+        
+        for (const row of importedRows) {
+          // Save to the API
+          const response = await fetch('/api/enhanced-fmeca/system', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(row),
+          });
+          
+          if (!response.ok) {
+            throw new Error('Failed to save imported FMECA data to database');
+          }
+          
+          // Get the saved row with its database ID
+          const savedRow = await response.json();
+          savedRows.push({
+            ...row,
+            id: savedRow.id.toString()
+          });
+        }
+        
+        // Update UI with saved rows that have database IDs
+        onUpdateRows([...rows, ...savedRows] as SystemFmecaRow[]);
+        
+        toast({
+          title: "Import Successful",
+          description: `${savedRows.length} system FMECA rows imported and saved to database`
+        });
+      }
+    } catch (error) {
+      console.error('Error saving imported FMECA data:', error);
+      toast({
+        title: "Import Error",
+        description: "Failed to save some imported FMECA data to database",
+        variant: "destructive"
+      });
+      
+      // Still update UI with imported rows even if database save fails
+      if (rowType === 'asset') {
+        onUpdateRows([...rows, ...importedRows] as AssetFmecaRow[]);
+      } else {
+        onUpdateRows([...rows, ...importedRows] as SystemFmecaRow[]);
+      }
     }
   };
   
