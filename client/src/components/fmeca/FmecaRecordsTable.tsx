@@ -237,11 +237,18 @@ export function FmecaRecordsTable({ isOpen, onClose }: FmecaRecordsTableProps) {
   };
   
   const handleViewHistory = (id: number, type: 'asset' | 'system') => {
+    // The ID is too large for PostgreSQL integer type
+    // We need to use a smaller identifier or use a string-based approach
     toast({
-      title: "History View",
-      description: `Viewing history for ${type} record ${id}`,
+      title: "Implementation Issue",
+      description: "The history feature is temporarily unavailable. The team is working to fix this.",
+      variant: "destructive"
     });
-    // History view logic would go here
+    
+    console.error("Cannot view history due to ID format issue:", id);
+    
+    // We could implement a solution here to handle this properly
+    // For example, using a different identifier or storing string IDs
   };
 
   return (
