@@ -14,7 +14,7 @@ export enum FmecaHistoryStatus {
 
 // Asset FMECA table
 export const assetFmeca = pgTable("asset_fmeca", {
-  id: serial("id").primaryKey(),
+  id: integer("id").primaryKey().notNull(),
   tagNumber: text("tag_number").notNull(),
   assetDescription: text("asset_description").notNull(),
   assetFunction: text("asset_function").notNull(),
