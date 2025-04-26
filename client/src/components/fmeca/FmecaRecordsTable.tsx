@@ -489,14 +489,14 @@ export function FmecaRecordsTable({ isOpen, onClose }: FmecaRecordsTableProps) {
               <div>
                 <Label htmlFor="edit-effectiveness">Effectiveness</Label>
                 <Select
-                  value={editRow.effectivenessVerified || ''}
+                  value={editRow.effectivenessVerified || 'none'}
                   onValueChange={(value) => setEditRow({ ...editRow, effectivenessVerified: value })}
                 >
                   <SelectTrigger id="edit-effectiveness">
                     <SelectValue placeholder="Select..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Not Verified</SelectItem>
+                    <SelectItem value="none">Not Verified</SelectItem>
                     <SelectItem value="yes">Fully Effective</SelectItem>
                     <SelectItem value="partial">Partially Effective</SelectItem>
                     <SelectItem value="no">Not Effective</SelectItem>
