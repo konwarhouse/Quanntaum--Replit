@@ -12,6 +12,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { FmecaManager } from "@/components/fmeca/FmecaManager";
+import { useAuth } from "@/hooks/use-auth";
+import { Redirect } from "wouter";
 import {
   Dialog,
   DialogContent,
@@ -92,9 +94,28 @@ interface SystemFmecaRow {
 }
 
 const FmecaPage: React.FC = () => {
+  const { user, isLoading: authLoading } = useAuth();
   const [selectedTab, setSelectedTab] = useState("asset-level");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // Redirect to login if not authenticated
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-border" />
+      </div>
+    );
+  }
+  
+  if (!user) {
+    toast({
+      title: "Authentication Required",
+      description: "You must be logged in to access the FMECA page",
+      variant: "destructive"
+    });
+    return <Redirect to="/auth" />;
+  }
   
   // Asset-level FMECA form state
   const [assetTagNumber, setAssetTagNumber] = useState("");
@@ -746,11 +767,28 @@ const FmecaPage: React.FC = () => {
   // Data fetching functions
   const fetchAssetFmecaData = async () => {
     try {
+      console.log("Fetching asset FMECA data...");
+      // Use the apiRequest function with credentials included
       const response = await apiRequest("GET", "/api/enhanced-fmeca/asset");
-      if (!response.ok) {
-        throw new Error("Failed to fetch asset FMECA data");
+      
+      if (response.status === 401) {
+        console.error("Authentication error when fetching asset FMECA data");
+        toast({
+          title: "Authentication Required",
+          description: "Please log in again to access FMECA data",
+          variant: "destructive"
+        });
+        return;
       }
+      
+      if (!response.ok) {
+        console.error("Failed to fetch asset FMECA data:", response.status, response.statusText);
+        throw new Error(`Failed to fetch asset FMECA data: ${response.status} ${response.statusText}`);
+      }
+      
       const data = await response.json();
+      console.log("Asset FMECA data fetched successfully:", data);
+      
       // Update state with fetched data
       setAssetRows(data.map((row: any) => ({
         ...row,
@@ -772,11 +810,28 @@ const FmecaPage: React.FC = () => {
   
   const fetchSystemFmecaData = async () => {
     try {
+      console.log("Fetching system FMECA data...");
+      // Use the apiRequest function with credentials included
       const response = await apiRequest("GET", "/api/enhanced-fmeca/system");
-      if (!response.ok) {
-        throw new Error("Failed to fetch system FMECA data");
+      
+      if (response.status === 401) {
+        console.error("Authentication error when fetching system FMECA data");
+        toast({
+          title: "Authentication Required",
+          description: "Please log in again to access FMECA data",
+          variant: "destructive"
+        });
+        return;
       }
+      
+      if (!response.ok) {
+        console.error("Failed to fetch system FMECA data:", response.status, response.statusText);
+        throw new Error(`Failed to fetch system FMECA data: ${response.status} ${response.statusText}`);
+      }
+      
       const data = await response.json();
+      console.log("System FMECA data fetched successfully:", data);
+      
       // Update state with fetched data
       setSystemRows(data.map((row: any) => ({
         ...row,
@@ -812,10 +867,20 @@ const FmecaPage: React.FC = () => {
   }, [selectedTab]);
   
   // Get all systems
-  const { data: systems, isLoading } = useQuery({
+  const { data: systems, isLoading: systemsLoading } = useQuery({
     queryKey: ["/api/fmeca/systems"],
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/fmeca/systems");
+      if (response.status === 401) {
+        console.error("Authentication error when fetching systems");
+        toast({
+          title: "Authentication Required",
+          description: "Please log in again to access systems data",
+          variant: "destructive"
+        });
+        return [];
+      }
+      
       if (!response.ok) {
         throw new Error("Failed to fetch systems");
       }
@@ -823,7 +888,7 @@ const FmecaPage: React.FC = () => {
     },
   });
 
-  if (isLoading) {
+  if (systemsLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
