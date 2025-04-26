@@ -17,6 +17,7 @@ import { FmecaHistoryButton } from "@/components/fmeca/FmecaHistory";
 import { FmecaActionButtons } from "@/components/fmeca/FmecaWithHistoryButtons";
 import { AddHistoryButton } from "@/components/fmeca/AddFmecaHistory";
 import { FmecaActionCell } from "@/components/fmeca/FmecaActionCells";
+import { FmecaRecordsTable } from "@/components/fmeca/FmecaRecordsTable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -1372,6 +1373,7 @@ const AddRowDialog: React.FC<AddRowDialogProps> = ({
 const EnhancedFmecaPage = () => {
   const [selectedTab, setSelectedTab] = useState("asset-level");
   const { toast } = useToast();
+  const [showFmecaRecords, setShowFmecaRecords] = useState(false);
   
   // Asset-level FMECA form state
   const [assetTagNumber, setAssetTagNumber] = useState("");
@@ -1469,11 +1471,19 @@ const EnhancedFmecaPage = () => {
         
         <TabsContent value="asset-level">
           <Card>
-            <CardHeader>
-              <CardTitle>Asset-Level FMECA</CardTitle>
-              <CardDescription>
-                Analyze failure modes at the individual asset level.
-              </CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Asset-Level FMECA</CardTitle>
+                <CardDescription>
+                  Analyze failure modes at the individual asset level.
+                </CardDescription>
+              </div>
+              <Button
+                className="bg-blue-600 hover:bg-blue-700"
+                onClick={() => setShowFmecaRecords(true)}
+              >
+                View All FMECA Records
+              </Button>
             </CardHeader>
             <CardContent>
               {/* RPN Guide Section */}
@@ -1616,11 +1626,19 @@ const EnhancedFmecaPage = () => {
         
         <TabsContent value="system-level">
           <Card>
-            <CardHeader>
-              <CardTitle>System-Level FMECA</CardTitle>
-              <CardDescription>
-                Analyze failure modes at the system and subsystem level.
-              </CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>System-Level FMECA</CardTitle>
+                <CardDescription>
+                  Analyze failure modes at the system and subsystem level.
+                </CardDescription>
+              </div>
+              <Button
+                className="bg-blue-600 hover:bg-blue-700"
+                onClick={() => setShowFmecaRecords(true)}
+              >
+                View All FMECA Records
+              </Button>
             </CardHeader>
             <CardContent>
               {/* RPN Guide Section */}
