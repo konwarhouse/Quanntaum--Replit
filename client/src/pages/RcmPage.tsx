@@ -174,12 +174,28 @@ const RcmPage: React.FC = () => {
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="mb-8 grid w-full grid-cols-3">
-          <TabsTrigger value="systems">Systems</TabsTrigger>
-          <TabsTrigger value="components">Components</TabsTrigger>
-          <TabsTrigger value="analysis">Analysis</TabsTrigger>
-        </TabsList>
+      {/* Licensed feature overlay */}
+      <div className="relative">
+        {/* Overlay */}
+        <div className="absolute inset-0 bg-white bg-opacity-80 z-20 flex items-center justify-center">
+          <div className="p-8 rounded-lg shadow-md text-center bg-white bg-opacity-90">
+            <Badge variant="default" className="mb-4 px-3 py-1 text-base bg-blue-500">LICENSED USERS ONLY</Badge>
+            <h2 className="text-2xl font-bold mb-2">Feature Restricted</h2>
+            <p className="text-lg mb-4">This functionality is only available to licensed users.</p>
+            <p className="text-muted-foreground">
+              Please contact our support team for licensing information and early access.
+            </p>
+          </div>
+        </div>
+
+        {/* Greyed out content */}
+        <div className="opacity-30 pointer-events-none filter grayscale">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="mb-8 grid w-full grid-cols-3">
+              <TabsTrigger value="systems">Systems</TabsTrigger>
+              <TabsTrigger value="components">Components</TabsTrigger>
+              <TabsTrigger value="analysis">Analysis</TabsTrigger>
+            </TabsList>
         
         <TabsContent value="systems" className="space-y-6">
           <Card className="mb-6">
@@ -348,6 +364,7 @@ const RcmPage: React.FC = () => {
           </Card>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   );
 };
