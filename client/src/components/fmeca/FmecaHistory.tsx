@@ -400,12 +400,14 @@ interface FmecaHistoryButtonProps {
   recordId: number;
   recordType: 'asset' | 'system';
   variant?: "default" | "outline" | "secondary" | "ghost" | "link" | "destructive";
+  iconOnly?: boolean;
 }
 
 export const FmecaHistoryButton: React.FC<FmecaHistoryButtonProps> = ({ 
   recordId, 
   recordType,
-  variant = "outline" 
+  variant = "outline",
+  iconOnly = false
 }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
@@ -428,10 +430,10 @@ export const FmecaHistoryButton: React.FC<FmecaHistoryButtonProps> = ({
         variant={variant} 
         size="sm" 
         onClick={handleOpenHistory}
-        className="gap-1"
+        className={iconOnly ? "" : "gap-1"}
       >
         <History className="h-4 w-4" />
-        <span>History</span>
+        {!iconOnly && <span>History</span>}
       </Button>
       
       {isDialogOpen && (
