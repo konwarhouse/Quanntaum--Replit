@@ -1474,7 +1474,7 @@ const EnhancedFmecaPage = () => {
   };
   
   // Handler for saving FMECA
-  const handleSaveFmeca = () => {
+  const handleSaveFmeca = async () => {
     if (selectedTab === "asset-level" && assetRows.length === 0) {
       toast({
         title: "Empty FMECA",
@@ -1493,10 +1493,103 @@ const EnhancedFmecaPage = () => {
       return;
     }
     
-    toast({
-      title: "FMECA Saved",
-      description: `Your ${selectedTab === "asset-level" ? "Asset" : "System"} FMECA analysis has been saved successfully`
-    });
+    try {
+      // Save all rows to ensure they're in the database and history
+      if (selectedTab === "asset-level") {
+        // Save all asset rows that might have been imported
+        for (const row of assetRows) {
+          // Check if this row has a numeric ID (already saved to DB) or a string timestamp ID (from import/add)
+          if (isNaN(Number(row.id))) {
+            // This row was likely imported from Excel or added but not saved to DB
+            // The POST endpoint will create a new record with history
+            const response = await fetch('/api/enhanced-fmeca/asset', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                ...row,
+                // Don't send the id as we want a new DB record
+                id: undefined
+              }),
+            });
+            
+            if (!response.ok) {
+              throw new Error(`Failed to save asset FMECA row: ${response.statusText}`);
+            }
+          } else {
+            // This row already exists in DB, update it to create a new history record
+            const response = await fetch(`/api/enhanced-fmeca/asset/${row.id}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                ...row,
+                historyReason: 'Updated from FMECA editor'
+              }),
+            });
+            
+            if (!response.ok) {
+              throw new Error(`Failed to update asset FMECA row: ${response.statusText}`);
+            }
+          }
+        }
+      } else {
+        // Save all system rows that might have been imported
+        for (const row of systemRows) {
+          // Check if this row has a numeric ID (already saved to DB) or a string timestamp ID (from import/add)
+          if (isNaN(Number(row.id))) {
+            // This row was likely imported from Excel or added but not saved to DB
+            // The POST endpoint will create a new record with history
+            const response = await fetch('/api/enhanced-fmeca/system', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                ...row,
+                // Don't send the id as we want a new DB record
+                id: undefined
+              }),
+            });
+            
+            if (!response.ok) {
+              throw new Error(`Failed to save system FMECA row: ${response.statusText}`);
+            }
+          } else {
+            // This row already exists in DB, update it to create a new history record
+            const response = await fetch(`/api/enhanced-fmeca/system/${row.id}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                ...row,
+                historyReason: 'Updated from FMECA editor'
+              }),
+            });
+            
+            if (!response.ok) {
+              throw new Error(`Failed to update system FMECA row: ${response.statusText}`);
+            }
+          }
+        }
+      }
+      
+      toast({
+        title: "FMECA Saved",
+        description: `Your ${selectedTab === "asset-level" ? "Asset" : "System"} FMECA analysis has been saved successfully`,
+        variant: "default"
+      });
+    } catch (error) {
+      console.error('Error saving FMECA data:', error);
+      toast({
+        title: "Error Saving FMECA",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
+        variant: "destructive"
+      });
+    }
   };
   
   return (
