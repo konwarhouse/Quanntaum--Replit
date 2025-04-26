@@ -3,7 +3,10 @@ import { storage } from '../storage';
 import { z } from 'zod';
 import { 
   insertAssetFmecaSchema, 
-  insertSystemFmecaSchema 
+  insertSystemFmecaSchema,
+  insertAssetFmecaHistorySchema,
+  insertSystemFmecaHistorySchema,
+  FmecaHistoryStatus
 } from '@shared/fmeca-schema';
 
 const router = express.Router();
@@ -86,6 +89,30 @@ router.post('/asset', async (req, res) => {
     console.log("Validated data:", JSON.stringify(validatedData, null, 2));
     const record = await storage.createAssetFmeca(validatedData);
     console.log("Created asset FMECA record:", JSON.stringify(record, null, 2));
+    
+    // Create a history record to track this initial creation
+    try {
+      // Prepare history data from the original record
+      const historyData = {
+        assetFmecaId: record.id,
+        version: 1,
+        status: FmecaHistoryStatus.ACTIVE,
+        historyReason: "Initial creation",
+        // Copy all the fields from the original record
+        ...record,
+        // Override the id to avoid conflict
+        id: undefined
+      };
+      
+      // Create history record
+      console.log("Creating initial asset FMECA history record");
+      await storage.createAssetFmecaHistory(historyData);
+      console.log("Initial history record created successfully");
+    } catch (historyError) {
+      // Just log the error but don't fail the main request
+      console.error("Error creating initial history record:", historyError);
+    }
+    
     return res.status(201).json(record);
   } catch (error) {
     if (error instanceof z.ZodError) {

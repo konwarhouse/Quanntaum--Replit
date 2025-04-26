@@ -496,6 +496,88 @@ export class MemStorage implements IStorage {
   async deleteSystemFmeca(id: number): Promise<boolean> {
     return this.systemFmecaMap.delete(id);
   }
+  
+  // Asset FMECA History operations
+  async getAssetFmecaHistory(id: number): Promise<AssetFmecaHistory | undefined> {
+    return this.assetFmecaHistoryMap.get(id);
+  }
+
+  async getAssetFmecaHistoryByFmecaId(assetFmecaId: number): Promise<AssetFmecaHistory[]> {
+    return Array.from(this.assetFmecaHistoryMap.values())
+      .filter(record => record.assetFmecaId === assetFmecaId)
+      .sort((a, b) => Number(b.version) - Number(a.version)); // Newest versions first
+  }
+
+  async getAssetFmecaHistoryByTagNumber(tagNumber: string): Promise<AssetFmecaHistory[]> {
+    return Array.from(this.assetFmecaHistoryMap.values())
+      .filter(record => record.tagNumber === tagNumber)
+      .sort((a, b) => Number(b.version) - Number(a.version)); // Newest versions first
+  }
+
+  async createAssetFmecaHistory(insertHistory: InsertAssetFmecaHistory): Promise<AssetFmecaHistory> {
+    const id = this.assetFmecaHistoryCurrentId++;
+    const now = new Date();
+    
+    // Set default values for optional fields
+    const assetFmecaHistory: AssetFmecaHistory = {
+      ...insertHistory,
+      id,
+      createdAt: now,
+      updatedAt: now,
+      status: insertHistory.status || FmecaHistoryStatus.ACTIVE,
+      historyReason: insertHistory.historyReason || "Manual update",
+      version: insertHistory.version || 1
+    };
+    
+    this.assetFmecaHistoryMap.set(id, assetFmecaHistory);
+    return assetFmecaHistory;
+  }
+
+  async getLatestAssetFmecaHistory(assetFmecaId: number): Promise<AssetFmecaHistory | undefined> {
+    const histories = await this.getAssetFmecaHistoryByFmecaId(assetFmecaId);
+    return histories.length > 0 ? histories[0] : undefined; // Return the most recent version
+  }
+
+  // System FMECA History operations
+  async getSystemFmecaHistory(id: number): Promise<SystemFmecaHistory | undefined> {
+    return this.systemFmecaHistoryMap.get(id);
+  }
+
+  async getSystemFmecaHistoryByFmecaId(systemFmecaId: number): Promise<SystemFmecaHistory[]> {
+    return Array.from(this.systemFmecaHistoryMap.values())
+      .filter(record => record.systemFmecaId === systemFmecaId)
+      .sort((a, b) => Number(b.version) - Number(a.version)); // Newest versions first
+  }
+
+  async getSystemFmecaHistoryBySystemName(systemName: string): Promise<SystemFmecaHistory[]> {
+    return Array.from(this.systemFmecaHistoryMap.values())
+      .filter(record => record.systemName === systemName)
+      .sort((a, b) => Number(b.version) - Number(a.version)); // Newest versions first
+  }
+
+  async createSystemFmecaHistory(insertHistory: InsertSystemFmecaHistory): Promise<SystemFmecaHistory> {
+    const id = this.systemFmecaHistoryCurrentId++;
+    const now = new Date();
+    
+    // Set default values for optional fields
+    const systemFmecaHistory: SystemFmecaHistory = {
+      ...insertHistory,
+      id,
+      createdAt: now,
+      updatedAt: now,
+      status: insertHistory.status || FmecaHistoryStatus.ACTIVE,
+      historyReason: insertHistory.historyReason || "Manual update",
+      version: insertHistory.version || 1
+    };
+    
+    this.systemFmecaHistoryMap.set(id, systemFmecaHistory);
+    return systemFmecaHistory;
+  }
+
+  async getLatestSystemFmecaHistory(systemFmecaId: number): Promise<SystemFmecaHistory | undefined> {
+    const histories = await this.getSystemFmecaHistoryByFmecaId(systemFmecaId);
+    return histories.length > 0 ? histories[0] : undefined; // Return the most recent version
+  }
 }
 
 // Import the DatabaseStorage implementation

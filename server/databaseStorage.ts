@@ -9,9 +9,12 @@ import {
   FailureMode, InsertFailureMode, FailureHistory, InsertFailureHistory
 } from "@shared/schema";
 import {
-  assetFmeca, systemFmeca,
+  assetFmeca, systemFmeca, assetFmecaHistory, systemFmecaHistory,
   AssetFmeca, InsertAssetFmeca,
-  SystemFmeca, InsertSystemFmeca
+  SystemFmeca, InsertSystemFmeca,
+  AssetFmecaHistory, InsertAssetFmecaHistory, 
+  SystemFmecaHistory, InsertSystemFmecaHistory,
+  FmecaHistoryStatus
 } from "@shared/fmeca-schema";
 
 /**
@@ -417,6 +420,218 @@ export class DatabaseStorage implements IStorage {
         return true;
       },
       `Delete system FMECA with ID ${id}`
+    );
+  }
+
+  // Asset FMECA History operations
+  async getAssetFmecaHistory(id: number): Promise<AssetFmecaHistory | undefined> {
+    console.log("Getting asset FMECA history with ID:", id);
+    
+    return executeWithRetry(
+      async () => {
+        const [record] = await db.select().from(assetFmecaHistory).where(eq(assetFmecaHistory.id, id));
+        if (record) {
+          console.log("Asset FMECA history record found");
+        } else {
+          console.log("No asset FMECA history record found with that ID");
+        }
+        return record;
+      },
+      `Get asset FMECA history with ID ${id}`
+    );
+  }
+
+  async getAssetFmecaHistoryByFmecaId(assetFmecaId: number): Promise<AssetFmecaHistory[]> {
+    console.log("Getting asset FMECA history records for FMECA ID:", assetFmecaId);
+    
+    return executeWithRetry(
+      async () => {
+        const results = await db
+          .select()
+          .from(assetFmecaHistory)
+          .where(eq(assetFmecaHistory.assetFmecaId, assetFmecaId))
+          .orderBy(assetFmecaHistory.version, "desc"); // Newest versions first
+        
+        console.log(`Found ${results.length} history records for asset FMECA ID ${assetFmecaId}`);
+        return results;
+      },
+      `Get asset FMECA history records for FMECA ID ${assetFmecaId}`
+    );
+  }
+
+  async getAssetFmecaHistoryByTagNumber(tagNumber: string): Promise<AssetFmecaHistory[]> {
+    console.log("Getting asset FMECA history records for tag number:", tagNumber);
+    
+    return executeWithRetry(
+      async () => {
+        const results = await db
+          .select()
+          .from(assetFmecaHistory)
+          .where(eq(assetFmecaHistory.tagNumber, tagNumber))
+          .orderBy(assetFmecaHistory.version, "desc"); // Newest versions first
+        
+        console.log(`Found ${results.length} history records for tag number ${tagNumber}`);
+        return results;
+      },
+      `Get asset FMECA history records for tag ${tagNumber}`
+    );
+  }
+
+  async createAssetFmecaHistory(insertHistory: InsertAssetFmecaHistory): Promise<AssetFmecaHistory> {
+    console.log("Creating new asset FMECA history record");
+    
+    // Process nullable string fields
+    const processedData = {...insertHistory};
+    if (processedData.completionDate === '') processedData.completionDate = undefined;
+    if (processedData.verifiedBy === '') processedData.verifiedBy = undefined;
+    if (processedData.effectivenessVerified === '') processedData.effectivenessVerified = undefined;
+    if (processedData.comments === '') processedData.comments = undefined;
+    
+    // Set default values if not provided
+    const now = new Date();
+    if (!processedData.createdAt) processedData.createdAt = now;
+    if (!processedData.updatedAt) processedData.updatedAt = now;
+    if (!processedData.status) processedData.status = FmecaHistoryStatus.ACTIVE;
+    if (!processedData.historyReason) processedData.historyReason = "Manual update";
+    if (!processedData.version) processedData.version = 1;
+    
+    return executeWithRetry(
+      async () => {
+        const [record] = await db.insert(assetFmecaHistory).values(processedData).returning();
+        console.log("Asset FMECA history record created with ID:", record.id);
+        return record;
+      },
+      "Create asset FMECA history record"
+    );
+  }
+
+  async getLatestAssetFmecaHistory(assetFmecaId: number): Promise<AssetFmecaHistory | undefined> {
+    console.log("Getting latest asset FMECA history for FMECA ID:", assetFmecaId);
+    
+    return executeWithRetry(
+      async () => {
+        const [record] = await db
+          .select()
+          .from(assetFmecaHistory)
+          .where(eq(assetFmecaHistory.assetFmecaId, assetFmecaId))
+          .orderBy(assetFmecaHistory.version, "desc")
+          .limit(1);
+        
+        if (record) {
+          console.log(`Found latest history record (version ${record.version}) for asset FMECA ID ${assetFmecaId}`);
+        } else {
+          console.log(`No history records found for asset FMECA ID ${assetFmecaId}`);
+        }
+        
+        return record;
+      },
+      `Get latest asset FMECA history for FMECA ID ${assetFmecaId}`
+    );
+  }
+
+  // System FMECA History operations
+  async getSystemFmecaHistory(id: number): Promise<SystemFmecaHistory | undefined> {
+    console.log("Getting system FMECA history with ID:", id);
+    
+    return executeWithRetry(
+      async () => {
+        const [record] = await db.select().from(systemFmecaHistory).where(eq(systemFmecaHistory.id, id));
+        if (record) {
+          console.log("System FMECA history record found");
+        } else {
+          console.log("No system FMECA history record found with that ID");
+        }
+        return record;
+      },
+      `Get system FMECA history with ID ${id}`
+    );
+  }
+
+  async getSystemFmecaHistoryByFmecaId(systemFmecaId: number): Promise<SystemFmecaHistory[]> {
+    console.log("Getting system FMECA history records for FMECA ID:", systemFmecaId);
+    
+    return executeWithRetry(
+      async () => {
+        const results = await db
+          .select()
+          .from(systemFmecaHistory)
+          .where(eq(systemFmecaHistory.systemFmecaId, systemFmecaId))
+          .orderBy(systemFmecaHistory.version, "desc"); // Newest versions first
+        
+        console.log(`Found ${results.length} history records for system FMECA ID ${systemFmecaId}`);
+        return results;
+      },
+      `Get system FMECA history records for FMECA ID ${systemFmecaId}`
+    );
+  }
+
+  async getSystemFmecaHistoryBySystemName(systemName: string): Promise<SystemFmecaHistory[]> {
+    console.log("Getting system FMECA history records for system name:", systemName);
+    
+    return executeWithRetry(
+      async () => {
+        const results = await db
+          .select()
+          .from(systemFmecaHistory)
+          .where(eq(systemFmecaHistory.systemName, systemName))
+          .orderBy(systemFmecaHistory.version, "desc"); // Newest versions first
+        
+        console.log(`Found ${results.length} history records for system name ${systemName}`);
+        return results;
+      },
+      `Get system FMECA history records for system ${systemName}`
+    );
+  }
+
+  async createSystemFmecaHistory(insertHistory: InsertSystemFmecaHistory): Promise<SystemFmecaHistory> {
+    console.log("Creating new system FMECA history record");
+    
+    // Process nullable string fields
+    const processedData = {...insertHistory};
+    if (processedData.completionDate === '') processedData.completionDate = undefined;
+    if (processedData.verifiedBy === '') processedData.verifiedBy = undefined;
+    if (processedData.effectivenessVerified === '') processedData.effectivenessVerified = undefined;
+    if (processedData.comments === '') processedData.comments = undefined;
+    
+    // Set default values if not provided
+    const now = new Date();
+    if (!processedData.createdAt) processedData.createdAt = now;
+    if (!processedData.updatedAt) processedData.updatedAt = now;
+    if (!processedData.status) processedData.status = FmecaHistoryStatus.ACTIVE;
+    if (!processedData.historyReason) processedData.historyReason = "Manual update";
+    if (!processedData.version) processedData.version = 1;
+    
+    return executeWithRetry(
+      async () => {
+        const [record] = await db.insert(systemFmecaHistory).values(processedData).returning();
+        console.log("System FMECA history record created with ID:", record.id);
+        return record;
+      },
+      "Create system FMECA history record"
+    );
+  }
+
+  async getLatestSystemFmecaHistory(systemFmecaId: number): Promise<SystemFmecaHistory | undefined> {
+    console.log("Getting latest system FMECA history for FMECA ID:", systemFmecaId);
+    
+    return executeWithRetry(
+      async () => {
+        const [record] = await db
+          .select()
+          .from(systemFmecaHistory)
+          .where(eq(systemFmecaHistory.systemFmecaId, systemFmecaId))
+          .orderBy(systemFmecaHistory.version, "desc")
+          .limit(1);
+        
+        if (record) {
+          console.log(`Found latest history record (version ${record.version}) for system FMECA ID ${systemFmecaId}`);
+        } else {
+          console.log(`No history records found for system FMECA ID ${systemFmecaId}`);
+        }
+        
+        return record;
+      },
+      `Get latest system FMECA history for FMECA ID ${systemFmecaId}`
     );
   }
 }
