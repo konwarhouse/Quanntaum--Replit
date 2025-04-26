@@ -12,7 +12,7 @@ import {
   type FailureHistory,
   type MaintenanceEvent,
 } from '@shared/schema';
-import { MemStorage } from './storage';
+import { IStorage } from './storage';
 
 const ISO_EQUIPMENT_CLASSES = [
   { name: 'pump', description: 'Pumping equipment' },
@@ -46,7 +46,7 @@ const FAILURE_MODES = [
 /**
  * Sets up the memory storage with demo data when running in Electron mode
  */
-export async function setupElectronDemoData(storage: MemStorage): Promise<void> {
+export async function setupElectronDemoData(storage: IStorage): Promise<void> {
   console.log('Setting up demo data for Electron mode...');
   
   // Create admin user
@@ -110,7 +110,9 @@ export async function setupElectronDemoData(storage: MemStorage): Promise<void> 
     }));
     
     // Add failure history if we have failure modes
-    const failureModes = await storage.getFailureModesByEquipmentClass(asset.equipmentClass);
+    // We can now directly pass the equipment class to the method
+    // The method will handle string or number
+    const failureModes = await storage.getFailureModesByEquipmentClass(asset.equipmentClass || 0);
     if (failureModes.length > 0) {
       await storage.createFailureHistory(insertFailureHistorySchema.parse({
         assetId: asset.id,

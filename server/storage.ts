@@ -279,9 +279,12 @@ export class MemStorage implements IStorage {
       .filter(failureMode => failureMode.assetId === assetId);
   }
   
-  async getFailureModesByEquipmentClass(equipmentClass: string): Promise<FailureMode[]> {
+  async getFailureModesByEquipmentClass(equipmentClass: string | number): Promise<FailureMode[]> {
     return Array.from(this.failureModesMap.values())
-      .filter(failureMode => failureMode.equipmentClass === equipmentClass);
+      .filter(failureMode => {
+        // Allow comparison between string and number by converting to string
+        return String(failureMode.equipmentClass) === String(equipmentClass);
+      });
   }
   
   async createFailureMode(insertFailureMode: InsertFailureMode): Promise<FailureMode> {
@@ -618,5 +621,10 @@ export class MemStorage implements IStorage {
 import { DatabaseStorage } from "./databaseStorage";
 
 // Choose the storage implementation based on environment
-// For production, use database storage
-export const storage = new DatabaseStorage();
+// For electron mode, use memory storage, otherwise database storage
+import { isElectronMode } from "./db";
+
+// Initialize appropriate storage implementation
+export const storage = isElectronMode() 
+  ? new MemStorage() 
+  : new DatabaseStorage();

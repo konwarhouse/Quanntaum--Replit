@@ -59,6 +59,8 @@ app.use((req, res, next) => {
     
     // Set up demo data for Electron mode
     try {
+      // For Electron mode, we don't need to check the storage type
+      // Just use the provided storage
       await setupElectronDemoData(storage);
       log("Electron demo data setup complete");
     } catch (error) {
