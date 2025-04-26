@@ -276,12 +276,12 @@ export function FmecaRecordsTable({ isOpen, onClose }: FmecaRecordsTableProps) {
   return (
     <>
       {/* Use our enhanced FmecaRecordsDialog component which has comprehensive view and export functionality */}
-      {isOpen && assetRecords && systemRecords && (
+      {isOpen && (
         <FmecaRecordsDialog
           isOpen={isOpen}
           onClose={onClose}
-          assetRecords={assetRecords as any[]}
-          systemRecords={systemRecords as any[]}
+          assetRecords={(assetRecords || []) as any[]}
+          systemRecords={(systemRecords || []) as any[]}
           onEditRecord={(record) => handleEditRecord(record as any)}
           onDeleteRecord={handleDeleteRecord}
           onViewHistory={handleViewHistory}
