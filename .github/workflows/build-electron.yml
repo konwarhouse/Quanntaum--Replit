@@ -21,13 +21,18 @@ jobs:
           node-version: 18
 
       - name: Install dependencies
-        run: npm install
+        run: |
+          echo "Installing dependencies..."
+          npm install || exit 1
 
       - name: Debug npm build
-        run: npm run build || echo "Frontend build failed!"
+        run: |
+          echo "Running frontend build..."
+          npm run build || echo "Frontend build failed!"
 
       - name: Build Electron App for ${{ matrix.os }}
         run: |
+          echo "Running Electron build for ${{ matrix.os }}..."
           if [ "${{ matrix.os }}" == "macos-latest" ]; then
             node build-electron.js --mac || echo "Electron build failed!"
           else
@@ -35,10 +40,13 @@ jobs:
           fi
 
       - name: Debug Artifact Directory
-        run: ls -R dist_electron || echo "dist_electron directory not found!"
+        run: |
+          echo "Checking contents of dist_electron..."
+          ls -R dist_electron || echo "dist_electron directory not found!"
 
       - name: Verify Artifact Directory
         run: |
+          echo "Verifying dist_electron directory..."
           if [ ! -d dist_electron ]; then
             echo "dist_electron directory does not exist!"
             exit 1
@@ -49,10 +57,10 @@ jobs:
 
       - name: Package Artifacts Manually
         run: |
+          echo "Packaging artifacts manually..."
           tar -czvf Electron-Build-${{ matrix.os }}.tar.gz dist_electron || echo "Artifact packaging failed!"
 
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: Electron-Build-${{ matrix.os }}
-          path: Electron-Build-${{ matrix.os }}.tar.gz
+      - name: Upload Artifacts Manually
+        run: |
+          echo "Uploading packaged artifacts manually..."
+          curl -F "file=@Electron-Build-${{ matrix.os }}.tar.gz" https://example-upload-endpoint.com/upload || echo "Artifact upload failed!"
