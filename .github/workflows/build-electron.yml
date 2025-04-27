@@ -44,17 +44,8 @@ jobs:
             exit 1
           fi
 
-      - name: Upload dummy artifact
-        run: echo "This is a test artifact" > dummy.txt
-
-      - name: Test Upload
-        uses: actions/upload-artifact@3dcea4e0f0e3b8a2c22a3f1f7a0e6b7b07c3cce5
-        with:
-          name: Dummy-Artifact
-          path: dummy.txt
-
       - name: Upload build artifacts
-        uses: actions/upload-artifact@3dcea4e0f0e3b8a2c22a3f1f7a0e6b7b07c3cce5
+        uses: actions/upload-artifact@v3.1.2
         with:
           name: Electron-build-${{ matrix.os }}
           path: dist_electron/*
