@@ -25,11 +25,18 @@ jobs:
         working-directory: electron
 
       - name: Build Electron app
-        run: npm run build
+        run: npm run build || { echo 'Build failed!'; exit 1; }
         working-directory: electron
 
-      - name: Upload Electron artifacts
+      - name: List build output (for debugging)
+        run: |
+          echo "Contents of electron/dist directory:"
+          ls -alh electron/dist || echo "No dist directory found"
+        shell: bash
+
+      - name: Upload Electron artifacts (if present)
         uses: actions/upload-artifact@v3
+        if: always()  # Always run, even if previous steps fail, so we get logs
         with:
           name: electron-app-${{ matrix.os }}
           path: electron/dist/
