@@ -8,12 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-        platform: [linux]
-        # Add macos-latest and windows-latest if you want to build for all OSs
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
@@ -41,13 +36,13 @@ jobs:
         working-directory: electron
 
       - name: Build Electron app
-        run: node build-electron.js --${{ matrix.platform }}
+        run: node build-electron.js --linux
 
       - name: List build output (diagnostics)
         run: ls -al dist_electron || echo "No dist_electron directory"
 
       - name: Upload Installers
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.platform }}-installers
+          name: linux-installers
           path: dist_electron/*
