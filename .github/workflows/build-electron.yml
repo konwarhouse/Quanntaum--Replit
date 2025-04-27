@@ -15,6 +15,23 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: List repo root contents
+        run: |
+          echo "=== Root directory ==="
+          ls -alh
+
+      - name: Fail if electron directory is missing
+        run: |
+          if [ ! -d electron ]; then
+            echo "ERROR: electron directory does not exist!"
+            exit 1
+          fi
+
+      - name: List electron directory contents
+        run: |
+          echo "=== electron directory ==="
+          ls -alh electron
+
       - name: Print Node and npm versions
         run: |
           node --version
@@ -41,11 +58,9 @@ jobs:
           echo "=== BUILD LOG ==="
           cat electron/build-output.log || echo "No build log found"
 
-      - name: List electron directory after build
+      - name: List electron/dist directory after build
         run: |
-          echo "=== electron directory tree ==="
-          ls -alh electron
-          echo "=== electron/dist directory tree ==="
+          echo "=== electron/dist directory ==="
           ls -alh electron/dist || echo "No dist directory found"
 
       - name: Fail if dist directory is missing
@@ -54,7 +69,6 @@ jobs:
             echo "Build failed: electron/dist directory does not exist."
             exit 1
           fi
-        shell: bash
 
       - name: Upload Electron artifacts (if present)
         uses: actions/upload-artifact@v3
