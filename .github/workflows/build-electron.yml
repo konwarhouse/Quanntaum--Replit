@@ -34,8 +34,17 @@ jobs:
       - name: Debug Artifact Directory
         run: ls -R dist_electron || echo "dist_electron directory not found!"
 
+      - name: Upload dummy artifact
+        run: echo "This is a test artifact" > dummy.txt
+
+      - name: Test Upload
+        uses: actions/upload-artifact@v3.1.2
+        with:
+          name: Dummy-Artifact
+          path: dummy.txt
+
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v3.1.2
         with:
           name: Electron-build-${{ matrix.os }}
           path: dist_electron/*
