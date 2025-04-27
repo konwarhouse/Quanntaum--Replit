@@ -1,0 +1,54 @@
+name: Build Electron Installers
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Desktop Installers
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest]
+        include:
+          - os: windows-latest
+            platform: win
+          - os: macos-latest
+            platform: mac
+    steps:
+      # Step 1: Checkout the code
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      # Step 2: Set up Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      # Step 3: Install dependencies
+      - name: Install Dependencies
+        run: npm install
+
+      # Step 4: Run setup script for Electron dependencies
+      - name: Setup Electron Dependencies
+        run: node setup-electron-deps.sh
+
+      # Step 5: Build the application
+      - name: Build Application
+        run: |
+          if [ "${{ matrix.platform }}" == "win" ]; then
+            node build-electron.js --win
+          elif [ "${{ matrix.platform }}" == "mac" ]; then
+            node build-electron.js --mac
+          fi
+
+      # Step 6: Upload the installers as artifacts
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.platform }}-installers
+          path: dist_electron/*
