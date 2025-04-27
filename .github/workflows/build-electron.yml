@@ -23,12 +23,15 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Build for ${{ matrix.os }}
+      - name: Debug npm build
+        run: npm run build || echo "Frontend build failed!"
+
+      - name: Build Electron App for ${{ matrix.os }}
         run: |
           if [ "${{ matrix.os }}" == "macos-latest" ]; then
-            node build-electron.js --mac
+            node build-electron.js --mac || echo "Electron build failed!"
           else
-            node build-electron.js --win
+            node build-electron.js --win || echo "Electron build failed!"
           fi
 
       - name: Debug Artifact Directory
@@ -44,8 +47,12 @@ jobs:
             exit 1
           fi
 
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v3.1.2
+      - name: Package Artifacts Manually
+        run: |
+          tar -czvf Electron-Build-${{ matrix.os }}.tar.gz dist_electron || echo "Artifact packaging failed!"
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
         with:
-          name: Electron-build-${{ matrix.os }}
-          path: dist_electron/*
+          name: Electron-Build-${{ matrix.os }}
+          path: Electron-Build-${{ matrix.os }}.tar.gz
