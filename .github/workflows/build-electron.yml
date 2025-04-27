@@ -15,6 +15,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Print Node and npm versions
+        run: |
+          node --version
+          npm --version
+
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
@@ -24,22 +29,24 @@ jobs:
         run: npm install
         working-directory: electron
 
-      - name: Build Electron app (capture output)
-        id: build
+      - name: Build Electron app and output to log
         run: |
           set -o pipefail
-          npm run build 2>&1 | tee build.log
+          npm run build --if-present --loglevel verbose | tee build-output.log
         working-directory: electron
 
-      - name: Output build log on failure
-        if: failure()
-        run: cat electron/build.log || echo "No build log found"
-
-      - name: List build output (for debugging)
+      - name: Show build log
+        if: always()
         run: |
-          echo "Contents of electron/dist directory:"
+          echo "=== BUILD LOG ==="
+          cat electron/build-output.log || echo "No build log found"
+
+      - name: List electron directory after build
+        run: |
+          echo "=== electron directory tree ==="
+          ls -alh electron
+          echo "=== electron/dist directory tree ==="
           ls -alh electron/dist || echo "No dist directory found"
-        shell: bash
 
       - name: Fail if dist directory is missing
         run: |
