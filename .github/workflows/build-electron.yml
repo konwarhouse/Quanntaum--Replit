@@ -1,26 +1,64 @@
-name: Artifact Action Diagnostic
+name: Build Electron Installers
 
 on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
-  artifact-test:
-    runs-on: ubuntu-latest
+  build:
+    name: Build Desktop Installers
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+        include:
+          - os: windows-latest
+            platform: win
+          - os: macos-latest
+            platform: mac
+          - os: ubuntu-latest
+            platform: linux
+
     steps:
-      - name: Create dummy file
-        run: echo "artifact test" > test.txt
+      - name: Checkout Code
+        uses: actions/checkout@v3
 
-      - name: Upload test artifact (v4)
-        uses: actions/upload-artifact@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
         with:
-          name: test-artifact
-          path: test.txt
+          node-version: 18
 
-      - name: Upload test artifact fallback (v2)
-        uses: actions/upload-artifact@v2
+      - name: Install dependencies (root)
+        run: npm install
+
+      - name: Build Frontend
+        run: npm run build
+
+      - name: Set up Electron dependencies and scripts
+        run: bash setup-electron-deps.sh
+
+      - name: Install dependencies (electron)
+        run: npm install
+        working-directory: electron
+
+      - name: Build Electron App
+        run: |
+          if [ "${{ matrix.platform }}" = "win" ]; then
+            node build-electron.js --win
+          elif [ "${{ matrix.platform }}" = "mac" ]; then
+            node build-electron.js --mac
+          elif [ "${{ matrix.platform }}" = "linux" ]; then
+            node build-electron.js --linux
+          fi
+
+      - name: List Output Files
+        run: ls -al dist_electron || echo "No dist_electron directory found"
+
+      - name: Upload Installers
+        uses: actions/upload-artifact@v3
         with:
-          name: test-artifact-fallback
-          path: test.txt
-        continue-on-error: true
+          name: ${{ matrix.platform }}-installers
+          path: dist_electron/*
+        if: success()
