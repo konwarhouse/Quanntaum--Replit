@@ -97,10 +97,21 @@ If you receive a warning that the app cannot be opened because it is from an uni
 2. Select "Open" from the shortcut menu.
 3. Click "Open" in the dialog that appears.
 
+For macOS Monterey or later, you may need additional steps:
+1. After downloading, open System Preferences > Security & Privacy.
+2. Look for a message about "Quanntaum Predict was blocked" and click "Open Anyway".
+3. Confirm by clicking "Open" in the subsequent dialog.
+
 #### Windows SmartScreen warning
 If Windows SmartScreen prevents the app from starting:
 1. Click "More info".
 2. Click "Run anyway" to proceed with the installation.
+
+For Windows 11, you may need to take additional steps:
+1. Right-click the installer file and select "Properties".
+2. Check the "Unblock" box next to "This file came from another computer".
+3. Click "Apply" and "OK".
+4. Now try running the installer again.
 
 ## Support
 
@@ -110,6 +121,50 @@ For additional assistance, please contact:
 
 ## Data Storage
 
-The desktop version of Quanntaum Predict uses a local in-memory database for storing application data. No additional database setup is required. All data is stored in memory and will be reset when the application is closed.
+The desktop version of Quanntaum Predict uses SQLite for persistent data storage. No additional database setup is required. All data is automatically saved to a local database file on your system.
 
-For a persistent database setup, please use the web-based deployment option of Quanntaum Predict.
+### Database Location
+
+The SQLite database is stored in:
+
+- **Windows**: `%APPDATA%\Quanntaum-Predict\quanntaum-predict.db`
+  - Typically: `C:\Users\[YourUsername]\AppData\Roaming\Quanntaum-Predict\quanntaum-predict.db`
+
+- **macOS**: `~/Library/Application Support/Quanntaum-Predict/quanntaum-predict.db`
+  - Typically: `/Users/[YourUsername]/Library/Application Support/Quanntaum-Predict/quanntaum-predict.db`
+
+- **Linux**: `~/.local/share/Quanntaum-Predict/quanntaum-predict.db`
+  - Typically: `/home/[YourUsername]/.local/share/Quanntaum-Predict/quanntaum-predict.db`
+
+### Data Persistence
+
+All modules in Quanntaum Predict support data persistence across sessions:
+
+- User accounts and authentication
+- Equipment and asset data
+- FMECA analysis (both asset-level and system-level)
+- RCM analysis data
+- RAM analysis data
+- Failure history records
+
+### Database Backup
+
+It's recommended to periodically back up your database file. To create a backup:
+
+1. Close the Quanntaum Predict application
+2. Navigate to the database location mentioned above
+3. Copy the `quanntaum-predict.db` file to a secure backup location
+
+### Troubleshooting Database Issues
+
+If you experience database-related issues:
+
+1. Close the application
+2. Make a backup copy of your database file
+3. Restart the application
+
+For persistent database corruption issues, you can reset the database by:
+1. Close the application
+2. Rename or remove the database file
+3. Restart the application (a new database will be created)
+4. Note that this will reset all your data

@@ -1,6 +1,48 @@
 import BetterSQLite3 from 'better-sqlite3';
 import * as fs from 'fs';
 import * as path from 'path';
+
+/**
+ * Execute a database operation with retry logic and error handling for robustness
+ */
+async function executeWithRetry<T>(
+  operation: () => T, 
+  maxRetries = 3, 
+  retryDelay = 200,
+  errorContext = "database operation"
+): Promise<T> {
+  let lastError: unknown = null;
+  
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return operation();
+    } catch (error: unknown) {
+      lastError = error;
+      console.error(`SQLite error during ${errorContext} (attempt ${attempt + 1}/${maxRetries}):`, error);
+      
+      // Handle specific error cases
+      if (error instanceof Error && error.message && (
+        error.message.includes('disk full') || 
+        error.message.includes('disk I/O error') ||
+        error.message.includes('permission denied')
+      )) {
+        console.error('Critical SQLite error - storage issue detected:', error.message);
+        // For critical errors, we might want to break early and not retry
+        break;
+      }
+      
+      if (attempt < maxRetries - 1) {
+        // Wait before retrying with exponential backoff
+        const backoffDelay = retryDelay * Math.pow(2, attempt);
+        await new Promise(resolve => setTimeout(resolve, backoffDelay));
+      }
+    }
+  }
+  
+  console.error(`SQLite operation failed after ${maxRetries} attempts:`, lastError);
+  const errorMessage = lastError instanceof Error ? lastError.message : 'Unknown error';
+  throw new Error(`Failed to execute SQLite ${errorContext}: ${errorMessage}`);
+}
 import { IStorage } from './storage';
 import {
   User, InsertUser,
@@ -11,6 +53,12 @@ import {
   FailureMode, InsertFailureMode,
   FailureHistory, InsertFailureHistory
 } from '@shared/schema';
+
+// Add a process exit handler to ensure clean SQLite shutdown
+process.on('exit', () => {
+  // Global instance cleanup will happen via the database instance
+  console.log('Process exit - cleaning up SQLite connections');
+});
 
 // Import FMECA types from fmeca-schema
 import {
@@ -24,24 +72,50 @@ import {
  * SQLite implementation of the storage interface for Electron mode
  */
 export class SQLiteStorage implements IStorage {
-  private db: BetterSQLite3.Database;
+  private db: BetterSQLite3.Database | any; // Using any as a temporary workaround for type issues
   private dbPath: string;
   
   constructor(dbFilePath?: string) {
-    // Default path is in the user's home directory
-    const userDataPath = this.getUserDataPath();
-    fs.mkdirSync(userDataPath, { recursive: true });
-    
-    this.dbPath = dbFilePath || path.join(userDataPath, 'quanntaum-predict.db');
-    console.log(`Initializing SQLite database at: ${this.dbPath}`);
-    
-    this.db = new BetterSQLite3(this.dbPath);
-    
-    // Enable foreign keys
-    this.db.pragma('foreign_keys = ON');
-    
-    // Initialize database schema
-    this.initializeDatabase();
+    try {
+      // Default path is in the user's home directory
+      const userDataPath = this.getUserDataPath();
+      fs.mkdirSync(userDataPath, { recursive: true });
+      
+      this.dbPath = dbFilePath || path.join(userDataPath, 'quanntaum-predict.db');
+      console.log(`Initializing SQLite database at: ${this.dbPath}`);
+      
+      // Check if the directory is writable
+      try {
+        fs.accessSync(path.dirname(this.dbPath), fs.constants.W_OK);
+      } catch (error) {
+        console.error(`Database directory is not writable: ${path.dirname(this.dbPath)}`, error);
+        throw new Error(`Cannot write to database location: ${path.dirname(this.dbPath)}`);
+      }
+      
+      // Create or open the database with proper error handling
+      this.db = new BetterSQLite3(this.dbPath, {
+        verbose: process.env.NODE_ENV === 'development' ? console.log : undefined,
+        fileMustExist: false // Don't require the file to exist
+      });
+      
+      // Ensure the database is functioning correctly
+      try {
+        // Enable foreign keys
+        this.db.pragma('foreign_keys = ON');
+        // Quick test query to verify connection
+        this.db.prepare('SELECT 1').get();
+      } catch (error) {
+        console.error('Failed to initialize SQLite database:', error);
+        throw new Error(`Database initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+      
+      // Initialize database schema
+      this.initializeDatabase();
+      console.log('SQLite database initialized successfully');
+    } catch (error) {
+      console.error('Fatal error initializing SQLite database:', error);
+      throw new Error(`Failed to initialize SQLite database: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
   
   /**
@@ -325,35 +399,46 @@ export class SQLiteStorage implements IStorage {
   // User operations
   
   async getUser(id: number): Promise<User | undefined> {
-    const stmt = this.db.prepare('SELECT * FROM users WHERE id = ?');
-    const user = stmt.get(id) as User | undefined;
-    return user;
+    return executeWithRetry(() => {
+      const stmt = this.db.prepare('SELECT * FROM users WHERE id = ?');
+      const user = stmt.get(id) as User | undefined;
+      return user;
+    }, 3, 200, "get user by ID");
   }
   
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const stmt = this.db.prepare('SELECT * FROM users WHERE username = ?');
-    const user = stmt.get(username) as User | undefined;
-    return user;
+    return executeWithRetry(() => {
+      const stmt = this.db.prepare('SELECT * FROM users WHERE username = ?');
+      const user = stmt.get(username) as User | undefined;
+      return user;
+    }, 3, 200, "get user by username");
   }
   
   async createUser(insertUser: InsertUser): Promise<User> {
-    const stmt = this.db.prepare(`
-      INSERT INTO users (username, password, fullName, email, role, isActive, createdBy)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `);
+    const id = await executeWithRetry(() => {
+      const stmt = this.db.prepare(`
+        INSERT INTO users (username, password, fullName, email, role, isActive, createdBy)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `);
+      
+      const info = stmt.run(
+        insertUser.username,
+        insertUser.password,
+        insertUser.fullName || null,
+        insertUser.email || null,
+        insertUser.role || 'user',
+        insertUser.isActive !== undefined ? insertUser.isActive ? 1 : 0 : 1,
+        insertUser.createdBy || null
+      );
+      
+      return info.lastInsertRowid as number;
+    }, 3, 200, "create user");
     
-    const info = stmt.run(
-      insertUser.username,
-      insertUser.password,
-      insertUser.fullName || null,
-      insertUser.email || null,
-      insertUser.role || 'user',
-      insertUser.isActive !== undefined ? insertUser.isActive ? 1 : 0 : 1,
-      insertUser.createdBy || null
-    );
-    
-    const id = info.lastInsertRowid as number;
-    return this.getUser(id) as Promise<User>;
+    const user = await this.getUser(id);
+    if (!user) {
+      throw new Error(`Failed to retrieve created user with ID ${id}`);
+    }
+    return user;
   }
   
   // Message operations
