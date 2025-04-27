@@ -48,16 +48,17 @@ jobs:
           echo "=== electron/dist_electron directory tree ==="
           ls -alh electron/dist_electron || echo "No dist_electron directory found"
 
-      - name: Fail if dist_electron directory is missing
+      - name: Check build output contents
         run: |
-          if [ ! -d electron/dist_electron ]; then
-            echo "Build failed: electron/dist_electron directory does not exist."
+          if [ -d electron/dist_electron ]; then
+            echo "dist_electron exists, contents:"
+            ls -lAh electron/dist_electron
+          else
+            echo "dist_electron does not exist."
             exit 1
           fi
-        shell: bash
 
-      # Attempt to upload artifacts using latest action
-      - name: Upload Electron artifacts (v4)
+      - name: Upload Electron build artifact (try v4)
         uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -65,10 +66,23 @@ jobs:
           path: electron/dist_electron/
         continue-on-error: true
 
-      # Fallback upload (in case v4 is temporarily broken)
-      - name: Upload Electron artifacts fallback (v2)
+      - name: Upload Electron build artifact fallback (v2)
         uses: actions/upload-artifact@v2
         if: failure()
         with:
           name: electron-app-${{ matrix.os }}-fallback
           path: electron/dist_electron/
+        continue-on-error: true
+
+      - name: Upload build log always
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: build-log-${{ matrix.os }}
+          path: electron/build-output.log
+        continue-on-error: true
+
+      - name: Notify if artifact upload failed
+        if: failure()
+        run: |
+          echo "::warning::Build completed, but artifact upload failed (likely GitHub Actions infrastructure issue)."
