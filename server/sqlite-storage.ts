@@ -2,6 +2,37 @@ import BetterSQLite3 from 'better-sqlite3';
 import * as fs from 'fs';
 import * as path from 'path';
 
+// External reference to SQLiteStorage instance for cleanup on app exit
+let _sqliteInstance: { cleanup: () => void } | null = null;
+
+// Register process exit handler for cleanup
+process.on('exit', () => {
+  if (_sqliteInstance) {
+    console.log('Process exiting: Cleaning up SQLite resources');
+    _sqliteInstance.cleanup();
+    _sqliteInstance = null;
+  }
+});
+
+// Handle SIGINT and SIGTERM for graceful shutdown
+process.on('SIGINT', () => {
+  console.log('Received SIGINT: Shutting down gracefully');
+  if (_sqliteInstance) {
+    _sqliteInstance.cleanup();
+    _sqliteInstance = null;
+  }
+  process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+  console.log('Received SIGTERM: Shutting down gracefully');
+  if (_sqliteInstance) {
+    _sqliteInstance.cleanup();
+    _sqliteInstance = null;
+  }
+  process.exit(0);
+});
+
 /**
  * Execute a database operation with retry logic and error handling for robustness
  */
@@ -53,20 +84,6 @@ import {
   FailureMode, InsertFailureMode,
   FailureHistory, InsertFailureHistory
 } from '@shared/schema';
-
-// Add a process exit handler to ensure clean SQLite shutdown
-let _sqliteInstance: any = null; // Store reference locally for cleanup
-process.on('exit', () => {
-  // Global instance cleanup will happen via the database instance
-  console.log('Process exit - cleaning up SQLite connections');
-  if (_sqliteInstance) {
-    try {
-      _sqliteInstance.cleanup();
-    } catch (error) {
-      console.error('Error during SQLite cleanup:', error);
-    }
-  }
-});
 
 // Import FMECA types from fmeca-schema
 import {
