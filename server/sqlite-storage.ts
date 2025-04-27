@@ -129,6 +129,13 @@ export class SQLiteStorage implements IStorage {
       // Initialize database schema
       this.initializeDatabase();
       console.log('SQLite database initialized successfully');
+      
+      // Create default admin user if none exists
+      this.createDefaultAdminIfNeeded().then(() => {
+        console.log('Default admin user check completed');
+      }).catch(error => {
+        console.error('Error during default admin user check:', error);
+      });
     } catch (error) {
       console.error('Fatal error initializing SQLite database:', error);
       throw new Error(`Failed to initialize SQLite database: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -184,6 +191,40 @@ export class SQLiteStorage implements IStorage {
       }
     } catch (error) {
       console.error('Error during SQLite cleanup:', error);
+    }
+  }
+  
+  /**
+   * Creates a default admin user if none exists
+   * This ensures that there's always at least one admin account for first-time setup
+   */
+  private async createDefaultAdminIfNeeded() {
+    try {
+      // Check if admin user exists
+      const admin = await this.getUserByUsername('admin');
+      if (!admin) {
+        console.log('Creating default admin user...');
+        const scrypt = await import('crypto');
+        const { scryptSync, randomBytes } = scrypt;
+        
+        // Generate a secure password hash
+        const salt = randomBytes(16).toString('hex');
+        const passwordHash = `${scryptSync('adminpassword', salt, 64).toString('hex')}.${salt}`;
+        
+        // Create the admin user
+        await this.createUser({
+          username: 'admin',
+          password: passwordHash,
+          fullName: 'Administrator',
+          email: 'admin@example.com',
+          role: 'admin',
+          isActive: true
+        });
+        
+        console.log('Default admin user created successfully');
+      }
+    } catch (error) {
+      console.error('Error creating default admin user:', error);
     }
   }
   
@@ -1433,10 +1474,11 @@ export class SQLiteStorage implements IStorage {
     return history;
   }
   
-  // Clean up database connection when done
+  /**
+   * Clean up database connection when done
+   * This is part of the IStorage interface and delegates to cleanup
+   */
   close() {
-    if (this.db) {
-      this.db.close();
-    }
+    this.cleanup();
   }
 }
