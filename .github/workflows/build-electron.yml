@@ -1,5 +1,38 @@
-- name: Upload build artifacts
-  uses: actions/upload-artifact@v3
-  with:
-    name: Electron-build-${{ matrix.os }}
-    path: dist_electron/*
+name: Build Electron Installers
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-desktop-installers:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build for ${{ matrix.os }}
+        run: |
+          if [ "${{ matrix.os }}" == "macos-latest" ]; then
+            node build-electron.js --mac
+          else
+            node build-electron.js --win
+          fi
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: Electron-build-${{ matrix.os }}
+          path: dist_electron/*
