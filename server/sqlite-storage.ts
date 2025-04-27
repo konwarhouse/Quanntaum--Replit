@@ -55,9 +55,17 @@ import {
 } from '@shared/schema';
 
 // Add a process exit handler to ensure clean SQLite shutdown
+let _sqliteInstance: any = null; // Store reference locally for cleanup
 process.on('exit', () => {
   // Global instance cleanup will happen via the database instance
   console.log('Process exit - cleaning up SQLite connections');
+  if (_sqliteInstance) {
+    try {
+      _sqliteInstance.cleanup();
+    } catch (error) {
+      console.error('Error during SQLite cleanup:', error);
+    }
+  }
 });
 
 // Import FMECA types from fmeca-schema
@@ -74,8 +82,17 @@ import {
 export class SQLiteStorage implements IStorage {
   private db: BetterSQLite3.Database | any; // Using any as a temporary workaround for type issues
   private dbPath: string;
+  private static instance: SQLiteStorage | null = null;
   
   constructor(dbFilePath?: string) {
+    if (SQLiteStorage.instance) {
+      console.log('Returning existing SQLiteStorage instance');
+      return SQLiteStorage.instance;
+    }
+    
+    SQLiteStorage.instance = this;
+    // Store for external cleanup reference
+    _sqliteInstance = this;
     try {
       // Default path is in the user's home directory
       const userDataPath = this.getUserDataPath();
@@ -142,7 +159,38 @@ export class SQLiteStorage implements IStorage {
   }
   
   /**
-   * Initialize the database schema
+   * Safely close the database connection and clean up resources
+   */
+  public cleanup(): void {
+    try {
+      if (this.db) {
+        // Make sure any pending transactions are committed
+        try {
+          const inTransaction = this.db.inTransaction;
+          if (inTransaction) {
+            console.log('Committing pending transaction before close');
+            this.db.exec('COMMIT');
+          }
+        } catch (error) {
+          console.error('Error checking transaction status:', error);
+        }
+        
+        // Close the database connection
+        console.log(`Closing SQLite database connection: ${this.dbPath}`);
+        this.db.close();
+        
+        // Clear the static instance
+        SQLiteStorage.instance = null;
+      }
+    } catch (error) {
+      console.error('Error during SQLite cleanup:', error);
+    }
+  }
+  
+  /**
+   * Initialize the database schema with required tables
+   * Creates tables for users, messages, equipment_classes, assets, maintenance_events,
+   * failure_modes, failure_history, asset_fmeca, system_fmeca, and related history tables
    */
   private initializeDatabase() {
     // Create users table
