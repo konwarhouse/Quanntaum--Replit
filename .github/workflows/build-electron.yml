@@ -45,13 +45,13 @@ jobs:
         run: |
           echo "=== electron directory tree ==="
           ls -alh electron
-          echo "=== electron/dist directory tree ==="
-          ls -alh electron/dist || echo "No dist directory found"
+          echo "=== electron/dist_electron directory tree ==="
+          ls -alh electron/dist_electron || echo "No dist_electron directory found"
 
-      - name: Fail if dist directory is missing
+      - name: Fail if dist_electron directory is missing
         run: |
-          if [ ! -d electron/dist ]; then
-            echo "Build failed: electron/dist directory does not exist."
+          if [ ! -d electron/dist_electron ]; then
+            echo "Build failed: electron/dist_electron directory does not exist."
             exit 1
           fi
         shell: bash
@@ -60,4 +60,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: electron-app-${{ matrix.os }}
-          path: electron/dist/
+          path: electron/dist_electron/
