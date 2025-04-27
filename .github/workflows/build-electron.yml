@@ -1,4 +1,4 @@
-name: Build Electron Installers
+name: Build Electron App
 
 on:
   push:
@@ -6,11 +6,11 @@ on:
       - main
 
 jobs:
-  build-desktop-installers:
+  build:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-latest, windows-latest]
+        os: [windows-latest, macos-latest]
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -21,46 +21,15 @@ jobs:
           node-version: 18
 
       - name: Install dependencies
-        run: |
-          echo "Installing dependencies..."
-          npm install || exit 1
+        run: npm install
+        working-directory: electron
 
-      - name: Debug npm build
-        run: |
-          echo "Running frontend build..."
-          npm run build || echo "Frontend build failed!"
+      - name: Build Electron app
+        run: npm run build
+        working-directory: electron
 
-      - name: Build Electron App for ${{ matrix.os }}
-        run: |
-          echo "Running Electron build for ${{ matrix.os }}..."
-          if [ "${{ matrix.os }}" == "macos-latest" ]; then
-            node build-electron.js --mac || echo "Electron build failed!"
-          else
-            node build-electron.js --win || echo "Electron build failed!"
-          fi
-
-      - name: Debug Artifact Directory
-        run: |
-          echo "Checking contents of dist_electron..."
-          ls -R dist_electron || echo "dist_electron directory not found!"
-
-      - name: Verify Artifact Directory
-        run: |
-          echo "Verifying dist_electron directory..."
-          if [ ! -d dist_electron ]; then
-            echo "dist_electron directory does not exist!"
-            exit 1
-          elif [ -z "$(ls -A dist_electron)" ]; then
-            echo "dist_electron directory is empty!"
-            exit 1
-          fi
-
-      - name: Package Artifacts Manually
-        run: |
-          echo "Packaging artifacts manually..."
-          tar -czvf Electron-Build-${{ matrix.os }}.tar.gz dist_electron || echo "Artifact packaging failed!"
-
-      - name: Upload Artifacts Manually
-        run: |
-          echo "Uploading packaged artifacts manually..."
-          curl -F "file=@Electron-Build-${{ matrix.os }}.tar.gz" https://example-upload-endpoint.com/upload || echo "Artifact upload failed!"
+      - name: Upload Electron artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: electron-app-${{ matrix.os }}
+          path: electron/dist/
