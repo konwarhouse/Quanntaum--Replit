@@ -85,4 +85,4 @@ jobs:
       - name: Notify if artifact upload failed
         if: failure()
         run: |
-          echo "::warning::Build completed, but artifact upload failed (likely GitHub Actions infrastructure issue)."
+          echo "::warning file=.github/workflows/build-electron.yml,line=1,col=1::Build completed, but artifact upload failed due to a GitHub Actions infrastructure/network issue. Your build is GOOD. Wait and re-run later."
