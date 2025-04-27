@@ -36,7 +36,7 @@ jobs:
         working-directory: electron
 
       - name: Build Electron app
-        run: node build-electron.js --linux
+        run: node build-electron.cjs --linux
 
       - name: List build output (diagnostics)
         run: ls -al dist_electron || echo "No dist_electron directory"
