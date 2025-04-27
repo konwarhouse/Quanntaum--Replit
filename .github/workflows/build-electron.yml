@@ -31,8 +31,11 @@ jobs:
             node build-electron.js --win
           fi
 
+      - name: Debug Artifact Directory
+        run: ls -R dist_electron || echo "dist_electron directory not found!"
+
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v2
         with:
           name: Electron-build-${{ matrix.os }}
           path: dist_electron/*
