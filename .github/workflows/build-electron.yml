@@ -8,21 +8,15 @@ on:
 
 jobs:
   build:
-    name: Build Desktop Installers
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest, macos-latest, ubuntu-latest]
-        include:
-          - os: windows-latest
-            platform: win
-          - os: macos-latest
-            platform: mac
-          - os: ubuntu-latest
-            platform: linux
+        os: [ubuntu-latest]
+        platform: [linux]
+        # Add macos-latest and windows-latest if you want to build for all OSs
 
     steps:
-      - name: Checkout Code
+      - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Set up Node.js
@@ -30,35 +24,30 @@ jobs:
         with:
           node-version: 18
 
-      - name: Install dependencies (root)
-        run: npm install
+      - name: Install root dependencies
+        run: npm ci
 
-      - name: Build Frontend
+      - name: Build frontend
         run: npm run build
 
-      - name: Set up Electron dependencies and scripts
-        run: bash setup-electron-deps.sh
+      - name: Make setup script executable
+        run: chmod +x setup-electron-deps.sh
 
-      - name: Install dependencies (electron)
-        run: npm install
+      - name: Set up Electron dependencies and scripts
+        run: ./setup-electron-deps.sh
+
+      - name: Install Electron dependencies
+        run: npm ci
         working-directory: electron
 
-      - name: Build Electron App
-        run: |
-          if [ "${{ matrix.platform }}" = "win" ]; then
-            node build-electron.js --win
-          elif [ "${{ matrix.platform }}" = "mac" ]; then
-            node build-electron.js --mac
-          elif [ "${{ matrix.platform }}" = "linux" ]; then
-            node build-electron.js --linux
-          fi
+      - name: Build Electron app
+        run: node build-electron.js --${{ matrix.platform }}
 
-      - name: List Output Files
-        run: ls -al dist_electron || echo "No dist_electron directory found"
+      - name: List build output (diagnostics)
+        run: ls -al dist_electron || echo "No dist_electron directory"
 
       - name: Upload Installers
         uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.platform }}-installers
           path: dist_electron/*
-        if: success()
