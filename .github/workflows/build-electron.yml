@@ -19,30 +19,17 @@ jobs:
         with:
           node-version: 18
 
-      - name: Install root dependencies
+      - name: Install dependencies
         run: npm ci
 
-      - name: Build frontend
-        run: npm run build
-
-      - name: Make setup script executable
-        run: chmod +x setup-electron-deps.sh
-
-      - name: Set up Electron dependencies and scripts
-        run: ./setup-electron-deps.sh
-
-      - name: Install Electron dependencies
-        run: npm ci
-        working-directory: electron
-
-      - name: Build Electron app
-        run: node build-electron.cjs --linux
+      - name: Build Electron app (Linux)
+        run: npx electron-builder --linux
 
       - name: List build output (diagnostics)
-        run: ls -al dist_electron || echo "No dist_electron directory"
+        run: ls -al dist/ || echo "No dist directory"
 
       - name: Upload Installers
         uses: actions/upload-artifact@v4
         with:
           name: linux-installers
-          path: dist_electron/*
+          path: dist/*
