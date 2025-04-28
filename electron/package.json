@@ -2,7 +2,7 @@
   "name": "quanntaum-predict-desktop",
   "version": "1.0.0",
   "description": "Quanntaum Predict - Reliability and System Analysis Platform",
-  "main": "electron/main.js",
+  "main": "main.js",
   "scripts": {
     "start": "electron .",
     "build": "electron-builder",
