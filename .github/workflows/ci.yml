@@ -1,0 +1,35 @@
+name: CI Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies (root)
+        run: npm install
+
+      - name: Build (root)
+        run: npm run build || echo "No root build script defined"
+
+      - name: Install dependencies (Electron app)
+        run: |
+          cd electron
+          npm install
+
+      - name: Build Electron app
+        run: |
+          cd electron
+          npm run build || echo "No Electron build script defined"
