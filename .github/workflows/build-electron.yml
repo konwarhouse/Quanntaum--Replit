@@ -4,15 +4,14 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
-  build-desktop-installers:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [macos-latest, windows-latest]
+  build:
+    runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Set up Node.js
@@ -20,47 +19,30 @@ jobs:
         with:
           node-version: 18
 
-      - name: Install dependencies
-        run: |
-          echo "Installing dependencies..."
-          npm install || exit 1
+      - name: Install root dependencies
+        run: npm ci
 
-      - name: Debug npm build
-        run: |
-          echo "Running frontend build..."
-          npm run build || echo "Frontend build failed!"
+      - name: Build frontend
+        run: npm run build
 
-      - name: Build Electron App for ${{ matrix.os }}
-        run: |
-          echo "Running Electron build for ${{ matrix.os }}..."
-          if [ "${{ matrix.os }}" == "macos-latest" ]; then
-            node build-electron.js --mac || echo "Electron build failed!"
-          else
-            node build-electron.js --win || echo "Electron build failed!"
-          fi
+      - name: Make setup script executable
+        run: chmod +x setup-electron-deps.sh
 
-      - name: Debug Artifact Directory
-        run: |
-          echo "Checking contents of dist_electron..."
-          ls -R dist_electron || echo "dist_electron directory not found!"
+      - name: Set up Electron dependencies and scripts
+        run: ./setup-electron-deps.sh
 
-      - name: Verify Artifact Directory
-        run: |
-          echo "Verifying dist_electron directory..."
-          if [ ! -d dist_electron ]; then
-            echo "dist_electron directory does not exist!"
-            exit 1
-          elif [ -z "$(ls -A dist_electron)" ]; then
-            echo "dist_electron directory is empty!"
-            exit 1
-          fi
+      - name: Install Electron dependencies
+        run: npm ci
+        working-directory: electron
 
-      - name: Package Artifacts Manually
-        run: |
-          echo "Packaging artifacts manually..."
-          tar -czvf Electron-Build-${{ matrix.os }}.tar.gz dist_electron || echo "Artifact packaging failed!"
+      - name: Build Electron app
+        run: node build-electron.cjs --linux
 
-      - name: Upload Artifacts Manually
-        run: |
-          echo "Uploading packaged artifacts manually..."
-          curl -F "file=@Electron-Build-${{ matrix.os }}.tar.gz" https://example-upload-endpoint.com/upload || echo "Artifact upload failed!"
+      - name: List build output (diagnostics)
+        run: ls -al dist_electron || echo "No dist_electron directory"
+
+      - name: Upload Installers
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-installers
+          path: dist_electron/*
