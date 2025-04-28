@@ -107,6 +107,7 @@ mac:
   entitlements: electron/entitlements.plist
   entitlementsInherit: electron/entitlements.plist
   gatekeeperAssess: false
+
   notarize: true
 ```
 
