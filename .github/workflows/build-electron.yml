@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
@@ -19,6 +22,12 @@ jobs:
         with:
           node-version: 20
 
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Build frontend and backend
+        run: npm run build
+
       - name: Install Electron dependencies
         run: npm ci
         working-directory: electron
@@ -28,10 +37,10 @@ jobs:
         working-directory: electron
 
       - name: List build output (diagnostics)
-        run: ls -al electron/dist/ || echo "No dist directory"
+        run: ls -al electron/dist_electron/ || echo "No dist_electron directory"
 
       - name: Upload Installers
         uses: actions/upload-artifact@v4
         with:
           name: linux-installers
-          path: electron/dist/*
+          path: electron/dist_electron/*
